@@ -1206,7 +1206,7 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
         <td>${formatarDataBr(t.data_realizacao)}</td>
         <td>${formatarDataBr(t.validade_data)}</td>
         <td><span class="pill ${status}">${status}${diasRestantes !== null ? ' (' + diasRestantes + 'd)' : ''}</span></td>
-        <td>${t.arquivo ? `<span class="file-link" data-arquivo="${t.arquivo}">Ver arquivo</span>` : '<span class="small">—</span>'}</td>
+        <td>${t.arquivo ? `<span class="file-link" data-arquivo="${t.arquivo}">Ver</span> · <span class="file-link" data-baixar="${t.arquivo}">Baixar</span>` : '<span class="small">—</span>'}</td>
         <td><button class="del-btn" data-id="${t.id}">Excluir</button></td>
       </tr>`;
     }).join('');
@@ -1214,9 +1214,8 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     tbody.querySelectorAll('.del-btn').forEach(btn => {
       btn.addEventListener('click', () => deleteTreinamento(btn.getAttribute('data-id')));
     });
-    tbody.querySelectorAll('.file-link').forEach(link => {
-      link.addEventListener('click', () => abrirArquivo(link.getAttribute('data-arquivo')));
-    });
+    tbody.querySelectorAll('[data-arquivo]').forEach(link => link.addEventListener('click', () => abrirArquivo(link.getAttribute('data-arquivo'))));
+    tbody.querySelectorAll('[data-baixar]').forEach(link => link.addEventListener('click', () => baixarArquivo(link.getAttribute('data-baixar'))));
   }
 
   // ---------- Upload / visualização de arquivo real (Supabase Storage) ----------
@@ -1231,6 +1230,26 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     const { data, error } = await sb.storage.from('documentos').createSignedUrl(caminho, 60 * 10); // link válido por 10 min
     if (error) { showAppStatus('err', 'Erro ao abrir arquivo: ' + error.message); return; }
     window.open(data.signedUrl, '_blank');
+  }
+
+  // Baixa o arquivo de verdade pro computador (não só abre na aba) — funciona pra
+  // qualquer tipo de arquivo (PDF, foto), pra poder mandar pro cliente que pediu.
+  async function baixarArquivo(caminho) {
+    showAppStatus('info', 'Preparando o download…');
+    try {
+      const { data, error } = await sb.storage.from('documentos').createSignedUrl(caminho, 60 * 10);
+      if (error) throw error;
+      const resp = await fetch(data.signedUrl);
+      const blob = await resp.blob();
+      const nomeArquivo = caminho.split('/').pop().replace(/^\d+_/, ''); // tira o timestamp do nome
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = nomeArquivo; a.click();
+      URL.revokeObjectURL(url);
+      showAppStatus('ok', `Baixado: ${nomeArquivo}`);
+    } catch (e) {
+      showAppStatus('err', 'Erro ao baixar o arquivo: ' + e.message);
+    }
   }
 
   async function saveTreinamento() {
@@ -1576,11 +1595,12 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
         ${linhas.length ? `<table><tbody>${linhas.join('')}</tbody></table>` : '<div class="small">Nenhum registro nessa seção.</div>'}
       </div>`;
 
-    const linhasAso = (asos.data || []).map(a => `<tr><td>${a.tipo || '—'}</td><td>${formatarDataBr(a.data_realizacao)}</td><td>${formatarDataBr(a.validade_data)}</td><td>${pill(a.validade_data)}</td></tr>`);
-    const linhasTreino = (treinos.data || []).map(t => `<tr><td>${t.curso}</td><td>${formatarDataBr(t.data_realizacao)}</td><td>${formatarDataBr(t.validade_data)}</td><td>${pill(t.validade_data)}</td></tr>`);
-    const linhasEpi = (epis.data || []).map(e => `<tr><td>${e.epi}</td><td>${e.ca || '—'}</td><td>${formatarDataBr(e.entrega)}</td><td>${formatarDataBr(e.troca)}</td></tr>`);
-    const linhasInteg = (integs.data || []).map(i => `<tr><td>${i.empresa_integracao}</td><td>${i.obra || '—'}</td><td>${formatarDataBr(i.validade_data)}</td><td>${pill(i.validade_data)}</td></tr>`);
-    const linhasPonto = (pontos.data || []).map(p => `<tr><td>${p.cliente || '—'}</td><td>${p.periodo || '—'}</td><td>${formatarDataBr(p.data_envio)}</td></tr>`);
+    const docCol = (arquivo) => arquivo ? `<span class="file-link" data-baixar="${arquivo}">📥 Baixar</span>` : '<span class="small">sem arquivo</span>';
+    const linhasAso = (asos.data || []).map(a => `<tr><td>${a.tipo || '—'}</td><td>${formatarDataBr(a.data_realizacao)}</td><td>${formatarDataBr(a.validade_data)}</td><td>${pill(a.validade_data)}</td><td>${docCol(a.arquivo)}</td></tr>`);
+    const linhasTreino = (treinos.data || []).map(t => `<tr><td>${t.curso}</td><td>${formatarDataBr(t.data_realizacao)}</td><td>${formatarDataBr(t.validade_data)}</td><td>${pill(t.validade_data)}</td><td>${docCol(t.arquivo)}</td></tr>`);
+    const linhasEpi = (epis.data || []).map(e => `<tr><td>${e.epi}</td><td>${e.ca || '—'}</td><td>${formatarDataBr(e.entrega)}</td><td>${formatarDataBr(e.troca)}</td><td>${docCol(e.arquivo)}</td></tr>`);
+    const linhasInteg = (integs.data || []).map(i => `<tr><td>${i.empresa_integracao}</td><td>${i.obra || '—'}</td><td>${formatarDataBr(i.validade_data)}</td><td>${pill(i.validade_data)}</td><td>${docCol(i.arquivo)}</td></tr>`);
+    const linhasPonto = (pontos.data || []).map(p => `<tr><td>${p.cliente || '—'}</td><td>${p.periodo || '—'}</td><td>${formatarDataBr(p.data_envio)}</td><td>${docCol(p.arquivo)}</td></tr>`);
     const linhasFerias = (ferias.data || []).map(v => `<tr><td>Início: ${formatarDataBr(v.inicio_periodo)}</td><td>Fim aquisitivo: ${formatarDataBr(v.fim_aquisitivo)}</td><td>Limite p/ gozar: ${formatarDataBr(v.limite_gozo)}</td><td>${pill(v.limite_gozo)}</td></tr>`);
 
     resultDiv.innerHTML = `
@@ -1595,6 +1615,7 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
       ${secao('🕒 Folhas de Ponto', linhasPonto)}
       ${secao('🏖️ Férias', linhasFerias)}
     `;
+    resultDiv.querySelectorAll('[data-baixar]').forEach(link => link.addEventListener('click', () => baixarArquivo(link.getAttribute('data-baixar'))));
   }
 
   async function bulkTreinamentos() {
@@ -1964,11 +1985,12 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
         <td>${e.ca || '—'}</td>
         <td>${formatarDataBr(e.entrega)}</td>
         <td>${formatarDataBr(e.troca)}</td>
-        <td>${e.arquivo ? `<span class="file-link" data-arquivo="${e.arquivo}">Ver ficha</span>` : '<span class="small">—</span>'}</td>
+        <td>${e.arquivo ? `<span class="file-link" data-arquivo="${e.arquivo}">Ver</span> · <span class="file-link" data-baixar="${e.arquivo}">Baixar</span>` : '<span class="small">—</span>'}</td>
         <td><button class="del-btn" data-id="${e.id}">Excluir</button></td>
       </tr>`).join('');
     tbody.querySelectorAll('.del-btn').forEach(btn => btn.addEventListener('click', () => deleteEpi(btn.getAttribute('data-id'))));
-    tbody.querySelectorAll('.file-link').forEach(link => link.addEventListener('click', () => abrirArquivo(link.getAttribute('data-arquivo'))));
+    tbody.querySelectorAll('[data-arquivo]').forEach(link => link.addEventListener('click', () => abrirArquivo(link.getAttribute('data-arquivo'))));
+    tbody.querySelectorAll('[data-baixar]').forEach(link => link.addEventListener('click', () => baixarArquivo(link.getAttribute('data-baixar'))));
   }
 
   async function saveEpi() {
