@@ -3,61 +3,152 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Master Energy — Piloto Supabase (Login + Funcionários)</title>
+<title>Master Energy · Sistema de Gestão SST</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 <style>
 :root{
-  --navy-950:#04182c; --navy-900:#0b3b6e; --blue-500:#0092d6; --blue-400:#29abe2;
-  --white:#ffffff; --gray-100:#f2f4f7; --gray-600:#5b6472;
-  --success:#1fa97a; --success-bg:rgba(31,169,122,.14);
-  --warning:#e8a33d; --warning-bg:rgba(232,163,61,.14);
-  --danger:#e5484d; --danger-bg:rgba(229,72,77,.14);
-  --surface-1: rgba(255,255,255,.05); --surface-border: rgba(255,255,255,.1);
-  --text-primary:#f3f6fb; --text-secondary:#a9b4c4; --text-tertiary:#6d7889;
+  /* ---- Paleta: azul industrial/segurança, refinado a partir da identidade da Master Energy ---- */
+  --navy-950:#03101f; --navy-900:#0a2647; --navy-800:#0f3258; --navy-700:#154070;
+  --blue-500:#0092d6; --blue-400:#3ab4f2; --blue-300:#7dd0fb;
+  --amber-500:#e8a33d; --amber-400:#f0b75f;
+  --white:#ffffff;
+  --success:#1fa97a; --success-bg:rgba(31,169,122,.15);
+  --warning:#e8a33d; --warning-bg:rgba(232,163,61,.15);
+  --danger:#e5484d; --danger-bg:rgba(229,72,77,.15);
+  --surface-1: rgba(255,255,255,.045); --surface-2: rgba(255,255,255,.07); --surface-border: rgba(255,255,255,.1);
+  --ink-50:#f3f6fb; --ink-300:#a9b4c4; --ink-500:#6d7889;
+  --font-display:'Sora',Inter,Arial,sans-serif; --font-body:'Inter',Arial,sans-serif; --font-mono:'JetBrains Mono',ui-monospace,monospace;
+  --radius:14px; --sidebar-w:250px;
 }
 *{box-sizing:border-box;}
-body{margin:0;font-family:Inter,Arial,sans-serif;background:radial-gradient(1200px 800px at 85% -10%,#0f4a80 0%,transparent 55%),var(--navy-950);color:var(--text-primary);min-height:100vh;}
-.wrap{max-width:900px;margin:0 auto;padding:40px 20px;}
-.card{background:rgba(255,255,255,.04);border:1px solid var(--surface-border);border-radius:18px;padding:28px;margin-bottom:20px;backdrop-filter:blur(14px);}
-h1{font-size:20px;margin:0 0 4px;}
-.sub{color:var(--text-secondary);font-size:13px;margin-bottom:20px;}
-label{display:block;font-size:11.5px;color:var(--text-secondary);margin-bottom:5px;font-weight:600;}
-input,select{width:100%;background:var(--surface-1);border:1px solid var(--surface-border);border-radius:9px;padding:9px 12px;color:var(--text-primary);font-size:13px;margin-bottom:12px;font-family:inherit;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;font-family:var(--font-body);color:var(--ink-50);min-height:100vh;
+  background:
+    radial-gradient(900px 600px at 100% -10%, rgba(0,146,214,.16) 0%, transparent 55%),
+    radial-gradient(700px 500px at -10% 100%, rgba(232,163,61,.07) 0%, transparent 50%),
+    var(--navy-950);
+}
+h1{font-family:var(--font-display);font-weight:700;font-size:19px;margin:0 0 4px;letter-spacing:-.01em;color:var(--white);}
+.sub{color:var(--ink-300);font-size:13px;margin-bottom:20px;line-height:1.5;}
+label{display:block;font-size:11px;color:var(--ink-300);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;}
+input,select{width:100%;background:var(--surface-1);border:1px solid var(--surface-border);border-radius:9px;padding:10px 12px;color:var(--ink-50);font-size:13px;margin-bottom:12px;font-family:inherit;transition:border-color .15s,background .15s;}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue-500);background:var(--surface-2);}
+input[type=date],input[type=month],input[type=number]{font-family:var(--font-mono);}
 /* A lista suspensa aberta usa o tema do sistema operacional em muitos navegadores, que ignora o
    fundo semi-transparente do select — por isso as opções ficam explícitas com fundo sólido e texto
    escuro em negrito, garantindo que sempre apareçam legíveis, não importa o navegador. */
 select option{background:#ffffff;color:#0b1220;font-weight:600;padding:6px;}
-button{cursor:pointer;font-weight:600;font-size:13px;border-radius:9px;padding:9px 16px;border:1px solid transparent;font-family:inherit;}
-.btn-primary{background:linear-gradient(135deg,var(--blue-500),#0b6fb0);color:#fff;}
-.btn-ghost{background:var(--surface-1);border-color:var(--surface-border);color:var(--text-primary);}
-.status{padding:10px 14px;border-radius:9px;font-size:12.5px;margin-bottom:14px;display:none;}
+button{cursor:pointer;font-weight:600;font-size:13px;border-radius:9px;padding:10px 16px;border:1px solid transparent;font-family:var(--font-body);transition:transform .1s,filter .15s,background .15s;}
+button:active{transform:scale(.98);}
+.btn-primary{background:linear-gradient(135deg,var(--blue-500),#0b6fb0);color:#fff;box-shadow:0 4px 14px rgba(0,146,214,.28);}
+.btn-primary:hover{filter:brightness(1.08);}
+.btn-ghost{background:var(--surface-1);border-color:var(--surface-border);color:var(--ink-50);}
+.btn-ghost:hover{background:var(--surface-2);}
+.status{padding:11px 14px;border-radius:9px;font-size:12.5px;margin-bottom:14px;display:none;line-height:1.5;}
 .status.ok{background:var(--success-bg);color:var(--success);display:block;}
 .status.err{background:var(--danger-bg);color:var(--danger);display:block;}
 .status.info{background:var(--warning-bg);color:var(--warning);display:block;}
 table{width:100%;border-collapse:collapse;font-size:12.5px;}
-th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--surface-border);}
-th{color:var(--text-tertiary);text-transform:uppercase;font-size:10.5px;letter-spacing:.05em;}
-.pill{padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700;}
+th,td{text-align:left;padding:11px 10px;border-bottom:1px solid var(--surface-border);}
+th{color:var(--ink-500);text-transform:uppercase;font-size:10px;letter-spacing:.06em;font-weight:700;}
+tbody tr{transition:background .12s;}
+tbody tr:hover{background:var(--surface-1);}
+td{font-variant-numeric:tabular-nums;}
+.pill{padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap;}
 .pill.apto{background:var(--success-bg);color:var(--success);}
 .pill.pendente{background:var(--warning-bg);color:var(--warning);}
 .pill.bloqueado{background:var(--danger-bg);color:var(--danger);}
-.row{display:flex;gap:10px;flex-wrap:wrap;}
+.pill.ativo{background:var(--success-bg);color:var(--success);}
+.row{display:flex;gap:12px;flex-wrap:wrap;}
 .row > div{flex:1;min-width:140px;}
 .hidden{display:none !important;}
-.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
-.small{font-size:11px;color:var(--text-tertiary);}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:12px;flex-wrap:wrap;}
+.small{font-size:11px;color:var(--ink-500);}
 a.link{color:var(--blue-400);cursor:pointer;font-size:12.5px;}
-.del-btn{background:none;border:none;color:var(--danger);cursor:pointer;font-size:12px;}
-textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-border);border-radius:9px;padding:9px 12px;color:var(--text-primary);font-size:12px;font-family:ui-monospace,monospace;min-height:100px;margin-bottom:10px;resize:vertical;}
-.file-link{color:var(--blue-400);font-size:11.5px;cursor:pointer;}
+a.link:hover{text-decoration:underline;}
+.del-btn{background:none;border:none;color:var(--danger);cursor:pointer;font-size:12px;padding:4px 6px;font-weight:600;}
+.del-btn:hover{text-decoration:underline;}
+textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-border);border-radius:9px;padding:10px 12px;color:var(--ink-50);font-size:12px;font-family:var(--font-mono);min-height:100px;margin-bottom:10px;resize:vertical;}
+.file-link{color:var(--blue-400);font-size:11.5px;cursor:pointer;font-weight:600;}
+.file-link:hover{text-decoration:underline;}
+
+/* ---- Cartão base: leve profundidade, cantos consistentes ---- */
+.card{
+  background:linear-gradient(180deg, var(--surface-2) 0%, var(--surface-1) 100%);
+  border:1px solid var(--surface-border);border-radius:var(--radius);padding:24px;margin-bottom:18px;
+  backdrop-filter:blur(16px);box-shadow:0 1px 0 rgba(255,255,255,.03) inset, 0 10px 30px -18px rgba(0,0,0,.5);
+}
+/* "Espinha" lateral colorida — um recurso visual que se repete pelo sistema todo pra indicar
+   status de relance (verde/âmbar/vermelho), sem precisar ler o texto. */
+.card.spine{border-left:3px solid var(--surface-border);padding-left:21px;}
+.card.spine.ok{border-left-color:var(--success);}
+.card.spine.warn{border-left-color:var(--warning);}
+.card.spine.bad{border-left-color:var(--danger);}
+.card.spine.info{border-left-color:var(--blue-500);}
+
+svg.icon{width:16px;height:16px;stroke-width:2;vertical-align:-3px;margin-right:6px;flex:none;}
+svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
+
+/* ---- Layout geral: barra lateral fixa + conteúdo ---- */
+.app-shell{display:flex;min-height:100vh;}
+.sidebar{
+  width:var(--sidebar-w);flex:none;position:sticky;top:0;height:100vh;overflow-y:auto;
+  background:linear-gradient(180deg, rgba(10,38,71,.9), rgba(4,16,31,.96));
+  border-right:1px solid var(--surface-border);display:flex;flex-direction:column;padding:22px 14px;
+}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 8px 20px;position:relative;}
+.brand-mark{
+  width:38px;height:38px;border-radius:10px;flex:none;position:relative;overflow:hidden;
+  background:linear-gradient(135deg,var(--blue-500),var(--navy-700));
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 14px rgba(0,146,214,.35);
+}
+.brand-mark::after{
+  /* pequeno canto de "sinalização" — referência sutil, não literal, a faixa de segurança */
+  content:'';position:absolute;width:22px;height:22px;right:-11px;bottom:-11px;
+  background:repeating-linear-gradient(45deg, var(--amber-500) 0 3px, transparent 3px 6px);
+  opacity:.55;transform:rotate(0deg);
+}
+.brand-name{font-family:var(--font-display);font-weight:700;font-size:14.5px;color:var(--white);line-height:1.15;}
+.brand-sub{font-size:10px;color:var(--ink-500);text-transform:uppercase;letter-spacing:.06em;margin-top:2px;}
+
+.nav-group-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-500);font-weight:700;margin:16px 10px 6px;}
+.nav-item{
+  display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  padding:9px 10px;border-radius:9px;font-size:13px;font-weight:600;
+  background:transparent;border:1px solid transparent;color:var(--ink-300);margin-bottom:2px;
+}
+.nav-item svg{width:16px;height:16px;stroke-width:2;flex:none;}
+.nav-item:hover{background:var(--surface-1);color:var(--ink-50);}
+.nav-item.btn-primary{background:linear-gradient(135deg,var(--blue-500),#0b6fb0);color:#fff;box-shadow:0 4px 14px rgba(0,146,214,.28);border-color:transparent;}
+.nav-item.btn-ghost{background:transparent;border-color:transparent;}
+
+.sidebar-foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--surface-border);}
+.sidebar-user{font-size:11px;color:var(--ink-500);padding:6px 10px 10px;word-break:break-all;}
+
+.main-content{flex:1;min-width:0;padding:28px 32px 60px;max-width:1180px;}
+
+/* ---- Tela de login: ocupa a página inteira, sem sidebar ---- */
+.auth-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.auth-card{max-width:420px;width:100%;}
 </style>
 </head>
 <body>
 <div class="wrap">
 
   <!-- ===================== TELA DE LOGIN / CADASTRO ===================== -->
-  <div id="authScreen" class="card">
+  <div id="authScreen" class="auth-page">
+  <div class="card auth-card">
+    <div class="brand" style="padding-bottom:22px">
+      <div class="brand-mark"><svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v6c0 5.2 3.8 9.4 9 10.5 5.2-1.1 9-5.3 9-10.5V7l-9-5Z"/><path d="m9 12 2 2 4-4"/></svg></div>
+      <div><div class="brand-name">MASTER ENERGY</div><div class="brand-sub">Gestão de SST</div></div>
+    </div>
     <h1 id="authTitle">Entrar no sistema</h1>
-    <div class="sub">Master Energy — Piloto conectado ao Supabase</div>
+    <div class="sub">Sistema de Gestão SST — conectado ao Supabase</div>
     <div id="authStatus" class="status"></div>
     <label>E-mail</label>
     <input type="email" id="authEmail" placeholder="voce@masterenergy.com.br">
@@ -70,16 +161,18 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     <div class="row" style="margin-top:6px">
       <button class="btn-primary" id="authSubmitBtn" style="flex:1">Entrar</button>
     </div>
-    <div style="margin-top:14px;font-size:12.5px;color:var(--text-secondary)">
+    <div style="margin-top:14px;font-size:12.5px;color:var(--ink-300)">
       <span id="authToggleText">Ainda não tem conta?</span> <a class="link" id="authToggleLink">Criar conta</a>
     </div>
     <div style="margin-top:8px;font-size:12.5px" id="forgotWrap">
       <a class="link" id="forgotLink">Esqueci minha senha</a>
     </div>
   </div>
+  </div>
 
   <!-- ===================== TELA: DEFINIR NOVA SENHA (após clicar no link do e-mail) ===================== -->
-  <div id="resetScreen" class="card hidden">
+  <div id="resetScreen" class="auth-page hidden">
+  <div class="card auth-card">
     <h1>Criar nova senha</h1>
     <div class="sub">Você chegou aqui pelo link enviado por e-mail. Digite sua nova senha abaixo.</div>
     <div id="resetStatus" class="status"></div>
@@ -87,29 +180,39 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     <input type="password" id="resetNewPassword" placeholder="mínimo 6 caracteres">
     <button class="btn-primary" id="resetConfirmBtn" style="width:100%">Salvar nova senha</button>
   </div>
+  </div>
+
 
   <!-- ===================== APP (só aparece logado) ===================== -->
-  <div id="appScreen" class="hidden">
-    <div class="topbar">
-      <div>
-        <h1>Master Energy — Piloto</h1>
-        <div class="small" id="loggedAs"></div>
+  <div id="appScreen" class="hidden app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark"><svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v6c0 5.2 3.8 9.4 9 10.5 5.2-1.1 9-5.3 9-10.5V7l-9-5Z"/><path d="m9 12 2 2 4-4"/></svg></div>
+        <div><div class="brand-name">MASTER ENERGY</div><div class="brand-sub">Gestão de SST</div></div>
       </div>
-      <button class="btn-ghost" id="logoutBtn">Sair</button>
-    </div>
 
-    <div class="row" style="margin-bottom:16px">
-      <button class="btn-ghost" id="tabBuscaBtn" style="flex:none">🔍 Ficha Completa</button>
-      <button class="btn-primary" id="tabFuncBtn" style="flex:none">Funcionários</button>
-      <button class="btn-ghost" id="tabTreinoBtn" style="flex:none">Treinamentos / NRs</button>
-      <button class="btn-ghost" id="tabAsoBtn" style="flex:none">ASOs</button>
-      <button class="btn-ghost" id="tabEpiBtn" style="flex:none">EPIs</button>
-      <button class="btn-ghost" id="tabPontoBtn" style="flex:none">Folha de Ponto</button>
-      <button class="btn-ghost" id="tabIntegBtn" style="flex:none">Integração de Cliente</button>
-      <button class="btn-ghost" id="tabFeriasBtn" style="flex:none">Férias</button>
-      <button class="btn-ghost" id="tabDashBtn" style="flex:none">📊 Dashboard</button>
-    </div>
+      <div class="nav-group-label">Visão geral</div>
+      <button class="nav-item btn-ghost" id="tabDashBtn"><svg data-lucide="layout-dashboard"></svg>Dashboard</button>
+      <button class="nav-item btn-ghost" id="tabBuscaBtn"><svg data-lucide="search"></svg>Ficha Completa</button>
 
+      <div class="nav-group-label">Cadastro</div>
+      <button class="nav-item btn-primary" id="tabFuncBtn"><svg data-lucide="users"></svg>Funcionários</button>
+
+      <div class="nav-group-label">Documentos monitorados</div>
+      <button class="nav-item btn-ghost" id="tabTreinoBtn"><svg data-lucide="graduation-cap"></svg>Treinamentos / NRs</button>
+      <button class="nav-item btn-ghost" id="tabAsoBtn"><svg data-lucide="stethoscope"></svg>ASOs</button>
+      <button class="nav-item btn-ghost" id="tabEpiBtn"><svg data-lucide="shield"></svg>EPIs</button>
+      <button class="nav-item btn-ghost" id="tabIntegBtn"><svg data-lucide="building-2"></svg>Integração de Cliente</button>
+      <button class="nav-item btn-ghost" id="tabFeriasBtn"><svg data-lucide="palmtree"></svg>Férias</button>
+      <button class="nav-item btn-ghost" id="tabPontoBtn"><svg data-lucide="clock"></svg>Folha de Ponto</button>
+
+      <div class="sidebar-foot">
+        <div class="sidebar-user" id="loggedAs"></div>
+        <button class="nav-item btn-ghost" id="logoutBtn" style="width:100%"><svg data-lucide="log-out"></svg>Sair</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
     <div id="appStatus" class="status"></div>
 
     <!-- ============ ABA: FUNCIONÁRIOS ============ -->
@@ -600,6 +703,7 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
         </table>
       </div>
     </div>
+    </main>
   </div>
 
 </div>
@@ -668,6 +772,7 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     document.getElementById('authScreen').classList.add('hidden');
     document.getElementById('appScreen').classList.remove('hidden');
     document.getElementById('loggedAs').textContent = 'Logado como: ' + user.email;
+    if (window.lucide) lucide.createIcons();
     switchTab('dash');
   }
 
@@ -1113,7 +1218,7 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
   function switchTab(tab) {
     TABS.forEach(t => {
       document.getElementById(TAB_DIV[t]).classList.toggle('hidden', t !== tab);
-      document.getElementById(TAB_BTN[t]).className = t === tab ? 'btn-primary' : 'btn-ghost';
+      document.getElementById(TAB_BTN[t]).className = 'nav-item ' + (t === tab ? 'btn-primary' : 'btn-ghost');
     });
     if (tab === 'func') loadFuncionarios();
     if (tab === 'treino') { loadFuncionariosEm('tFuncionarioId'); loadTreinamentos(); }
@@ -2070,13 +2175,13 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     const diasDe = (validadeIso) => validadeIso ? Math.round((new Date(validadeIso + 'T00:00:00') - hoje) / 86400000) : null;
 
     const modulos = [
-      { nome: 'Funcionários', dados: funcs.data || [], icone: '👷', tab: 'func', semVencimento: true },
-      { nome: 'ASOs', dados: asos.data || [], icone: '🩺', tab: 'aso', campoValidade: 'validade_data' },
-      { nome: 'Treinamentos / NRs', dados: treinos.data || [], icone: '🎓', tab: 'treino', campoValidade: 'validade_data' },
-      { nome: 'EPIs', dados: epis.data || [], icone: '🦺', tab: 'epi', campoValidade: 'troca' },
-      { nome: 'Integrações', dados: integs.data || [], icone: '🏢', tab: 'integ', campoValidade: 'validade_data' },
-      { nome: 'Folha de Ponto', dados: pontos.data || [], icone: '🕒', tab: 'ponto', semVencimento: true },
-      { nome: 'Férias', dados: ferias.data || [], icone: '🏖️', tab: 'ferias', campoValidade: 'limite_gozo' },
+      { nome: 'Funcionários', dados: funcs.data || [], icone: 'users', tab: 'func', semVencimento: true },
+      { nome: 'ASOs', dados: asos.data || [], icone: 'stethoscope', tab: 'aso', campoValidade: 'validade_data' },
+      { nome: 'Treinamentos / NRs', dados: treinos.data || [], icone: 'graduation-cap', tab: 'treino', campoValidade: 'validade_data' },
+      { nome: 'EPIs', dados: epis.data || [], icone: 'shield', tab: 'epi', campoValidade: 'troca' },
+      { nome: 'Integrações', dados: integs.data || [], icone: 'building-2', tab: 'integ', campoValidade: 'validade_data' },
+      { nome: 'Folha de Ponto', dados: pontos.data || [], icone: 'clock', tab: 'ponto', semVencimento: true },
+      { nome: 'Férias', dados: ferias.data || [], icone: 'palmtree', tab: 'ferias', campoValidade: 'limite_gozo' },
     ];
 
     // Cartões clicáveis, cada um leva direto pra aba correspondente
@@ -2088,12 +2193,13 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
           if (dias !== null) { if (dias < 0) vencidos++; else if (dias <= 60) pendentes++; }
         });
       }
+      const spine = vencidos ? 'bad' : pendentes ? 'warn' : 'ok';
       return `
-        <div class="card" style="cursor:pointer;text-align:center" data-tab="${m.tab}">
-          <div style="font-size:24px">${m.icone}</div>
-          <div style="font-size:22px;font-weight:800">${m.dados.length}</div>
-          <div class="small">${m.nome}</div>
-          ${!m.semVencimento ? `<div style="margin-top:6px;font-size:10.5px">
+        <div class="card spine ${m.semVencimento ? 'info' : spine}" style="cursor:pointer;text-align:center" data-tab="${m.tab}">
+          <svg class="icon-lg" data-lucide="${m.icone}" style="color:var(--blue-400);margin-bottom:6px"></svg>
+          <div style="font-family:var(--font-display);font-size:24px;font-weight:800">${m.dados.length}</div>
+          <div class="small" style="margin-top:2px">${m.nome}</div>
+          ${!m.semVencimento ? `<div style="margin-top:8px;font-size:10.5px">
             ${vencidos ? `<span style="color:var(--danger)">${vencidos} vencido(s)</span>` : ''}
             ${vencidos && pendentes ? ' · ' : ''}
             ${pendentes ? `<span style="color:var(--warning)">${pendentes} vencendo</span>` : ''}
@@ -2101,6 +2207,7 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
           </div>` : ''}
         </div>`;
     }).join('');
+    if (window.lucide) lucide.createIcons();
     document.querySelectorAll('#dashCards [data-tab]').forEach(card => {
       card.addEventListener('click', () => switchTab(card.getAttribute('data-tab')));
     });
