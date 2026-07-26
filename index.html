@@ -132,7 +132,8 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
         <div class="small" style="margin-bottom:10px">
           Cole aqui uma planilha do Excel com <b>uma linha por funcionário</b> e quantas colunas quiser — o sistema lê o
           <b>nome de cada coluna</b> (a primeira linha) e distribui sozinho cada informação pro lugar certo: funcionário,
-          ASO, cada NR, integração, férias. Colunas que você não usar podem ficar em branco ou nem existir.
+          ASO, cada NR, integração, férias, EPI (ex: "EPI - Capacete de segurança") e folha de ponto.
+          Colunas que você não usar podem ficar em branco ou nem existir.
         </div>
         <button class="btn-ghost" id="baixarModeloBtn" style="margin-bottom:10px">⬇️ Baixar modelo (.csv) para preencher no Excel</button>
         <textarea id="importCompletaArea" style="min-height:140px" placeholder="Cole aqui a planilha inteira (com a linha de cabeçalho no topo)…"></textarea>
@@ -277,6 +278,7 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
           <h1 style="font-size:15px">Treinamentos cadastrados</h1>
           <button class="btn-ghost" id="refreshTreinoBtn">Atualizar lista</button>
         </div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:400;margin-bottom:10px"><input type="checkbox" id="tMostrarHistorico" style="width:auto;margin:0"> Mostrar histórico (cursos substituídos por um mais recente)</label>
         <table>
           <thead><tr><th>Funcionário</th><th>Curso</th><th>Realizado em</th><th>Válido até</th><th>Situação</th><th>Certificado</th><th></th></tr></thead>
           <tbody id="treinoTableBody"><tr><td colspan="7" class="small">Carregando…</td></tr></tbody>
@@ -332,6 +334,7 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
           <h1 style="font-size:15px">ASOs cadastrados</h1>
           <button class="btn-ghost" id="refreshAsoBtn">Atualizar lista</button>
         </div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:400;margin-bottom:10px"><input type="checkbox" id="aMostrarHistorico" style="width:auto;margin:0"> Mostrar histórico (ASOs substituídos por um mais recente do mesmo tipo)</label>
         <table>
           <thead><tr><th>Funcionário</th><th>Tipo</th><th>Data do exame</th><th>Válido até</th><th>Médico</th><th>Clínica</th><th>Situação</th><th></th></tr></thead>
           <tbody id="asoTableBody"><tr><td colspan="6" class="small">Carregando…</td></tr></tbody>
@@ -404,6 +407,7 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
           <h1 style="font-size:15px">EPIs cadastrados</h1>
           <button class="btn-ghost" id="refreshEpiBtn">Atualizar lista</button>
         </div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:400;margin-bottom:10px"><input type="checkbox" id="eMostrarHistorico" style="width:auto;margin:0"> Mostrar histórico (EPIs substituídos por um mais recente do mesmo item)</label>
         <table>
           <thead><tr><th>Funcionário</th><th>EPI</th><th>CA</th><th>Entrega</th><th>Próxima troca</th><th>Situação</th><th>Ficha</th><th></th></tr></thead>
           <tbody id="epiTableBody"><tr><td colspan="6" class="small">Carregando…</td></tr></tbody>
@@ -529,6 +533,7 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
           <h1 style="font-size:15px">Integrações cadastradas</h1>
           <button class="btn-ghost" id="refreshIntegBtn">Atualizar lista</button>
         </div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:400;margin-bottom:10px"><input type="checkbox" id="iMostrarHistorico" style="width:auto;margin:0"> Mostrar histórico (integrações substituídas por uma mais recente da mesma empresa)</label>
         <table>
           <thead><tr><th>Funcionário</th><th>Empresa</th><th>Obra</th><th>Realizado em</th><th>Válido até</th><th>Situação</th><th></th></tr></thead>
           <tbody id="integTableBody"><tr><td colspan="7" class="small">Carregando…</td></tr></tbody>
@@ -557,6 +562,7 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
           <h1 style="font-size:15px">Controle de Férias</h1>
           <button class="btn-ghost" id="refreshFeriasBtn">Atualizar lista</button>
         </div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:400;margin-bottom:10px"><input type="checkbox" id="vMostrarHistorico" style="width:auto;margin:0"> Mostrar histórico (períodos de férias já encerrados/substituídos)</label>
         <table>
           <thead><tr><th>Funcionário</th><th>Início do período</th><th>Fim aquisitivo</th><th>Limite p/ 2ª gozar</th><th>Início das Férias</th><th>Dias de Gozo</th><th>Data de Retorno</th><th>Situação</th><th></th></tr></thead>
           <tbody id="feriasTableBody"><tr><td colspan="9" class="small">Carregando…</td></tr></tbody>
@@ -747,6 +753,7 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
       document.getElementById('fCargo').style.display = e.target.value === '__outro__' ? 'block' : 'none';
     });
     document.getElementById('refreshTreinoBtn').addEventListener('click', loadTreinamentos);
+    document.getElementById('tMostrarHistorico').addEventListener('change', loadTreinamentos);
     document.getElementById('saveTreinoBtn').addEventListener('click', saveTreinamento);
     document.getElementById('fBulkBtn').addEventListener('click', bulkFuncionarios);
     document.getElementById('tBulkBtn').addEventListener('click', bulkTreinamentos);
@@ -755,7 +762,7 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     [['tFuncionarioBusca', 'tFuncionarioId'], ['aFuncionarioBusca', 'aFuncionarioId'], ['eFuncionarioBusca', 'eFuncionarioId'], ['pFuncionarioBusca', 'pFuncionarioId'], ['iFuncionarioBusca', 'iFuncionarioId'], ['vFuncionarioBusca', 'vFuncionarioId']].forEach(([buscaId, selectId]) => {
       document.getElementById(buscaId).addEventListener('input', (e) => {
         const termo = e.target.value.trim().toLowerCase();
-        const filtrados = termo ? funcionariosCache.filter(f => f.nome.toLowerCase().includes(termo)) : funcionariosCache;
+        const filtrados = termo ? funcionariosCache.filter(f => normalizarTexto(f.nome).includes(normalizarTexto(termo))) : funcionariosCache;
         renderFuncionarioOptionsEm(selectId, filtrados);
       });
     });
@@ -773,8 +780,10 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
 
     document.getElementById('saveAsoBtn').addEventListener('click', saveAso);
     document.getElementById('refreshAsoBtn').addEventListener('click', loadAsos);
+    document.getElementById('aMostrarHistorico').addEventListener('change', loadAsos);
     document.getElementById('saveEpiBtn').addEventListener('click', saveEpi);
     document.getElementById('refreshEpiBtn').addEventListener('click', loadEpis);
+    document.getElementById('eMostrarHistorico').addEventListener('change', loadEpis);
     document.getElementById('savePontoBtn').addEventListener('click', saveFolhaPonto);
     document.getElementById('pPainelVerBtn').addEventListener('click', carregarPainelPonto);
     document.getElementById('refreshPontoBtn').addEventListener('click', loadFolhasPonto);
@@ -831,12 +840,14 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
 
     document.getElementById('saveIntegBtn').addEventListener('click', saveInteg);
     document.getElementById('refreshIntegBtn').addEventListener('click', loadIntegracoes);
+    document.getElementById('iMostrarHistorico').addEventListener('change', loadIntegracoes);
     document.getElementById('iEmpresaSelect').addEventListener('change', (e) => {
       document.getElementById('iEmpresaOutro').style.display = e.target.value === '__outro__' ? 'block' : 'none';
     });
 
     document.getElementById('saveFeriasBtn').addEventListener('click', saveFerias);
     document.getElementById('refreshFeriasBtn').addEventListener('click', loadFerias);
+    document.getElementById('vMostrarHistorico').addEventListener('change', loadFerias);
     document.getElementById('confirmarGozoBtn').addEventListener('click', confirmarGozo);
     document.getElementById('gozoInicio').addEventListener('input', calcularDataRetorno);
     document.getElementById('gozoDias').addEventListener('input', calcularDataRetorno);
@@ -1161,7 +1172,7 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     const { data: existentes, error: errBusca } = await sb.from('funcionarios').select('id, nome, cpf');
     if (errBusca) { showAppStatus('err', 'Erro ao verificar duplicidade: ' + errBusca.message); return; }
     const duplicadoPorCpf = cpf ? existentes.find(f => f.cpf && f.cpf.replace(/\D/g, '') === cpf.replace(/\D/g, '')) : null;
-    const duplicadoPorNome = existentes.find(f => f.nome.trim().toLowerCase() === nome.toLowerCase());
+    const duplicadoPorNome = existentes.find(f => normalizarTexto(f.nome) === normalizarTexto(nome));
     const duplicado = duplicadoPorCpf || duplicadoPorNome;
     if (duplicado) {
       showAppStatus('err',
@@ -1272,6 +1283,30 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     }
   }
   // Converte data do banco (aaaa-mm-dd) para o padrão brasileiro (dd/mm/aaaa)
+  // Normaliza texto pra comparar sem se importar com acento, maiúscula/minúscula, ou espaço extra —
+  // usado em toda busca e verificação de duplicado do sistema, pra nunca deixar passar por causa
+  // de um acento diferente, um espaço a mais, ou letra maiúscula/minúscula.
+  function normalizarTexto(t) {
+    return (t || '').toString().trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
+  }
+
+  // Sempre que um registro NOVO é salvo, arquiva sozinho qualquer registro ANTERIOR do mesmo
+  // tipo (mesmo curso, mesmo tipo de ASO, mesmo EPI, mesma empresa de integração) daquele mesmo
+  // funcionário — assim nunca fica "duplicado" na tela principal, só o mais recente aparece,
+  // e o antigo continua guardado e pode ser encontrado no histórico a qualquer momento.
+  // Se campoChave for null, arquiva TUDO que estiver ativo daquele funcionário na tabela
+  // (usado em Férias, onde só existe 1 período ativo por vez, sem uma "chave" pra comparar).
+  async function arquivarRegistrosAnteriores(tabela, funcionarioId, campoChave, valorChave) {
+    let query = sb.from(tabela).select('id').eq('funcionario_id', funcionarioId).eq('arquivado', false);
+    if (campoChave) query = query.eq(campoChave, valorChave);
+    const { data: anteriores, error } = await query;
+    if (error || !anteriores || !anteriores.length) return 0;
+    for (const registro of anteriores) {
+      await sb.from(tabela).update({ arquivado: true }).eq('id', registro.id);
+    }
+    return anteriores.length;
+  }
+
   function formatarDataBr(dataIso) {
     if (!dataIso) return '—';
     const [yyyy, mm, dd] = dataIso.split('-');
@@ -1305,15 +1340,18 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
   async function loadTreinamentos() {
     const tbody = document.getElementById('treinoTableBody');
     tbody.innerHTML = '<tr><td colspan="7" class="small">Carregando…</td></tr>';
+    const mostrarHistorico = document.getElementById('tMostrarHistorico').checked;
     // "funcionarios(nome)" busca o nome do funcionário automaticamente pela relação entre as tabelas
-    const { data, error } = await sb.from('treinamentos').select('*, funcionarios(nome)').order('validade_data', { ascending: true });
+    let query = sb.from('treinamentos').select('*, funcionarios(nome)').order('validade_data', { ascending: true });
+    if (!mostrarHistorico) query = query.eq('arquivado', false);
+    const { data, error } = await query;
     if (error) {
       tbody.innerHTML = `<tr><td colspan="7" class="small" style="color:var(--danger)">Erro ao carregar: ${error.message}</td></tr>`;
       showAppStatus('err', 'Erro ao carregar treinamentos: ' + error.message);
       return;
     }
     if (!data.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="small">Nenhum treinamento cadastrado ainda.</td></tr>';
+      tbody.innerHTML = `<tr><td colspan="7" class="small">${mostrarHistorico ? 'Nenhum treinamento (nem no histórico) ainda.' : 'Nenhum treinamento atual cadastrado ainda.'}</td></tr>`;
       return;
     }
     const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
@@ -1321,8 +1359,8 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
       const diasRestantes = t.validade_data ? Math.round((new Date(t.validade_data + 'T00:00:00') - hoje) / 86400000) : null;
       const status = diasRestantes !== null ? calcularStatus(diasRestantes) : (t.status || 'apto');
       return `
-      <tr>
-        <td>${t.funcionarios ? t.funcionarios.nome : '—'}</td>
+      <tr${t.arquivado ? ' style="opacity:.55"' : ''}>
+        <td>${t.funcionarios ? t.funcionarios.nome : '—'}${t.arquivado ? ' <span class="small">(histórico)</span>' : ''}</td>
         <td>${t.curso}</td>
         <td>${formatarDataBr(t.data_realizacao)}</td>
         <td>${formatarDataBr(t.validade_data)}</td>
@@ -1409,11 +1447,13 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
       validade_data: validadeData,
       status: calcularStatus(diasRestantes),
       arquivo: caminhoArquivo,
+      arquivado: false,
     };
     showAppStatus('info', 'Salvando…');
+    const arquivados = await arquivarRegistrosAnteriores('treinamentos', funcionarioId, 'curso', curso);
     const { error } = await sb.from('treinamentos').insert(payload);
     if (error) { showAppStatus('err', 'Erro ao salvar: ' + error.message); return; }
-    showAppStatus('ok', `Treinamento salvo — validade calculada automaticamente: ${anos} ano(s), vence em ${validadeData}.${caminhoArquivo ? ' Certificado anexado.' : ''}`);
+    showAppStatus('ok', `Treinamento salvo — validade calculada automaticamente: ${anos} ano(s), vence em ${validadeData}.${caminhoArquivo ? ' Certificado anexado.' : ''}${arquivados ? ' O registro anterior desse curso foi movido pro histórico.' : ''}`);
     ['tCursoOutro', 'tInstrutor', 'tCarga', 'tData', 'tArquivo', 'tFuncionarioBusca'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('tCursoSelect').value = '';
     document.getElementById('tCursoOutro').style.display = 'none';
@@ -1493,13 +1533,17 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     if (/integra.*empresa|empresa.*integra/.test(h)) return { tipo: 'integracao_empresa' };
     if (/integra/.test(h)) return { tipo: 'integracao_data' };
     if (/ferias/.test(h)) return { tipo: 'ferias_inicio' };
+    // "EPI" sozinho ou "EPI - Capacete de segurança" (reconhece o tipo específico se vier escrito)
+    const epiMatch = h.match(/^(?:ficha\s+de\s+)?epi\s*[-:]?\s*(.*)$/);
+    if (epiMatch) return { tipo: 'epi', subtipo: epiMatch[1].trim() || null };
+    if (/folha.*ponto|^ponto\b/.test(h)) return { tipo: 'ponto_data' };
     return { tipo: 'ignorar' };
   }
 
   document.getElementById('baixarModeloBtn')?.addEventListener('click', () => {
     const linhas = [
-      'Nome,CPF,Cargo,Telefone,Admissão,ASO Tipo,ASO Data,NR-06,NR-10,NR-33,NR-35,Integração Empresa,Integração Data,Férias Início',
-      'João Pedro Alves,111.111.111-11,Soldador,(11) 90000-0001,01/03/2024,ASO Admissional,01/03/2024,15/03/2024,,,20/03/2024,ABL,25/03/2024,01/03/2024',
+      'Nome,CPF,Cargo,Telefone,Admissão,ASO Tipo,ASO Data,NR-06,NR-10,NR-33,NR-35,Integração Empresa,Integração Data,Férias Início,EPI - Capacete de segurança,EPI - Luva de raspa,Folha de Ponto',
+      'João Pedro Alves,111.111.111-11,Soldador,(11) 90000-0001,01/03/2024,ASO Admissional,01/03/2024,15/03/2024,,,20/03/2024,ABL,25/03/2024,01/03/2024,01/03/2024,01/03/2024,05/07/2026',
     ];
     const blob = new Blob([linhas.join('\n')], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -1528,7 +1572,7 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     const { data: existentes, error: errBusca } = await sb.from('funcionarios').select('id, nome, cpf');
     if (errBusca) { showAppStatus('err', 'Erro ao verificar funcionários existentes: ' + errBusca.message); return; }
 
-    const resumo = { funcionariosCriados: 0, funcionariosExistentes: 0, asos: 0, porNr: {}, integracoes: 0, ferias: 0, erros: [] };
+    const resumo = { funcionariosCriados: 0, funcionariosExistentes: 0, asos: 0, porNr: {}, integracoes: 0, ferias: 0, epis: 0, pontos: 0, erros: [] };
 
     for (const linha of dados) {
       const obter = (tipo, numero) => {
@@ -1541,7 +1585,7 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
       const cpf = obter('cpf') || null;
       const cpfLimpo = cpf ? cpf.replace(/\D/g, '') : null;
       let funcionarioId;
-      const existente = existentes.find(f => (cpfLimpo && f.cpf && f.cpf.replace(/\D/g, '') === cpfLimpo) || f.nome.trim().toLowerCase() === nome.toLowerCase());
+      const existente = existentes.find(f => (cpfLimpo && f.cpf && f.cpf.replace(/\D/g, '') === cpfLimpo) || normalizarTexto(f.nome) === normalizarTexto(nome));
 
       if (existente) {
         funcionarioId = existente.id;
@@ -1563,7 +1607,9 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
         const dataVal = new Date(asoDataIso + 'T00:00:00'); dataVal.setFullYear(dataVal.getFullYear() + 1);
         const validadeData = dataVal.toISOString().slice(0, 10);
         const dias = Math.round((dataVal - new Date()) / 86400000);
-        const { error } = await sb.from('asos').insert({ funcionario_id: funcionarioId, tipo: obter('aso_tipo') || 'ASO Periódico', data_realizacao: asoDataIso, validade_data: validadeData, status: calcularStatus(dias) });
+        const tipoAso = obter('aso_tipo') || 'ASO Periódico';
+        await arquivarRegistrosAnteriores('asos', funcionarioId, 'tipo', tipoAso);
+        const { error } = await sb.from('asos').insert({ funcionario_id: funcionarioId, tipo: tipoAso, data_realizacao: asoDataIso, validade_data: validadeData, status: calcularStatus(dias), arquivado: false });
         if (error) resumo.erros.push(`ASO de "${nome}": ${error.message}`); else resumo.asos++;
       }
 
@@ -1579,7 +1625,8 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
         const dataVal = new Date(dataIso + 'T00:00:00'); dataVal.setFullYear(dataVal.getFullYear() + anos);
         const validadeData = dataVal.toISOString().slice(0, 10);
         const dias = Math.round((dataVal - new Date()) / 86400000);
-        const { error } = await sb.from('treinamentos').insert({ funcionario_id: funcionarioId, curso: cursoNome, data_realizacao: dataIso, validade_data: validadeData, status: calcularStatus(dias) });
+        await arquivarRegistrosAnteriores('treinamentos', funcionarioId, 'curso', cursoNome);
+        const { error } = await sb.from('treinamentos').insert({ funcionario_id: funcionarioId, curso: cursoNome, data_realizacao: dataIso, validade_data: validadeData, status: calcularStatus(dias), arquivado: false });
         if (error) resumo.erros.push(`${cursoNome} de "${nome}": ${error.message}`);
         else resumo.porNr[cursoNome] = (resumo.porNr[cursoNome] || 0) + 1;
       }
@@ -1590,7 +1637,9 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
         const dataVal = new Date(integDataIso + 'T00:00:00'); dataVal.setFullYear(dataVal.getFullYear() + 1);
         const validadeData = dataVal.toISOString().slice(0, 10);
         const dias = Math.round((dataVal - new Date()) / 86400000);
-        const { error } = await sb.from('integracoes').insert({ funcionario_id: funcionarioId, empresa_integracao: obter('integracao_empresa') || 'Não informado', data_realizacao: integDataIso, validade_data: validadeData, status: calcularStatus(dias) });
+        const empresaInteg = obter('integracao_empresa') || 'Não informado';
+        await arquivarRegistrosAnteriores('integracoes', funcionarioId, 'empresa_integracao', empresaInteg);
+        const { error } = await sb.from('integracoes').insert({ funcionario_id: funcionarioId, empresa_integracao: empresaInteg, data_realizacao: integDataIso, validade_data: validadeData, status: calcularStatus(dias), arquivado: false });
         if (error) resumo.erros.push(`Integração de "${nome}": ${error.message}`); else resumo.integracoes++;
       }
 
@@ -1600,12 +1649,47 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
         const fimAquisitivo = new Date(feriasIso + 'T00:00:00'); fimAquisitivo.setFullYear(fimAquisitivo.getFullYear() + 1);
         const limiteGozo = new Date(feriasIso + 'T00:00:00'); limiteGozo.setFullYear(limiteGozo.getFullYear() + 2);
         const dias = Math.round((limiteGozo - new Date()) / 86400000);
+        await arquivarRegistrosAnteriores('ferias', funcionarioId, null, null);
         const { error } = await sb.from('ferias').insert({
           funcionario_id: funcionarioId, inicio_periodo: feriasIso,
           fim_aquisitivo: fimAquisitivo.toISOString().slice(0, 10), limite_gozo: limiteGozo.toISOString().slice(0, 10),
-          status: calcularStatus(dias),
+          status: calcularStatus(dias), arquivado: false,
         });
         if (error) resumo.erros.push(`Férias de "${nome}": ${error.message}`); else resumo.ferias++;
+      }
+
+      // EPI — qualquer coluna reconhecida como EPI (pode ter várias: "EPI - Capacete", "EPI - Luva de raspa", etc.)
+      for (let idx = 0; idx < colunas.length; idx++) {
+        if (colunas[idx].tipo !== 'epi') continue;
+        const valorBr = (linha[idx] || '').trim();
+        if (!valorBr) continue;
+        const entregaIso = converterDataBrParaIso(valorBr);
+        if (!entregaIso) { resumo.erros.push(`EPI de "${nome}": data "${valorBr}" não reconhecida (use dd/mm/aaaa).`); continue; }
+        // Tenta casar o nome da coluna com um dos 29 tipos conhecidos (pra calcular a validade sozinho).
+        // Se não achar um tipo exato, guarda o nome da coluna como está e deixa a validade em branco
+        // (não arrisca calcular errado sem saber qual item é de verdade).
+        const subtipo = colunas[idx].subtipo;
+        const subtipoNormalizado = normalizarTexto(subtipo);
+        const tipoConhecido = subtipo ? Object.keys(EPI_VALIDADE).find(k => { const kNorm = normalizarTexto(k); return kNorm.includes(subtipoNormalizado) || subtipoNormalizado.includes(kNorm); }) : null;
+        const nomeEpi = tipoConhecido || subtipo || 'Ficha de EPI (importada)';
+        const trocaCalculada = tipoConhecido ? calcularTrocaEpi(tipoConhecido, entregaIso) : null;
+        let statusEpi = 'apto';
+        if (trocaCalculada) { const dias = Math.round((new Date(trocaCalculada + 'T00:00:00') - new Date()) / 86400000); statusEpi = calcularStatus(dias); }
+        await arquivarRegistrosAnteriores('epis', funcionarioId, 'epi', nomeEpi);
+        const { error } = await sb.from('epis').insert({ funcionario_id: funcionarioId, epi: nomeEpi, entrega: entregaIso, troca: trocaCalculada, status: statusEpi, arquivado: false });
+        if (error) resumo.erros.push(`EPI de "${nome}": ${error.message}`); else resumo.epis++;
+      }
+
+      // Folha de Ponto — a data da coluna é tratada como a entrega da folha da competência ATUAL
+      const pontoDataIso = converterDataBrParaIso(obter('ponto_data'));
+      if (pontoDataIso) {
+        const hoje = new Date();
+        const competenciaAtual = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
+        const { error } = await sb.from('folhas_ponto').insert({
+          funcionario_id: funcionarioId, periodo: competenciaAtual, data_envio: pontoDataIso,
+          recebido: true, assinatura_funcionario: true, status: 'entregue',
+        });
+        if (error) resumo.erros.push(`Folha de Ponto de "${nome}": ${error.message}`); else resumo.pontos++;
       }
     }
 
@@ -1616,6 +1700,8 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
       ...Object.entries(resumo.porNr).map(([nr, n]) => `${nr}: ${n} cadastrado(s)`),
       `Integrações cadastradas: ${resumo.integracoes}`,
       `Férias cadastradas: ${resumo.ferias}`,
+      `EPIs cadastrados: ${resumo.epis}`,
+      `Folhas de Ponto cadastradas: ${resumo.pontos}`,
     ];
     if (resumo.erros.length) linhasResumo.push('', '⚠️ Avisos/erros:', ...resumo.erros);
 
@@ -1642,7 +1728,7 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
       const nome = c[0], cpf = c[1] || null;
       const nomeChave = nome.trim().toLowerCase();
       const cpfChave = cpf ? cpf.replace(/\D/g, '') : null;
-      const existeNoBanco = existentes.some(f => (cpfChave && f.cpf && f.cpf.replace(/\D/g, '') === cpfChave) || f.nome.trim().toLowerCase() === nomeChave);
+      const existeNoBanco = existentes.some(f => (cpfChave && f.cpf && f.cpf.replace(/\D/g, '') === cpfChave) || normalizarTexto(f.nome) === normalizarTexto(nomeChave));
       const duplicadoNoProprioLote = jaVistosNesteLote.has(nomeChave) || (cpfChave && jaVistosNesteLote.has(cpfChave));
       if (existeNoBanco || duplicadoNoProprioLote) {
         duplicados.push(nome);
@@ -1677,10 +1763,10 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     const { data: todos, error: errBusca } = await sb.from('funcionarios').select('*');
     if (errBusca) { resultDiv.innerHTML = `<div class="card small" style="color:var(--danger)">Erro: ${errBusca.message}</div>`; return; }
 
-    const termoLower = termo.toLowerCase();
+    const termoNormalizado = normalizarTexto(termo);
     const termoCpfLimpo = termo.replace(/\D/g, '');
     const encontrado = todos.find(f =>
-      f.nome.toLowerCase().includes(termoLower) ||
+      normalizarTexto(f.nome).includes(termoNormalizado) ||
       (termoCpfLimpo.length >= 4 && f.cpf && f.cpf.replace(/\D/g, '').includes(termoCpfLimpo))
     );
 
@@ -1691,12 +1777,12 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
 
     const fid = encontrado.id;
     const [asos, treinos, epis, integs, pontos, ferias] = await Promise.all([
-      sb.from('asos').select('*').eq('funcionario_id', fid),
-      sb.from('treinamentos').select('*').eq('funcionario_id', fid),
-      sb.from('epis').select('*').eq('funcionario_id', fid),
-      sb.from('integracoes').select('*').eq('funcionario_id', fid),
+      sb.from('asos').select('*').eq('funcionario_id', fid).eq('arquivado', false),
+      sb.from('treinamentos').select('*').eq('funcionario_id', fid).eq('arquivado', false),
+      sb.from('epis').select('*').eq('funcionario_id', fid).eq('arquivado', false),
+      sb.from('integracoes').select('*').eq('funcionario_id', fid).eq('arquivado', false),
       sb.from('folhas_ponto').select('*').eq('funcionario_id', fid),
-      sb.from('ferias').select('*').eq('funcionario_id', fid),
+      sb.from('ferias').select('*').eq('funcionario_id', fid).eq('arquivado', false),
     ]);
 
     const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
@@ -1750,20 +1836,21 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     if (errF) { showAppStatus('err', 'Erro ao buscar funcionários: ' + errF.message); return; }
 
     const payload = []; const naoEncontrados = [];
-    validas.forEach(c => {
+    for (const c of validas) {
       const [nome, curso, dataBr] = c;
-      const emp = funcionarios.find(f => f.nome.toLowerCase() === nome.toLowerCase());
-      if (!emp) { naoEncontrados.push(nome); return; }
+      const emp = funcionarios.find(f => normalizarTexto(f.nome) === normalizarTexto(nome));
+      if (!emp) { naoEncontrados.push(nome); continue; }
       const [dd, mm, yyyy] = dataBr.split('/');
-      if (!dd || !mm || !yyyy) return;
+      if (!dd || !mm || !yyyy) continue;
       const dataRealizacao = `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
       const anos = anosDeValidade(curso);
       const dataVal = new Date(dataRealizacao + 'T00:00:00');
       dataVal.setFullYear(dataVal.getFullYear() + anos);
       const validadeData = dataVal.toISOString().slice(0, 10);
       const diasRestantes = Math.round((dataVal - new Date()) / 86400000);
-      payload.push({ funcionario_id: emp.id, curso, data_realizacao: dataRealizacao, validade_data: validadeData, status: calcularStatus(diasRestantes) });
-    });
+      await arquivarRegistrosAnteriores('treinamentos', emp.id, 'curso', curso);
+      payload.push({ funcionario_id: emp.id, curso, data_realizacao: dataRealizacao, validade_data: validadeData, status: calcularStatus(diasRestantes), arquivado: false });
+    }
 
     if (!payload.length) { showAppStatus('err', 'Nenhuma linha válida — confira se os nomes batem exatamente com os funcionários já cadastrados.'); return; }
     const { error } = await sb.from('treinamentos').insert(payload);
@@ -1777,15 +1864,18 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
   async function loadIntegracoes() {
     const tbody = document.getElementById('integTableBody');
     tbody.innerHTML = '<tr><td colspan="7" class="small">Carregando…</td></tr>';
-    const { data, error } = await sb.from('integracoes').select('*, funcionarios(nome)').order('validade_data', { ascending: true });
+    const mostrarHistorico = document.getElementById('iMostrarHistorico').checked;
+    let query = sb.from('integracoes').select('*, funcionarios(nome)').order('validade_data', { ascending: true });
+    if (!mostrarHistorico) query = query.eq('arquivado', false);
+    const { data, error } = await query;
     if (error) { tbody.innerHTML = `<tr><td colspan="7" class="small" style="color:var(--danger)">Erro: ${error.message}</td></tr>`; return; }
-    if (!data.length) { tbody.innerHTML = '<tr><td colspan="7" class="small">Nenhuma integração cadastrada ainda.</td></tr>'; return; }
+    if (!data.length) { tbody.innerHTML = `<tr><td colspan="7" class="small">${mostrarHistorico ? 'Nenhuma integração (nem no histórico) ainda.' : 'Nenhuma integração atual cadastrada ainda.'}</td></tr>`; return; }
     const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
     tbody.innerHTML = data.map(i => {
       const dias = i.validade_data ? Math.round((new Date(i.validade_data + 'T00:00:00') - hoje) / 86400000) : null;
       const status = dias !== null ? calcularStatus(dias) : (i.status || 'apto');
-      return `<tr>
-        <td>${i.funcionarios ? i.funcionarios.nome : '—'}</td>
+      return `<tr${i.arquivado ? ' style="opacity:.55"' : ''}>
+        <td>${i.funcionarios ? i.funcionarios.nome : '—'}${i.arquivado ? ' <span class="small">(histórico)</span>' : ''}</td>
         <td>${i.empresa_integracao}</td>
         <td>${i.obra || '—'}</td>
         <td>${formatarDataBr(i.data_realizacao)}</td>
@@ -1820,12 +1910,14 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     }
 
     showAppStatus('info', 'Salvando…');
+    const arquivados = await arquivarRegistrosAnteriores('integracoes', funcionarioId, 'empresa_integracao', empresa);
     const { error } = await sb.from('integracoes').insert({
       funcionario_id: funcionarioId, empresa_integracao: empresa, obra: document.getElementById('iObra').value.trim() || null,
       data_realizacao: dataRealizacao, validade_data: validadeData, status: calcularStatus(diasRestantes), arquivo: caminhoArquivo,
+      arquivado: false,
     });
     if (error) { showAppStatus('err', 'Erro ao salvar: ' + error.message); return; }
-    showAppStatus('ok', `Integração salva — validade até ${formatarDataBr(validadeData)}.`);
+    showAppStatus('ok', `Integração salva — validade até ${formatarDataBr(validadeData)}.${arquivados ? ' A integração anterior dessa mesma empresa foi movida pro histórico.' : ''}`);
     ['iData', 'iObra', 'iArquivo', 'iEmpresaOutro', 'iFuncionarioBusca'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('iEmpresaSelect').value = '';
     document.getElementById('iEmpresaOutro').style.display = 'none';
@@ -1849,15 +1941,18 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
   async function loadFerias() {
     const tbody = document.getElementById('feriasTableBody');
     tbody.innerHTML = '<tr><td colspan="9" class="small">Carregando…</td></tr>';
-    const { data, error } = await sb.from('ferias').select('*, funcionarios(nome)').order('limite_gozo', { ascending: true });
+    const mostrarHistorico = document.getElementById('vMostrarHistorico').checked;
+    let query = sb.from('ferias').select('*, funcionarios(nome)').order('limite_gozo', { ascending: true });
+    if (!mostrarHistorico) query = query.eq('arquivado', false);
+    const { data, error } = await query;
     if (error) { tbody.innerHTML = `<tr><td colspan="9" class="small" style="color:var(--danger)">Erro: ${error.message}</td></tr>`; return; }
-    if (!data.length) { tbody.innerHTML = '<tr><td colspan="9" class="small">Nenhum período cadastrado ainda.</td></tr>'; return; }
+    if (!data.length) { tbody.innerHTML = `<tr><td colspan="9" class="small">${mostrarHistorico ? 'Nenhum período (nem no histórico) ainda.' : 'Nenhum período atual cadastrado ainda.'}</td></tr>`; return; }
     const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
     tbody.innerHTML = data.map(v => {
       const dias = v.limite_gozo ? Math.round((new Date(v.limite_gozo + 'T00:00:00') - hoje) / 86400000) : null;
       const status = dias !== null ? calcularStatus(dias) : (v.status || 'apto');
-      return `<tr>
-        <td>${v.funcionarios ? v.funcionarios.nome : '—'}</td>
+      return `<tr${v.arquivado ? ' style="opacity:.55"' : ''}>
+        <td>${v.funcionarios ? v.funcionarios.nome : '—'}${v.arquivado ? ' <span class="small">(histórico)</span>' : ''}</td>
         <td>${formatarDataBr(v.inicio_periodo)}</td>
         <td>${formatarDataBr(v.fim_aquisitivo)}</td>
         <td>${formatarDataBr(v.limite_gozo)}</td>
@@ -1866,7 +1961,7 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
         <td>${formatarDataBr(v.data_retorno)}</td>
         <td><span class="pill ${status}">${status}${dias !== null ? ' (' + dias + 'd)' : ''}</span></td>
         <td>
-          <button class="file-link" data-id="${v.id}" data-nome="${v.funcionarios ? v.funcionarios.nome : ''}">Registrar gozo</button>
+          ${v.arquivado ? '' : `<button class="file-link" data-id="${v.id}" data-nome="${v.funcionarios ? v.funcionarios.nome : ''}">Registrar gozo</button>`}
           <button class="del-btn" data-id="${v.id}">Excluir</button>
         </td>
       </tr>`;
@@ -1886,13 +1981,16 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     const dias = Math.round((limiteGozo - new Date()) / 86400000);
 
     showAppStatus('info', 'Salvando…');
+    // Férias não tem "tipo" pra comparar — só pode existir 1 período ATIVO por funcionário,
+    // então arquiva qualquer período anterior dele, sem precisar de uma chave extra.
+    const arquivados = await arquivarRegistrosAnteriores('ferias', funcionarioId, null, null);
     const { error } = await sb.from('ferias').insert({
       funcionario_id: funcionarioId, inicio_periodo: inicio,
       fim_aquisitivo: fimAquisitivo.toISOString().slice(0, 10), limite_gozo: limiteGozo.toISOString().slice(0, 10),
-      status: calcularStatus(dias),
+      status: calcularStatus(dias), arquivado: false,
     });
     if (error) { showAppStatus('err', 'Erro ao salvar: ' + error.message); return; }
-    showAppStatus('ok', `Período de férias salvo — limite para gozar: ${formatarDataBr(limiteGozo.toISOString().slice(0, 10))}.`);
+    showAppStatus('ok', `Período de férias salvo — limite para gozar: ${formatarDataBr(limiteGozo.toISOString().slice(0, 10))}.${arquivados ? ' O período anterior desse funcionário foi movido pro histórico.' : ''}`);
     ['vInicio', 'vFuncionarioBusca'].forEach(id => document.getElementById(id).value = '');
     renderFuncionarioOptionsEm('vFuncionarioId', funcionariosCache);
     loadFerias();
@@ -1960,12 +2058,12 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
 
     const [funcs, asos, treinos, epis, integs, pontos, ferias] = await Promise.all([
       sb.from('funcionarios').select('*'),
-      sb.from('asos').select('*, funcionarios(nome)'),
-      sb.from('treinamentos').select('*, funcionarios(nome)'),
-      sb.from('epis').select('*, funcionarios(nome)'),
-      sb.from('integracoes').select('*, funcionarios(nome)'),
+      sb.from('asos').select('*, funcionarios(nome)').eq('arquivado', false),
+      sb.from('treinamentos').select('*, funcionarios(nome)').eq('arquivado', false),
+      sb.from('epis').select('*, funcionarios(nome)').eq('arquivado', false),
+      sb.from('integracoes').select('*, funcionarios(nome)').eq('arquivado', false),
       sb.from('folhas_ponto').select('*, funcionarios(nome)'),
-      sb.from('ferias').select('*, funcionarios(nome)'),
+      sb.from('ferias').select('*, funcionarios(nome)').eq('arquivado', false),
     ]);
 
     const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
@@ -2044,15 +2142,18 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
   async function loadAsos() {
     const tbody = document.getElementById('asoTableBody');
     tbody.innerHTML = '<tr><td colspan="8" class="small">Carregando…</td></tr>';
-    const { data, error } = await sb.from('asos').select('*, funcionarios(nome)').order('validade_data', { ascending: true });
+    const mostrarHistorico = document.getElementById('aMostrarHistorico').checked;
+    let query = sb.from('asos').select('*, funcionarios(nome)').order('validade_data', { ascending: true });
+    if (!mostrarHistorico) query = query.eq('arquivado', false);
+    const { data, error } = await query;
     if (error) { tbody.innerHTML = `<tr><td colspan="8" class="small" style="color:var(--danger)">Erro: ${error.message}</td></tr>`; return; }
-    if (!data.length) { tbody.innerHTML = '<tr><td colspan="8" class="small">Nenhum ASO cadastrado ainda.</td></tr>'; return; }
+    if (!data.length) { tbody.innerHTML = `<tr><td colspan="8" class="small">${mostrarHistorico ? 'Nenhum ASO (nem no histórico) ainda.' : 'Nenhum ASO atual cadastrado ainda.'}</td></tr>`; return; }
     const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
     tbody.innerHTML = data.map(a => {
       const dias = a.validade_data ? Math.round((new Date(a.validade_data + 'T00:00:00') - hoje) / 86400000) : null;
       const status = dias !== null ? calcularStatus(dias) : (a.status || 'apto');
-      return `<tr>
-        <td>${a.funcionarios ? a.funcionarios.nome : '—'}</td>
+      return `<tr${a.arquivado ? ' style="opacity:.55"' : ''}>
+        <td>${a.funcionarios ? a.funcionarios.nome : '—'}${a.arquivado ? ' <span class="small">(histórico)</span>' : ''}</td>
         <td>${a.tipo || '—'}</td>
         <td>${formatarDataBr(a.data_realizacao)}</td>
         <td>${formatarDataBr(a.validade_data)}</td>
@@ -2087,14 +2188,16 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     }
 
     showAppStatus('info', 'Salvando…');
+    const arquivados = await arquivarRegistrosAnteriores('asos', funcionarioId, 'tipo', tipo);
     const { error } = await sb.from('asos').insert({
       funcionario_id: funcionarioId, tipo, data_realizacao: dataRealizacao,
       validade_data: validadeData, status: calcularStatus(diasRestantes), arquivo: caminhoArquivo,
       medico_trabalho: document.getElementById('aMedico').value.trim() || null,
       clinica: document.getElementById('aClinica').value.trim() || null,
+      arquivado: false,
     });
     if (error) { showAppStatus('err', 'Erro ao salvar: ' + error.message); return; }
-    showAppStatus('ok', `ASO salvo — validade até ${formatarDataBr(validadeData)}.`);
+    showAppStatus('ok', `ASO salvo — validade até ${formatarDataBr(validadeData)}.${arquivados ? ' O ASO anterior desse mesmo tipo foi movido pro histórico.' : ''}`);
     ['aData', 'aArquivo', 'aFuncionarioBusca', 'aMedico', 'aClinica'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('aTipo').value = '';
     document.getElementById('aArquivoNome').textContent = '';
@@ -2116,15 +2219,18 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
   async function loadEpis() {
     const tbody = document.getElementById('epiTableBody');
     tbody.innerHTML = '<tr><td colspan="8" class="small">Carregando…</td></tr>';
-    const { data, error } = await sb.from('epis').select('*, funcionarios(nome)').order('troca', { ascending: true });
+    const mostrarHistorico = document.getElementById('eMostrarHistorico').checked;
+    let query = sb.from('epis').select('*, funcionarios(nome)').order('troca', { ascending: true });
+    if (!mostrarHistorico) query = query.eq('arquivado', false);
+    const { data, error } = await query;
     if (error) { tbody.innerHTML = `<tr><td colspan="8" class="small" style="color:var(--danger)">Erro: ${error.message}</td></tr>`; return; }
-    if (!data.length) { tbody.innerHTML = '<tr><td colspan="8" class="small">Nenhum EPI cadastrado ainda.</td></tr>'; return; }
+    if (!data.length) { tbody.innerHTML = `<tr><td colspan="8" class="small">${mostrarHistorico ? 'Nenhum EPI (nem no histórico) ainda.' : 'Nenhum EPI atual cadastrado ainda.'}</td></tr>`; return; }
     const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
     tbody.innerHTML = data.map(e => {
       const dias = e.troca ? Math.round((new Date(e.troca + 'T00:00:00') - hoje) / 86400000) : null;
       const status = dias !== null ? calcularStatus(dias) : null;
-      return `<tr>
-        <td>${e.funcionarios ? e.funcionarios.nome : '—'}</td>
+      return `<tr${e.arquivado ? ' style="opacity:.55"' : ''}>
+        <td>${e.funcionarios ? e.funcionarios.nome : '—'}${e.arquivado ? ' <span class="small">(histórico)</span>' : ''}</td>
         <td>${e.epi}</td>
         <td>${e.ca || '—'}</td>
         <td>${formatarDataBr(e.entrega)}</td>
@@ -2164,13 +2270,14 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     }
 
     showAppStatus('info', 'Salvando…');
+    const arquivados = await arquivarRegistrosAnteriores('epis', funcionarioId, 'epi', epi);
     const { error } = await sb.from('epis').insert({
       funcionario_id: funcionarioId, epi,
       ca: document.getElementById('eCa').value.trim() || null,
-      entrega, troca, status, arquivo: caminhoArquivo,
+      entrega, troca, status, arquivo: caminhoArquivo, arquivado: false,
     });
     if (error) { showAppStatus('err', 'Erro ao salvar: ' + error.message); return; }
-    showAppStatus('ok', `EPI salvo com sucesso.${troca ? ` Próxima troca: ${formatarDataBr(troca)}.` : ''}${caminhoArquivo ? ' Ficha anexada.' : ''}`);
+    showAppStatus('ok', `EPI salvo com sucesso.${troca ? ` Próxima troca: ${formatarDataBr(troca)}.` : ''}${caminhoArquivo ? ' Ficha anexada.' : ''}${arquivados ? ' O EPI anterior desse mesmo item foi movido pro histórico.' : ''}`);
     ['eCa', 'eEntrega', 'eTroca', 'eEpiOutro', 'eFuncionarioBusca', 'eArquivo'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('eEpiSelect').value = '';
     document.getElementById('eEpiOutro').style.display = 'none';
