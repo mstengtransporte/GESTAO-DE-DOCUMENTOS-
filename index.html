@@ -97,6 +97,9 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     <div class="row" style="margin-bottom:16px">
       <button class="btn-primary" id="tabFuncBtn" style="flex:none">Funcionários</button>
       <button class="btn-ghost" id="tabTreinoBtn" style="flex:none">Treinamentos / NRs</button>
+      <button class="btn-ghost" id="tabAsoBtn" style="flex:none">ASOs</button>
+      <button class="btn-ghost" id="tabEpiBtn" style="flex:none">EPIs</button>
+      <button class="btn-ghost" id="tabPontoBtn" style="flex:none">Folha de Ponto</button>
     </div>
 
     <div id="appStatus" class="status"></div>
@@ -110,7 +113,25 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
           <div><label>CPF</label><input type="text" id="fCpf" placeholder="000.000.000-00"></div>
         </div>
         <div class="row">
-          <div><label>Cargo</label><input type="text" id="fCargo"></div>
+          <div>
+            <label>Cargo</label>
+            <select id="fCargoSelect">
+              <option value="">Selecionar…</option>
+              <option value="Soldador">Soldador</option>
+              <option value="Caldeireiro">Caldeireiro</option>
+              <option value="Montador Industrial">Montador Industrial</option>
+              <option value="Encarregado">Encarregado</option>
+              <option value="Técnico de Segurança">Técnico de Segurança</option>
+              <option value="Rigger">Rigger</option>
+              <option value="Operador de Munck">Operador de Munck</option>
+              <option value="Eletricista Industrial">Eletricista Industrial</option>
+              <option value="Instrumentista">Instrumentista</option>
+              <option value="Supervisor de Obra">Supervisor de Obra</option>
+              <option value="Andaimista">Andaimista</option>
+              <option value="__outro__">Outro (digitar manualmente)</option>
+            </select>
+            <input type="text" id="fCargo" placeholder="Digite o cargo" style="display:none">
+          </div>
           <div><label>Telefone</label><input type="text" id="fTelefone"></div>
         </div>
         <div class="row">
@@ -170,14 +191,21 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
             <label>Curso / NR *</label>
             <select id="tCursoSelect">
               <option value="">Selecionar…</option>
+              <option value="NR-01 Disposições Gerais e Gerenciamento de Riscos Ocupacionais">NR-01 · Gerenciamento de Riscos</option>
+              <option value="NR-05 CIPA">NR-05 · CIPA</option>
               <option value="NR-06 Equipamento de Proteção Individual (EPI)">NR-06 · EPI</option>
               <option value="NR-10 Segurança em Instalações e Serviços em Eletricidade">NR-10 · Segurança em Eletricidade</option>
-              <option value="NR-33 Espaço Confinado">NR-33 · Espaço Confinado</option>
-              <option value="NR-35 Trabalho em Altura">NR-35 · Trabalho em Altura</option>
+              <option value="NR-11 Operador de Empilhadeira">NR-11 · Operador de Empilhadeira</option>
+              <option value="NR-12 Segurança em Máquinas e Equipamentos">NR-12 · Máquinas e Equipamentos</option>
+              <option value="NR-13 Caldeiras, Vasos de Pressão e Tubulações">NR-13 · Caldeiras e Vasos de Pressão</option>
+              <option value="NR-17 Ergonomia">NR-17 · Ergonomia</option>
               <option value="NR-18 Operador de PEMT">NR-18 · Operador de PEMT</option>
               <option value="NR-18 Montador de Andaimes">NR-18 · Montador de Andaimes</option>
-              <option value="NR-12 Segurança em Máquinas e Equipamentos">NR-12 · Máquinas e Equipamentos</option>
-              <option value="NR-11 Operador de Empilhadeira">NR-11 · Operador de Empilhadeira</option>
+              <option value="NR-20 Inflamáveis e Combustíveis">NR-20 · Inflamáveis e Combustíveis</option>
+              <option value="NR-23 Brigada de Incêndio">NR-23 · Brigada de Incêndio</option>
+              <option value="NR-33 Espaço Confinado">NR-33 · Espaço Confinado</option>
+              <option value="NR-34 Indústria da Construção e Reparação Naval">NR-34 · Construção e Reparação Naval</option>
+              <option value="NR-35 Trabalho em Altura">NR-35 · Trabalho em Altura</option>
               <option value="__outro__">Outro (digitar manualmente)</option>
             </select>
             <input type="text" id="tCursoOutro" placeholder="Digite o nome do curso" style="display:none">
@@ -190,6 +218,7 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
             <label>Certificado (PDF, foto ou print) — leitura automática tenta preencher os campos</label>
             <input type="file" id="tArquivo" accept=".pdf,.jpg,.jpeg,.png">
             <div class="small" id="tArquivoNome"></div>
+            <button type="button" class="btn-ghost" id="tArquivoRemover" style="display:none;font-size:11.5px;padding:6px 12px;margin-top:6px">✕ Remover arquivo / anexar outro</button>
           </div>
         </div>
         <div id="ocrSuggestionBox" class="hidden" style="background:var(--warning-bg);border:1px solid rgba(232,163,61,.4);border-radius:9px;padding:12px 14px;margin-bottom:12px;font-size:12.5px">
@@ -218,6 +247,138 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
         <table>
           <thead><tr><th>Funcionário</th><th>Curso</th><th>Realizado em</th><th>Válido até</th><th>Situação</th><th>Certificado</th><th></th></tr></thead>
           <tbody id="treinoTableBody"><tr><td colspan="7" class="small">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============ ABA: ASOs ============ -->
+    <div id="tabAsos" class="hidden">
+      <div class="card">
+        <h1 style="font-size:15px">Novo ASO</h1>
+        <div class="small" style="margin-bottom:12px">Validade padrão de 1 ano. Aviso de vencimento começa 60 dias antes.</div>
+        <label>Buscar funcionário</label>
+        <input type="text" id="aFuncionarioBusca" placeholder="Digite o nome pra filtrar a lista abaixo…">
+        <div class="row">
+          <div style="flex:2"><label>Funcionário *</label><select id="aFuncionarioId"><option value="">Carregando…</option></select></div>
+          <div><label>Data do exame *</label><input type="date" id="aData"></div>
+        </div>
+        <div class="row">
+          <div><label>Tipo de ASO *</label>
+            <select id="aTipo">
+              <option value="">Selecionar…</option>
+              <option value="ASO Admissional">Admissional</option>
+              <option value="ASO Periódico">Periódico</option>
+              <option value="ASO de Mudança de Função">Mudança de Função</option>
+              <option value="ASO de Retorno ao Trabalho">Retorno ao Trabalho</option>
+              <option value="ASO Demissional">Demissional</option>
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Atestado (PDF, foto ou print) — leitura automática tenta preencher os campos</label>
+            <input type="file" id="aArquivo" accept=".pdf,.jpg,.jpeg,.png">
+            <div class="small" id="aArquivoNome"></div>
+            <button type="button" class="btn-ghost" id="aArquivoRemover" style="display:none;font-size:11.5px;padding:6px 12px;margin-top:6px">✕ Remover arquivo / anexar outro</button>
+          </div>
+        </div>
+        <div id="ocrSuggestionBoxAso" class="hidden" style="background:var(--warning-bg);border:1px solid rgba(232,163,61,.4);border-radius:9px;padding:12px 14px;margin-bottom:12px;font-size:12.5px">
+          <b style="color:var(--warning)">🔍 Sugestão da leitura automática — confira antes de usar:</b>
+          <div id="ocrSuggestionTextAso" style="margin:6px 0;color:var(--text-secondary)"></div>
+          <button class="btn-ghost" id="ocrApplyBtnAso" style="font-size:11.5px;padding:6px 12px">Preencher com esses dados</button>
+          <button class="btn-ghost" id="ocrDismissBtnAso" style="font-size:11.5px;padding:6px 12px">Ignorar</button>
+        </div>
+        <button class="btn-primary" id="saveAsoBtn">Salvar ASO</button>
+      </div>
+      <div class="card">
+        <div class="topbar" style="margin-bottom:12px">
+          <h1 style="font-size:15px">ASOs cadastrados</h1>
+          <button class="btn-ghost" id="refreshAsoBtn">Atualizar lista</button>
+        </div>
+        <table>
+          <thead><tr><th>Funcionário</th><th>Tipo</th><th>Data do exame</th><th>Válido até</th><th>Situação</th><th></th></tr></thead>
+          <tbody id="asoTableBody"><tr><td colspan="6" class="small">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============ ABA: EPIs ============ -->
+    <div id="tabEpis" class="hidden">
+      <div class="card">
+        <h1 style="font-size:15px">Nova Ficha de EPI</h1>
+        <label>Buscar funcionário</label>
+        <input type="text" id="eFuncionarioBusca" placeholder="Digite o nome pra filtrar a lista abaixo…">
+        <div class="row">
+          <div style="flex:2"><label>Funcionário *</label><select id="eFuncionarioId"><option value="">Carregando…</option></select></div>
+          <div><label>Data de entrega *</label><input type="date" id="eEntrega"></div>
+        </div>
+        <div class="row">
+          <div><label>EPI *</label>
+            <select id="eEpiSelect">
+              <option value="">Selecionar…</option>
+              <option value="Capacete de Segurança">Capacete de Segurança</option>
+              <option value="Óculos de Proteção">Óculos de Proteção</option>
+              <option value="Protetor Auricular">Protetor Auricular</option>
+              <option value="Luva de Raspa">Luva de Raspa</option>
+              <option value="Botina de Segurança">Botina de Segurança</option>
+              <option value="Cinto Paraquedista">Cinto Paraquedista (trabalho em altura)</option>
+              <option value="Máscara PFF2">Máscara PFF2</option>
+              <option value="Protetor Facial">Protetor Facial</option>
+              <option value="Colete Refletivo">Colete Refletivo</option>
+              <option value="__outro__">Outro (digitar manualmente)</option>
+            </select>
+            <input type="text" id="eEpiOutro" placeholder="Digite o nome do EPI" style="display:none">
+          </div>
+          <div><label>CA (Certificado de Aprovação)</label><input type="text" id="eCa" placeholder="Ex: 31469"></div>
+          <div><label>Próxima troca</label><input type="date" id="eTroca"></div>
+        </div>
+        <button class="btn-primary" id="saveEpiBtn">Salvar EPI</button>
+      </div>
+      <div class="card">
+        <div class="topbar" style="margin-bottom:12px">
+          <h1 style="font-size:15px">EPIs cadastrados</h1>
+          <button class="btn-ghost" id="refreshEpiBtn">Atualizar lista</button>
+        </div>
+        <table>
+          <thead><tr><th>Funcionário</th><th>EPI</th><th>CA</th><th>Entrega</th><th>Próxima troca</th><th></th></tr></thead>
+          <tbody id="epiTableBody"><tr><td colspan="6" class="small">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============ ABA: FOLHA DE PONTO ============ -->
+    <div id="tabPonto" class="hidden">
+      <div class="card">
+        <h1 style="font-size:15px">Nova Folha de Ponto</h1>
+        <label>Buscar funcionário</label>
+        <input type="text" id="pFuncionarioBusca" placeholder="Digite o nome pra filtrar a lista abaixo…">
+        <div class="row">
+          <div style="flex:2"><label>Funcionário *</label><select id="pFuncionarioId"><option value="">Carregando…</option></select></div>
+          <div><label>Período (mês/ano) *</label><input type="month" id="pPeriodo"></div>
+        </div>
+        <div class="row">
+          <div><label>Cliente</label><input type="text" id="pCliente"></div>
+          <div><label>Obra</label><input type="text" id="pObra"></div>
+          <div><label>Data de envio *</label><input type="date" id="pDataEnvio"></div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Folha de ponto (PDF ou foto)</label>
+            <input type="file" id="pArquivo" accept=".pdf,.jpg,.jpeg,.png">
+            <div class="small" id="pArquivoNome"></div>
+            <button type="button" class="btn-ghost" id="pArquivoRemover" style="display:none;font-size:11.5px;padding:6px 12px;margin-top:6px">✕ Remover arquivo / anexar outro</button>
+          </div>
+        </div>
+        <button class="btn-primary" id="savePontoBtn">Salvar folha de ponto</button>
+      </div>
+      <div class="card">
+        <div class="topbar" style="margin-bottom:12px">
+          <h1 style="font-size:15px">Folhas de ponto cadastradas</h1>
+          <button class="btn-ghost" id="refreshPontoBtn">Atualizar lista</button>
+        </div>
+        <table>
+          <thead><tr><th>Funcionário</th><th>Cliente</th><th>Período</th><th>Enviada em</th><th>Situação</th><th></th></tr></thead>
+          <tbody id="pontoTableBody"><tr><td colspan="6" class="small">Carregando…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -370,81 +531,144 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     });
     document.getElementById('refreshBtn').addEventListener('click', loadFuncionarios);
     document.getElementById('saveEmpBtn').addEventListener('click', saveFuncionario);
+    document.getElementById('fCargoSelect').addEventListener('change', (e) => {
+      document.getElementById('fCargo').style.display = e.target.value === '__outro__' ? 'block' : 'none';
+    });
     document.getElementById('refreshTreinoBtn').addEventListener('click', loadTreinamentos);
     document.getElementById('saveTreinoBtn').addEventListener('click', saveTreinamento);
     document.getElementById('fBulkBtn').addEventListener('click', bulkFuncionarios);
     document.getElementById('tBulkBtn').addEventListener('click', bulkTreinamentos);
 
-    // Busca/filtro do funcionário no formulário de treinamento
-    document.getElementById('tFuncionarioBusca').addEventListener('input', (e) => {
-      const termo = e.target.value.trim().toLowerCase();
-      const filtrados = termo ? funcionariosCache.filter(f => f.nome.toLowerCase().includes(termo)) : funcionariosCache;
-      renderFuncionarioOptions(filtrados);
+    // Busca/filtro do funcionário em cada formulário de lançamento
+    [['tFuncionarioBusca', 'tFuncionarioId'], ['aFuncionarioBusca', 'aFuncionarioId'], ['eFuncionarioBusca', 'eFuncionarioId'], ['pFuncionarioBusca', 'pFuncionarioId']].forEach(([buscaId, selectId]) => {
+      document.getElementById(buscaId).addEventListener('input', (e) => {
+        const termo = e.target.value.trim().toLowerCase();
+        const filtrados = termo ? funcionariosCache.filter(f => f.nome.toLowerCase().includes(termo)) : funcionariosCache;
+        renderFuncionarioOptionsEm(selectId, filtrados);
+      });
     });
 
     // Curso/NR: alterna entre lista e campo livre quando escolhe "Outro"
     document.getElementById('tCursoSelect').addEventListener('change', (e) => {
       document.getElementById('tCursoOutro').style.display = e.target.value === '__outro__' ? 'block' : 'none';
     });
+    document.getElementById('eEpiSelect').addEventListener('change', (e) => {
+      document.getElementById('eEpiOutro').style.display = e.target.value === '__outro__' ? 'block' : 'none';
+    });
+
+    document.getElementById('saveAsoBtn').addEventListener('click', saveAso);
+    document.getElementById('refreshAsoBtn').addEventListener('click', loadAsos);
+    document.getElementById('saveEpiBtn').addEventListener('click', saveEpi);
+    document.getElementById('refreshEpiBtn').addEventListener('click', loadEpis);
+    document.getElementById('savePontoBtn').addEventListener('click', saveFolhaPonto);
+    document.getElementById('refreshPontoBtn').addEventListener('click', loadFolhasPonto);
 
     // Anexo: se for imagem, tenta ler automaticamente (nunca aplica sozinho, sempre pede confirmação)
-    document.getElementById('tArquivo').addEventListener('change', async (e) => {
-      const f = e.target.files[0];
-      document.getElementById('tArquivoNome').textContent = f ? `Selecionado: ${f.name}` : '';
-      document.getElementById('ocrSuggestionBox').classList.add('hidden');
-      if (!f) return;
+    const ALVO_TREINO = { boxId: 'ocrSuggestionBox', textId: 'ocrSuggestionText', applyBtnId: 'ocrApplyBtn', dismissBtnId: 'ocrDismissBtn', funcionarioSelectId: 'tFuncionarioId', dataFieldId: 'tData', cursoSelectId: 'tCursoSelect', cursoOutroId: 'tCursoOutro', nomeCampoId: 'tArquivoNome' };
+    const ALVO_ASO = { boxId: 'ocrSuggestionBoxAso', textId: 'ocrSuggestionTextAso', applyBtnId: 'ocrApplyBtnAso', dismissBtnId: 'ocrDismissBtnAso', funcionarioSelectId: 'aFuncionarioId', dataFieldId: 'aData', nomeCampoId: 'aArquivoNome' };
 
-      if (f.type === 'application/pdf') {
-        await processarPdf(f);
-        return;
-      }
-      if (f.type.startsWith('image/')) {
-        await processarImagem(f);
-        return;
-      }
-      // outros tipos de arquivo (raro, já que o campo só aceita pdf/jpg/png) — sem leitura
-    });
+    // Função genérica que liga: seleção de arquivo (mostra botão de remover + tenta ler) e o botão de remover em si
+    function ligarCampoDeArquivo(inputId, nomeId, removerBtnId, boxSugestaoId, alvo) {
+      document.getElementById(inputId).addEventListener('change', async (e) => {
+        const f = e.target.files[0];
+        document.getElementById(nomeId).textContent = f ? `Selecionado: ${f.name}` : '';
+        document.getElementById(removerBtnId).style.display = f ? 'inline-block' : 'none';
+        if (boxSugestaoId) document.getElementById(boxSugestaoId).classList.add('hidden');
+        if (!f) return;
+        if (f.type === 'application/pdf' && alvo) { await processarPdf(f, alvo); return; }
+        if (f.type.startsWith('image/') && alvo) { await processarImagem(f, alvo); return; }
+      });
+      document.getElementById(removerBtnId).addEventListener('click', () => {
+        const input = document.getElementById(inputId);
+        input.value = ''; // limpa o arquivo escolhido de verdade
+        document.getElementById(nomeId).textContent = '';
+        document.getElementById(removerBtnId).style.display = 'none';
+        if (boxSugestaoId) document.getElementById(boxSugestaoId).classList.add('hidden');
+        showAppStatus('info', 'Arquivo removido. Você pode anexar outro quando quiser.');
+      });
+    }
+
+    ligarCampoDeArquivo('tArquivo', 'tArquivoNome', 'tArquivoRemover', 'ocrSuggestionBox', ALVO_TREINO);
+    ligarCampoDeArquivo('aArquivo', 'aArquivoNome', 'aArquivoRemover', 'ocrSuggestionBoxAso', ALVO_ASO);
+    ligarCampoDeArquivo('pArquivo', 'pArquivoNome', 'pArquivoRemover', null, null);
 
     document.getElementById('tabFuncBtn').addEventListener('click', () => switchTab('func'));
     document.getElementById('tabTreinoBtn').addEventListener('click', () => switchTab('treino'));
+    document.getElementById('tabAsoBtn').addEventListener('click', () => switchTab('aso'));
+    document.getElementById('tabEpiBtn').addEventListener('click', () => switchTab('epi'));
+    document.getElementById('tabPontoBtn').addEventListener('click', () => switchTab('ponto'));
   }
 
-  function marcarNomeArquivo(f, sufixoHtml) {
-    document.getElementById('tArquivoNome').innerHTML = `Selecionado: ${f.name}${sufixoHtml || ''}`;
+  function marcarNomeArquivo(f, sufixoHtml, campoId) {
+    document.getElementById(campoId || 'tArquivoNome').innerHTML = `Selecionado: ${f.name}${sufixoHtml || ''}`;
   }
 
   // ---------- Leitura automática de IMAGEM (foto, print) ----------
-  async function processarImagem(f) {
-    marcarNomeArquivo(f, ' <b style="color:var(--warning)">— lendo automaticamente, aguarde…</b>');
-    showAppStatus('info', 'Lendo a imagem automaticamente (OCR)… isso pode levar 10-30 segundos.');
+  // Tenta ler a imagem em 4 posições (0°, 90°, 180°, 270°) e usa a que o motor de leitura
+  // teve mais confiança — resolve o caso de foto tirada com o celular de lado/rotacionado.
+  async function girarImagem(bitmap, graus) {
+    const canvas = document.createElement('canvas');
+    const vertical = graus === 90 || graus === 270;
+    canvas.width = vertical ? bitmap.height : bitmap.width;
+    canvas.height = vertical ? bitmap.width : bitmap.height;
+    const ctx = canvas.getContext('2d');
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate(graus * Math.PI / 180);
+    ctx.drawImage(bitmap, -bitmap.width / 2, -bitmap.height / 2);
+    return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+  }
+
+  async function ocrComRotacaoAutomatica(fonteImagem, atualizarProgresso) {
+    const bitmap = await createImageBitmap(fonteImagem);
+    const rotacoes = [0, 90, 270, 180];
+    let melhor = { texto: '', pontuacao: -1, graus: 0 };
+    for (let i = 0; i < rotacoes.length; i++) {
+      const graus = rotacoes[i];
+      if (atualizarProgresso) atualizarProgresso(i + 1, rotacoes.length, graus);
+      const blob = graus === 0 ? fonteImagem : await girarImagem(bitmap, graus);
+      const { data: { text, confidence } } = await Tesseract.recognize(blob, 'por');
+      if (confidence > melhor.pontuacao) melhor = { texto: text, pontuacao: confidence, graus };
+      // se já achou uma leitura bem confiante, não precisa testar as outras rotações (mais rápido)
+      if (confidence >= 88) break;
+    }
+    return melhor;
+  }
+
+  async function processarImagem(f, alvo) {
+    alvo = alvo || { nomeCampoId: 'tArquivoNome' };
+    marcarNomeArquivo(f, ' <b style="color:var(--warning)">— lendo automaticamente, aguarde…</b>', alvo.nomeCampoId);
+    showAppStatus('info', 'Lendo a imagem automaticamente (OCR)… isso pode levar de 15 segundos a 1-2 minutos, porque testa a imagem em diferentes posições (caso a foto esteja de lado).');
 
     if (typeof Tesseract === 'undefined') {
-      marcarNomeArquivo(f, ' <b style="color:var(--danger)">— leitura automática indisponível agora</b>');
+      marcarNomeArquivo(f, ' <b style="color:var(--danger)">— leitura automática indisponível agora</b>', alvo.nomeCampoId);
       showAppStatus('err', 'A biblioteca de leitura automática não carregou (verifique sua internet e recarregue a página). Preencha os campos manualmente por enquanto.');
       return;
     }
     try {
-      const { data: { text } } = await Tesseract.recognize(f, 'por');
-      marcarNomeArquivo(f);
-      if (!text || !text.trim()) {
-        showAppStatus('err', 'A leitura terminou mas não encontrou nenhum texto legível nessa imagem. Preencha os campos manualmente.');
+      const resultado = await ocrComRotacaoAutomatica(f, (etapa, total, graus) => {
+        showAppStatus('info', `Testando leitura (${etapa}/${total}, posição ${graus}°)…`);
+      });
+      marcarNomeArquivo(f, resultado.graus !== 0 ? ` <span class="small">(lida girando ${resultado.graus}°)</span>` : '', alvo.nomeCampoId);
+      if (!resultado.texto || !resultado.texto.trim()) {
+        showAppStatus('err', 'A leitura terminou mas não encontrou nenhum texto legível nessa imagem, em nenhuma posição testada. Preencha os campos manualmente.');
         return;
       }
-      mostrarSugestaoOcr(text);
-      showAppStatus('ok', 'Leitura concluída — confira a sugestão logo abaixo do campo de anexo antes de usar.');
+      mostrarSugestaoOcr(resultado.texto, alvo);
+      showAppStatus('ok', `Leitura concluída${resultado.graus !== 0 ? ` (a imagem estava girada ${resultado.graus}°, corrigido automaticamente)` : ''} — confira a sugestão logo abaixo do campo de anexo.`);
     } catch (err) {
-      marcarNomeArquivo(f, ' <b style="color:var(--danger)">— erro na leitura</b>');
+      marcarNomeArquivo(f, ' <b style="color:var(--danger)">— erro na leitura</b>', alvo.nomeCampoId);
       showAppStatus('err', 'Não foi possível ler a imagem automaticamente: ' + err.message + '. Preencha os campos manualmente.');
     }
   }
 
   // ---------- Leitura automática de PDF (texto digital OU escaneado/foto) ----------
-  async function processarPdf(f) {
-    marcarNomeArquivo(f, ' <b style="color:var(--warning)">— abrindo o PDF, aguarde…</b>');
+  async function processarPdf(f, alvo) {
+    alvo = alvo || { nomeCampoId: 'tArquivoNome' };
+    marcarNomeArquivo(f, ' <b style="color:var(--warning)">— abrindo o PDF, aguarde…</b>', alvo.nomeCampoId);
     showAppStatus('info', 'Lendo o PDF automaticamente…');
 
     if (typeof pdfjsLib === 'undefined') {
-      marcarNomeArquivo(f, ' <b style="color:var(--danger)">— leitura automática indisponível agora</b>');
+      marcarNomeArquivo(f, ' <b style="color:var(--danger)">— leitura automática indisponível agora</b>', alvo.nomeCampoId);
       showAppStatus('err', 'A biblioteca de leitura de PDF não carregou (verifique sua internet e recarregue a página). Preencha os campos manualmente por enquanto.');
       return;
     }
@@ -460,19 +684,19 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
       const textoDigital = conteudo.items.map(item => item.str).join(' ').trim();
 
       if (textoDigital.length > 25) {
-        marcarNomeArquivo(f);
-        mostrarSugestaoOcr(textoDigital);
+        marcarNomeArquivo(f, '', alvo.nomeCampoId);
+        mostrarSugestaoOcr(textoDigital, alvo);
         showAppStatus('ok', 'PDF lido com sucesso (texto digital) — confira a sugestão logo abaixo do campo de anexo.');
         return;
       }
 
       // 2ª tentativa: PDF sem texto digital (provavelmente um certificado escaneado/foto colada em PDF) —
       // converte a página em imagem e aplica a mesma leitura usada em fotos.
-      marcarNomeArquivo(f, ' <b style="color:var(--warning)">— PDF parece ser escaneado, convertendo em imagem e lendo…</b>');
+      marcarNomeArquivo(f, ' <b style="color:var(--warning)">— PDF parece ser escaneado, convertendo em imagem e lendo…</b>', alvo.nomeCampoId);
       showAppStatus('info', 'Esse PDF não tem texto digital (parece ser uma foto/scan) — convertendo em imagem para ler. Pode levar mais tempo.');
 
       if (typeof Tesseract === 'undefined') {
-        marcarNomeArquivo(f, ' <b style="color:var(--danger)">— leitura automática indisponível agora</b>');
+        marcarNomeArquivo(f, ' <b style="color:var(--danger)">— leitura automática indisponível agora</b>', alvo.nomeCampoId);
         showAppStatus('err', 'A biblioteca de leitura de imagem não carregou. Preencha os campos manualmente.');
         return;
       }
@@ -484,16 +708,18 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
       await page1.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
       const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
 
-      const { data: { text } } = await Tesseract.recognize(blob, 'por');
-      marcarNomeArquivo(f);
-      if (!text || !text.trim()) {
+      const resultado = await ocrComRotacaoAutomatica(blob, (etapa, total, graus) => {
+        showAppStatus('info', `Testando leitura do PDF escaneado (${etapa}/${total}, posição ${graus}°)…`);
+      });
+      marcarNomeArquivo(f, '', alvo.nomeCampoId);
+      if (!resultado.texto || !resultado.texto.trim()) {
         showAppStatus('err', 'A leitura terminou mas não encontrou nenhum texto legível nesse PDF. Preencha os campos manualmente.');
         return;
       }
-      mostrarSugestaoOcr(text);
-      showAppStatus('ok', 'PDF escaneado lido com sucesso — confira a sugestão logo abaixo do campo de anexo.');
+      mostrarSugestaoOcr(resultado.texto, alvo);
+      showAppStatus('ok', `PDF escaneado lido com sucesso${resultado.graus !== 0 ? ` (corrigido ${resultado.graus}° de rotação)` : ''} — confira a sugestão logo abaixo do campo de anexo.`);
     } catch (err) {
-      marcarNomeArquivo(f, ' <b style="color:var(--danger)">— erro na leitura</b>');
+      marcarNomeArquivo(f, ' <b style="color:var(--danger)">— erro na leitura</b>', alvo.nomeCampoId);
       showAppStatus('err', 'Não foi possível ler o PDF automaticamente: ' + err.message + '. Preencha os campos manualmente.');
     }
   }
@@ -505,8 +731,15 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     return MESES_PT[chave] || null;
   }
   let ocrSugestaoAtual = null;
-  function mostrarSugestaoOcr(texto) {
-    const nr = texto.match(/NR[\s\u2013\u2014-]*0?(\d{1,2})/i);
+  function mostrarSugestaoOcr(textoOriginal, alvo) {
+    // alvo: { boxId, textId, applyBtnId, dismissBtnId, funcionarioSelectId, dataFieldId, cursoSelectId (opcional), cursoOutroId (opcional) }
+    alvo = alvo || { boxId: 'ocrSuggestionBox', textId: 'ocrSuggestionText', applyBtnId: 'ocrApplyBtn', dismissBtnId: 'ocrDismissBtn', funcionarioSelectId: 'tFuncionarioId', dataFieldId: 'tData', cursoSelectId: 'tCursoSelect', cursoOutroId: 'tCursoOutro' };
+
+    // Normaliza espaços/quebras de linha antes de tudo — o OCR costuma quebrar uma mesma
+    // palavra ou "NR-06" em duas linhas separadas, o que quebrava a leitura antes desse ajuste.
+    const texto = textoOriginal.replace(/\s+/g, ' ').trim();
+
+    const nr = texto.match(/N\s*R[\s\u2013\u2014-]*0?(\d{1,2})/i);
     // data por extenso (prioriza a do rodapé/assinatura "Cidade, dd de Mês de aaaa")
     let dataEncontrada = null;
     const rodape = texto.match(/[A-Za-zÀ-ú]+\s*,\s*(\d{1,2})\s*de\s*([A-Za-zçÇãÃéÉ]+)\s*de\s*(\d{4})/i);
@@ -519,44 +752,64 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
       const numerica = texto.match(/(\d{2})\/(\d{2})\/(\d{4})/);
       if (numerica) dataEncontrada = `${numerica[3]}-${numerica[2]}-${numerica[1]}`;
     }
-    // tenta achar o nome de um funcionário já cadastrado dentro do texto lido
-    const funcionarioEncontrado = funcionariosCache.find(f => texto.toUpperCase().includes(f.nome.toUpperCase()));
 
-    ocrSugestaoAtual = { nr: nr ? `NR-${nr[1].padStart(2,'0')}` : null, data: dataEncontrada, funcionarioId: funcionarioEncontrado ? funcionarioEncontrado.id : null, funcionarioNome: funcionarioEncontrado ? funcionarioEncontrado.nome : null };
+    // Busca o funcionário por PALAVRAS do nome, não pelo nome inteiro de uma vez —
+    // assim, mesmo se o OCR errar uma letra ou juntar/separar palavras diferente do esperado,
+    // ainda reconhece a pessoa se a maioria das palavras do nome aparecer no texto lido.
+    const textoNormalizado = texto.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    let funcionarioEncontrado = null, melhorPontuacao = 0;
+    funcionariosCache.forEach(f => {
+      const palavrasNome = f.nome.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/\s+/).filter(p => p.length > 2);
+      if (!palavrasNome.length) return;
+      const acertos = palavrasNome.filter(p => textoNormalizado.includes(p)).length;
+      const pontuacao = acertos / palavrasNome.length;
+      if (pontuacao >= 0.6 && pontuacao > melhorPontuacao) { melhorPontuacao = pontuacao; funcionarioEncontrado = f; }
+    });
+
+    ocrSugestaoAtual = { nr: nr ? `NR-${nr[1].padStart(2,'0')}` : null, data: dataEncontrada, funcionarioId: funcionarioEncontrado ? funcionarioEncontrado.id : null, funcionarioNome: funcionarioEncontrado ? funcionarioEncontrado.nome : null, alvo };
 
     const partes = [];
-    partes.push(ocrSugestaoAtual.nr ? `Norma: <b>${ocrSugestaoAtual.nr}</b>` : 'Norma: não identificada');
+    if (alvo.cursoSelectId) partes.push(ocrSugestaoAtual.nr ? `Norma: <b>${ocrSugestaoAtual.nr}</b>` : 'Norma: não identificada');
     partes.push(ocrSugestaoAtual.data ? `Data: <b>${formatarDataBr(ocrSugestaoAtual.data)}</b>` : 'Data: não identificada');
     partes.push(ocrSugestaoAtual.funcionarioNome ? `Funcionário: <b>${ocrSugestaoAtual.funcionarioNome}</b>` : 'Funcionário: não identificado no texto (selecione manualmente)');
-    document.getElementById('ocrSuggestionText').innerHTML = partes.join(' · ');
-    document.getElementById('ocrSuggestionBox').classList.remove('hidden');
+    document.getElementById(alvo.textId).innerHTML = partes.join(' · ');
+    document.getElementById(alvo.boxId).classList.remove('hidden');
   }
+
+  function aplicarSugestaoOcr() {
+    if (!ocrSugestaoAtual) return;
+    const alvo = ocrSugestaoAtual.alvo;
+    if (ocrSugestaoAtual.data) document.getElementById(alvo.dataFieldId).value = ocrSugestaoAtual.data;
+    if (ocrSugestaoAtual.nr && alvo.cursoSelectId) {
+      const sel = document.getElementById(alvo.cursoSelectId);
+      const match = Array.from(sel.options).find(o => o.value.toUpperCase().startsWith(ocrSugestaoAtual.nr));
+      if (match) { sel.value = match.value; }
+      else { sel.value = '__outro__'; document.getElementById(alvo.cursoOutroId).style.display = 'block'; document.getElementById(alvo.cursoOutroId).value = ocrSugestaoAtual.nr; }
+    }
+    if (ocrSugestaoAtual.funcionarioId) document.getElementById(alvo.funcionarioSelectId).value = ocrSugestaoAtual.funcionarioId;
+    document.getElementById(alvo.boxId).classList.add('hidden');
+    showAppStatus('ok', 'Dados da sugestão aplicados — confira tudo antes de salvar.');
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('ocrApplyBtn')?.addEventListener('click', () => {
-      if (!ocrSugestaoAtual) return;
-      if (ocrSugestaoAtual.data) document.getElementById('tData').value = ocrSugestaoAtual.data;
-      if (ocrSugestaoAtual.nr) {
-        const sel = document.getElementById('tCursoSelect');
-        const match = Array.from(sel.options).find(o => o.value.toUpperCase().startsWith(ocrSugestaoAtual.nr));
-        if (match) { sel.value = match.value; }
-        else { sel.value = '__outro__'; document.getElementById('tCursoOutro').style.display = 'block'; document.getElementById('tCursoOutro').value = ocrSugestaoAtual.nr; }
-      }
-      if (ocrSugestaoAtual.funcionarioId) document.getElementById('tFuncionarioId').value = ocrSugestaoAtual.funcionarioId;
-      document.getElementById('ocrSuggestionBox').classList.add('hidden');
-      showAppStatus('ok', 'Dados da sugestão aplicados — confira tudo antes de salvar.');
-    });
-    document.getElementById('ocrDismissBtn')?.addEventListener('click', () => {
-      document.getElementById('ocrSuggestionBox').classList.add('hidden');
+    [['ocrApplyBtn', 'ocrDismissBtn', 'ocrSuggestionBox'], ['ocrApplyBtnAso', 'ocrDismissBtnAso', 'ocrSuggestionBoxAso']].forEach(([applyId, dismissId, boxId]) => {
+      document.getElementById(applyId)?.addEventListener('click', aplicarSugestaoOcr);
+      document.getElementById(dismissId)?.addEventListener('click', () => document.getElementById(boxId).classList.add('hidden'));
     });
   });
 
+  const TABS = ['func', 'treino', 'aso', 'epi', 'ponto'];
+  const TAB_DIV = { func: 'tabFuncionarios', treino: 'tabTreinamentos', aso: 'tabAsos', epi: 'tabEpis', ponto: 'tabPonto' };
+  const TAB_BTN = { func: 'tabFuncBtn', treino: 'tabTreinoBtn', aso: 'tabAsoBtn', epi: 'tabEpiBtn', ponto: 'tabPontoBtn' };
   function switchTab(tab) {
-    const isFunc = tab === 'func';
-    document.getElementById('tabFuncionarios').classList.toggle('hidden', !isFunc);
-    document.getElementById('tabTreinamentos').classList.toggle('hidden', isFunc);
-    document.getElementById('tabFuncBtn').className = isFunc ? 'btn-primary' : 'btn-ghost';
-    document.getElementById('tabTreinoBtn').className = !isFunc ? 'btn-primary' : 'btn-ghost';
-    if (!isFunc) { loadFuncionariosParaSelect(); loadTreinamentos(); }
+    TABS.forEach(t => {
+      document.getElementById(TAB_DIV[t]).classList.toggle('hidden', t !== tab);
+      document.getElementById(TAB_BTN[t]).className = t === tab ? 'btn-primary' : 'btn-ghost';
+    });
+    if (tab === 'treino') { loadFuncionariosEm('tFuncionarioId'); loadTreinamentos(); }
+    if (tab === 'aso') { loadFuncionariosEm('aFuncionarioId'); loadAsos(); }
+    if (tab === 'epi') { loadFuncionariosEm('eFuncionarioId'); loadEpis(); }
+    if (tab === 'ponto') { loadFuncionariosEm('pFuncionarioId'); loadFolhasPonto(); }
   }
 
   // ---------- CRUD Funcionários ----------
@@ -609,7 +862,7 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
 
     const payload = {
       nome, cpf,
-      cargo: document.getElementById('fCargo').value.trim() || null,
+      cargo: (() => { const sel = document.getElementById('fCargoSelect').value; return sel === '__outro__' ? document.getElementById('fCargo').value.trim() || null : sel || null; })(),
       telefone: document.getElementById('fTelefone').value.trim() || null,
       status: document.getElementById('fStatus').value,
       admissao: document.getElementById('fAdmissao').value || null,
@@ -622,6 +875,8 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     }
     showAppStatus('ok', 'Funcionário salvo com sucesso no banco de dados.');
     ['fNome', 'fCpf', 'fCargo', 'fTelefone', 'fAdmissao'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('fCargoSelect').value = '';
+    document.getElementById('fCargo').style.display = 'none';
     loadFuncionarios();
   }
 
@@ -655,21 +910,27 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     return `${dd}/${mm}/${yyyy}`;
   }
 
-  // ---------- CRUD Treinamentos ----------
+  // ---------- Funcionários (compartilhado por todas as abas de lançamento) ----------
   let funcionariosCache = [];
-  async function loadFuncionariosParaSelect() {
-    const sel = document.getElementById('tFuncionarioId');
-    const { data, error } = await sb.from('funcionarios').select('id, nome').order('nome');
-    if (error) { sel.innerHTML = '<option value="">Erro ao carregar funcionários</option>'; return; }
-    funcionariosCache = data;
-    renderFuncionarioOptions(data);
+  async function loadFuncionariosEm(selectId) {
+    const sel = document.getElementById(selectId);
+    if (!funcionariosCache.length) {
+      const { data, error } = await sb.from('funcionarios').select('id, nome').order('nome');
+      if (error) { sel.innerHTML = '<option value="">Erro ao carregar funcionários</option>'; return; }
+      funcionariosCache = data;
+    }
+    renderFuncionarioOptionsEm(selectId, funcionariosCache);
   }
-  function renderFuncionarioOptions(lista) {
-    const sel = document.getElementById('tFuncionarioId');
+  function renderFuncionarioOptionsEm(selectId, lista) {
+    const sel = document.getElementById(selectId);
     const selecionadoAntes = sel.value;
     sel.innerHTML = '<option value="">Selecionar funcionário…</option>' +
       lista.map(f => `<option value="${f.id}">${f.nome}</option>`).join('');
     if (lista.some(f => f.id === selecionadoAntes)) sel.value = selecionadoAntes;
+  }
+  function nomeDoFuncionario(id) {
+    const f = funcionariosCache.find(x => x.id === id);
+    return f ? f.nome : '—';
   }
 
   async function loadTreinamentos() {
@@ -769,9 +1030,9 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     document.getElementById('tCursoSelect').value = '';
     document.getElementById('tCursoOutro').style.display = 'none';
     document.getElementById('tArquivoNome').textContent = '';
+    document.getElementById('tArquivoRemover').style.display = 'none';
     document.getElementById('ocrSuggestionBox').classList.add('hidden');
-    renderFuncionarioOptions(funcionariosCache);
-    document.getElementById('tArquivoNome').textContent = '';
+    renderFuncionarioOptionsEm('tFuncionarioId', funcionariosCache);
     document.getElementById('tFuncionarioId').value = '';
     loadTreinamentos();
   }
@@ -871,6 +1132,197 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     showAppStatus('ok', `${payload.length} treinamento(s) cadastrado(s).${naoEncontrados.length ? ' Não encontrados (confira o nome exato): ' + naoEncontrados.join(', ') : ''}`);
     document.getElementById('tBulkArea').value = '';
     loadTreinamentos();
+  }
+
+  // ================= CRUD: ASOs =================
+  async function loadAsos() {
+    const tbody = document.getElementById('asoTableBody');
+    tbody.innerHTML = '<tr><td colspan="6" class="small">Carregando…</td></tr>';
+    const { data, error } = await sb.from('asos').select('*, funcionarios(nome)').order('validade_data', { ascending: true });
+    if (error) { tbody.innerHTML = `<tr><td colspan="6" class="small" style="color:var(--danger)">Erro: ${error.message}</td></tr>`; return; }
+    if (!data.length) { tbody.innerHTML = '<tr><td colspan="6" class="small">Nenhum ASO cadastrado ainda.</td></tr>'; return; }
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    tbody.innerHTML = data.map(a => {
+      const dias = a.validade_data ? Math.round((new Date(a.validade_data + 'T00:00:00') - hoje) / 86400000) : null;
+      const status = dias !== null ? calcularStatus(dias) : (a.status || 'apto');
+      return `<tr>
+        <td>${a.funcionarios ? a.funcionarios.nome : '—'}</td>
+        <td>${a.tipo || '—'}</td>
+        <td>${formatarDataBr(a.data_realizacao)}</td>
+        <td>${formatarDataBr(a.validade_data)}</td>
+        <td><span class="pill ${status}">${status}${dias !== null ? ' (' + dias + 'd)' : ''}</span></td>
+        <td><button class="del-btn" data-id="${a.id}">Excluir</button></td>
+      </tr>`;
+    }).join('');
+    tbody.querySelectorAll('.del-btn').forEach(btn => btn.addEventListener('click', () => deleteAso(btn.getAttribute('data-id'))));
+  }
+
+  async function saveAso() {
+    const funcionarioId = document.getElementById('aFuncionarioId').value;
+    const tipo = document.getElementById('aTipo').value;
+    const dataRealizacao = document.getElementById('aData').value;
+    if (!funcionarioId) { showAppStatus('err', 'Selecione o funcionário.'); return; }
+    if (!tipo) { showAppStatus('err', 'Selecione o tipo de ASO.'); return; }
+    if (!dataRealizacao) { showAppStatus('err', 'Digite a data do exame.'); return; }
+
+    const dataVal = new Date(dataRealizacao + 'T00:00:00');
+    dataVal.setFullYear(dataVal.getFullYear() + 1); // ASO — validade padrão de 1 ano
+    const validadeData = dataVal.toISOString().slice(0, 10);
+    const diasRestantes = Math.round((dataVal - new Date()) / 86400000);
+
+    const arquivoFile = document.getElementById('aArquivo').files[0];
+    let caminhoArquivo = null;
+    if (arquivoFile) {
+      showAppStatus('info', 'Enviando atestado…');
+      try { caminhoArquivo = await subirArquivoTreinamento(arquivoFile, funcionarioId); }
+      catch (e) { showAppStatus('err', 'Erro ao enviar o arquivo: ' + e.message); return; }
+    }
+
+    showAppStatus('info', 'Salvando…');
+    const { error } = await sb.from('asos').insert({
+      funcionario_id: funcionarioId, tipo, data_realizacao: dataRealizacao,
+      validade_data: validadeData, status: calcularStatus(diasRestantes), arquivo: caminhoArquivo,
+    });
+    if (error) { showAppStatus('err', 'Erro ao salvar: ' + error.message); return; }
+    showAppStatus('ok', `ASO salvo — validade até ${formatarDataBr(validadeData)}.`);
+    ['aData', 'aArquivo', 'aFuncionarioBusca'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('aTipo').value = '';
+    document.getElementById('aArquivoNome').textContent = '';
+    document.getElementById('aArquivoRemover').style.display = 'none';
+    document.getElementById('ocrSuggestionBoxAso').classList.add('hidden');
+    renderFuncionarioOptionsEm('aFuncionarioId', funcionariosCache);
+    loadAsos();
+  }
+
+  async function deleteAso(id) {
+    if (!confirm('Excluir este ASO definitivamente do banco de dados?')) return;
+    const { error } = await sb.from('asos').delete().eq('id', id);
+    if (error) { showAppStatus('err', 'Erro ao excluir: ' + error.message); return; }
+    showAppStatus('ok', 'Excluído do banco de dados.');
+    loadAsos();
+  }
+
+  // ================= CRUD: EPIs =================
+  async function loadEpis() {
+    const tbody = document.getElementById('epiTableBody');
+    tbody.innerHTML = '<tr><td colspan="6" class="small">Carregando…</td></tr>';
+    const { data, error } = await sb.from('epis').select('*, funcionarios(nome)').order('troca', { ascending: true });
+    if (error) { tbody.innerHTML = `<tr><td colspan="6" class="small" style="color:var(--danger)">Erro: ${error.message}</td></tr>`; return; }
+    if (!data.length) { tbody.innerHTML = '<tr><td colspan="6" class="small">Nenhum EPI cadastrado ainda.</td></tr>'; return; }
+    tbody.innerHTML = data.map(e => `<tr>
+        <td>${e.funcionarios ? e.funcionarios.nome : '—'}</td>
+        <td>${e.epi}</td>
+        <td>${e.ca || '—'}</td>
+        <td>${formatarDataBr(e.entrega)}</td>
+        <td>${formatarDataBr(e.troca)}</td>
+        <td><button class="del-btn" data-id="${e.id}">Excluir</button></td>
+      </tr>`).join('');
+    tbody.querySelectorAll('.del-btn').forEach(btn => btn.addEventListener('click', () => deleteEpi(btn.getAttribute('data-id'))));
+  }
+
+  async function saveEpi() {
+    const funcionarioId = document.getElementById('eFuncionarioId').value;
+    const epiSelecionado = document.getElementById('eEpiSelect').value;
+    const epi = epiSelecionado === '__outro__' ? document.getElementById('eEpiOutro').value.trim() : epiSelecionado;
+    const entrega = document.getElementById('eEntrega').value;
+    if (!funcionarioId) { showAppStatus('err', 'Selecione o funcionário.'); return; }
+    if (!epi) { showAppStatus('err', 'Selecione (ou digite) o EPI.'); return; }
+    if (!entrega) { showAppStatus('err', 'Digite a data de entrega.'); return; }
+
+    showAppStatus('info', 'Salvando…');
+    const { error } = await sb.from('epis').insert({
+      funcionario_id: funcionarioId, epi,
+      ca: document.getElementById('eCa').value.trim() || null,
+      entrega, troca: document.getElementById('eTroca').value || null,
+      status: 'apto',
+    });
+    if (error) { showAppStatus('err', 'Erro ao salvar: ' + error.message); return; }
+    showAppStatus('ok', 'EPI salvo com sucesso.');
+    ['eCa', 'eEntrega', 'eTroca', 'eEpiOutro', 'eFuncionarioBusca'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('eEpiSelect').value = '';
+    document.getElementById('eEpiOutro').style.display = 'none';
+    renderFuncionarioOptionsEm('eFuncionarioId', funcionariosCache);
+    loadEpis();
+  }
+
+  async function deleteEpi(id) {
+    if (!confirm('Excluir esta ficha de EPI definitivamente do banco de dados?')) return;
+    const { error } = await sb.from('epis').delete().eq('id', id);
+    if (error) { showAppStatus('err', 'Erro ao excluir: ' + error.message); return; }
+    showAppStatus('ok', 'Excluído do banco de dados.');
+    loadEpis();
+  }
+
+  // ================= CRUD: Folha de Ponto =================
+  async function loadFolhasPonto() {
+    const tbody = document.getElementById('pontoTableBody');
+    tbody.innerHTML = '<tr><td colspan="6" class="small">Carregando…</td></tr>';
+    const { data, error } = await sb.from('folhas_ponto').select('*, funcionarios(nome)').order('data_envio', { ascending: false });
+    if (error) { tbody.innerHTML = `<tr><td colspan="6" class="small" style="color:var(--danger)">Erro: ${error.message}</td></tr>`; return; }
+    if (!data.length) { tbody.innerHTML = '<tr><td colspan="6" class="small">Nenhuma folha de ponto cadastrada ainda.</td></tr>'; return; }
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    tbody.innerHTML = data.map(p => {
+      const dias = p.validade_data ? Math.round((new Date(p.validade_data + 'T00:00:00') - hoje) / 86400000) : null;
+      const status = dias !== null ? calcularStatus(dias) : (p.status || 'apto');
+      return `<tr>
+        <td>${p.funcionarios ? p.funcionarios.nome : '—'}</td>
+        <td>${p.cliente || '—'}</td>
+        <td>${p.periodo || '—'}</td>
+        <td>${formatarDataBr(p.data_envio)}</td>
+        <td><span class="pill ${status}">${status}</span></td>
+        <td><button class="del-btn" data-id="${p.id}">Excluir</button></td>
+      </tr>`;
+    }).join('');
+    tbody.querySelectorAll('.del-btn').forEach(btn => btn.addEventListener('click', () => deleteFolhaPonto(btn.getAttribute('data-id'))));
+  }
+
+  async function saveFolhaPonto() {
+    const funcionarioId = document.getElementById('pFuncionarioId').value;
+    const periodoMes = document.getElementById('pPeriodo').value; // formato aaaa-mm do <input type=month>
+    const dataEnvio = document.getElementById('pDataEnvio').value;
+    if (!funcionarioId) { showAppStatus('err', 'Selecione o funcionário.'); return; }
+    if (!periodoMes) { showAppStatus('err', 'Selecione o período (mês/ano).'); return; }
+    if (!dataEnvio) { showAppStatus('err', 'Digite a data de envio.'); return; }
+
+    const [ano, mes] = periodoMes.split('-');
+    const nomesMeses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    const periodoTexto = `${nomesMeses[parseInt(mes) - 1]}/${ano}`;
+
+    const dataVal = new Date(dataEnvio + 'T00:00:00');
+    dataVal.setDate(dataVal.getDate() + 30); // próxima folha em ~30 dias, ciclo mensal
+    const validadeData = dataVal.toISOString().slice(0, 10);
+    const diasRestantes = Math.round((dataVal - new Date()) / 86400000);
+
+    const arquivoFile = document.getElementById('pArquivo').files[0];
+    let caminhoArquivo = null;
+    if (arquivoFile) {
+      showAppStatus('info', 'Enviando arquivo…');
+      try { caminhoArquivo = await subirArquivoTreinamento(arquivoFile, funcionarioId); }
+      catch (e) { showAppStatus('err', 'Erro ao enviar o arquivo: ' + e.message); return; }
+    }
+
+    showAppStatus('info', 'Salvando…');
+    const { error } = await sb.from('folhas_ponto').insert({
+      funcionario_id: funcionarioId, cliente: document.getElementById('pCliente').value.trim() || null,
+      obra: document.getElementById('pObra').value.trim() || null, periodo: periodoTexto,
+      data_envio: dataEnvio, validade_data: validadeData, status: calcularStatus(diasRestantes), arquivo: caminhoArquivo,
+    });
+    if (error) { showAppStatus('err', 'Erro ao salvar: ' + error.message); return; }
+    showAppStatus('ok', 'Folha de ponto salva com sucesso.');
+    ['pCliente', 'pObra', 'pDataEnvio', 'pArquivo', 'pFuncionarioBusca'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('pPeriodo').value = '';
+    document.getElementById('pArquivoNome').textContent = '';
+    document.getElementById('pArquivoRemover').style.display = 'none';
+    renderFuncionarioOptionsEm('pFuncionarioId', funcionariosCache);
+    loadFolhasPonto();
+  }
+
+  async function deleteFolhaPonto(id) {
+    if (!confirm('Excluir esta folha de ponto definitivamente do banco de dados?')) return;
+    const { error } = await sb.from('folhas_ponto').delete().eq('id', id);
+    if (error) { showAppStatus('err', 'Erro ao excluir: ' + error.message); return; }
+    showAppStatus('ok', 'Excluído do banco de dados.');
+    loadFolhasPonto();
   }
 
   boot();
