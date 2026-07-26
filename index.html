@@ -301,11 +301,15 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
               <option value="">Selecionar…</option>
               <option value="ASO Admissional">Admissional</option>
               <option value="ASO Periódico">Periódico</option>
-              <option value="ASO de Mudança de Função">Mudança de Função</option>
               <option value="ASO de Retorno ao Trabalho">Retorno ao Trabalho</option>
+              <option value="ASO de Mudança de Risco/Função">Mudança de Risco/Função</option>
               <option value="ASO Demissional">Demissional</option>
             </select>
           </div>
+        </div>
+        <div class="row">
+          <div><label>Médico do Trabalho <span class="small">(opcional)</span></label><input type="text" id="aMedico"></div>
+          <div><label>Clínica <span class="small">(opcional)</span></label><input type="text" id="aClinica"></div>
         </div>
         <div class="row">
           <div>
@@ -329,7 +333,7 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
           <button class="btn-ghost" id="refreshAsoBtn">Atualizar lista</button>
         </div>
         <table>
-          <thead><tr><th>Funcionário</th><th>Tipo</th><th>Data do exame</th><th>Válido até</th><th>Situação</th><th></th></tr></thead>
+          <thead><tr><th>Funcionário</th><th>Tipo</th><th>Data do exame</th><th>Válido até</th><th>Médico</th><th>Clínica</th><th>Situação</th><th></th></tr></thead>
           <tbody id="asoTableBody"><tr><td colspan="6" class="small">Carregando…</td></tr></tbody>
         </table>
       </div>
@@ -349,21 +353,41 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
           <div><label>EPI *</label>
             <select id="eEpiSelect">
               <option value="">Selecionar…</option>
-              <option value="Capacete de Segurança">Capacete de Segurança</option>
-              <option value="Óculos de Proteção">Óculos de Proteção</option>
-              <option value="Protetor Auricular">Protetor Auricular</option>
-              <option value="Luva de Raspa">Luva de Raspa</option>
-              <option value="Botina de Segurança">Botina de Segurança</option>
-              <option value="Cinto Paraquedista">Cinto Paraquedista (trabalho em altura)</option>
-              <option value="Máscara PFF2">Máscara PFF2</option>
-              <option value="Protetor Facial">Protetor Facial</option>
-              <option value="Colete Refletivo">Colete Refletivo</option>
+              <option value="Capacete de segurança">Capacete de segurança</option>
+              <option value="Óculos de segurança (impacto)">Óculos de segurança (impacto)</option>
+              <option value="Óculos ampla visão">Óculos ampla visão</option>
+              <option value="Protetor facial (Policarbonato/Acrílico)">Protetor facial (Policarbonato/Acrílico)</option>
+              <option value="Viseira / Protetor facial para solda">Viseira / Protetor facial para solda</option>
+              <option value="Máscara de solda (autoescurecimento)">Máscara de solda (autoescurecimento)</option>
+              <option value="Botina de couro (Bico de Aço)">Botina de couro (Bico de Aço)</option>
+              <option value="Botina de couro (Bico de PVC/Composite)">Botina de couro (Bico de PVC/Composite)</option>
+              <option value="Botina/Bota de PVC ou Borracha (Química)">Botina/Bota de PVC ou Borracha (Química)</option>
+              <option value="Uniforme de trabalho (Brim/Algodão)">Uniforme de trabalho (Brim/Algodão)</option>
+              <option value="Cinto de segurança (tipo paraquedista)">Cinto de segurança (tipo paraquedista)</option>
+              <option value="Talabarte e trava-quedas">Talabarte e trava-quedas</option>
+              <option value="Luva de raspa">Luva de raspa</option>
+              <option value="Luva de vaqueta">Luva de vaqueta</option>
+              <option value="Luva nitrílica">Luva nitrílica</option>
+              <option value="Luva de neoprene/butyl (química)">Luva de neoprene/butyl (química)</option>
+              <option value="Luva de alta voltagem/dielétrica">Luva de alta voltagem/dielétrica</option>
+              <option value="Luva para alta temperatura (Kevlar/Silicone)">Luva para alta temperatura (Kevlar/Silicone)</option>
+              <option value="Luva multitato">Luva multitato</option>
+              <option value="Avental de raspa">Avental de raspa</option>
+              <option value="Avental de PVC/Impermeável (Químico)">Avental de PVC/Impermeável (Químico)</option>
+              <option value="Mangote de raspa/Kevlar">Mangote de raspa/Kevlar</option>
+              <option value="Perneira de raspa/proteção">Perneira de raspa/proteção</option>
+              <option value="Protetor auricular (tipo plug/inserção)">Protetor auricular (tipo plug/inserção)</option>
+              <option value="Protetor auricular (tipo concha/abafador)">Protetor auricular (tipo concha/abafador)</option>
+              <option value="Respirador PFF2/N95 (descartável)">Respirador PFF2/N95 (descartável)</option>
+              <option value="Respirador semifacial (filtros trocáveis)">Respirador semifacial (filtros trocáveis)</option>
+              <option value="Capa de chuva / Conjunto de PVC">Capa de chuva / Conjunto de PVC</option>
+              <option value="Protetor solar">Protetor solar</option>
               <option value="__outro__">Outro (digitar manualmente)</option>
             </select>
             <input type="text" id="eEpiOutro" placeholder="Digite o nome do EPI" style="display:none">
           </div>
           <div><label>CA (Certificado de Aprovação)</label><input type="text" id="eCa" placeholder="Ex: 31469"></div>
-          <div><label>Próxima troca</label><input type="date" id="eTroca"></div>
+          <div><label>Próxima troca</label><input type="date" id="eTroca"><div class="small" id="eTrocaAuto"></div></div>
         </div>
         <div class="row">
           <div>
@@ -381,7 +405,7 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
           <button class="btn-ghost" id="refreshEpiBtn">Atualizar lista</button>
         </div>
         <table>
-          <thead><tr><th>Funcionário</th><th>EPI</th><th>CA</th><th>Entrega</th><th>Próxima troca</th><th>Ficha</th><th></th></tr></thead>
+          <thead><tr><th>Funcionário</th><th>EPI</th><th>CA</th><th>Entrega</th><th>Próxima troca</th><th>Situação</th><th>Ficha</th><th></th></tr></thead>
           <tbody id="epiTableBody"><tr><td colspan="6" class="small">Carregando…</td></tr></tbody>
         </table>
       </div>
@@ -395,16 +419,24 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
         <input type="text" id="pFuncionarioBusca" placeholder="Digite o nome pra filtrar a lista abaixo…">
         <div class="row">
           <div style="flex:2"><label>Funcionário *</label><select id="pFuncionarioId"><option value="">Carregando…</option></select></div>
-          <div><label>Período (mês/ano) *</label><input type="month" id="pPeriodo"></div>
+          <div><label>Competência (Mês/Ano) *</label><input type="month" id="pPeriodo"></div>
         </div>
         <div class="row">
           <div><label>Cliente</label><input type="text" id="pCliente"></div>
           <div><label>Obra</label><input type="text" id="pObra"></div>
-          <div><label>Data de envio *</label><input type="date" id="pDataEnvio"></div>
+          <div><label>Data da Entrega *</label><input type="date" id="pDataEnvio"></div>
+        </div>
+        <div class="row">
+          <div><label>Recebido?</label>
+            <select id="pRecebido"><option value="sim">Sim</option><option value="nao">Não</option></select>
+          </div>
+          <div><label>Assinatura do Funcionário?</label>
+            <select id="pAssinatura"><option value="sim">Sim</option><option value="nao">Não</option></select>
+          </div>
         </div>
         <div class="row">
           <div>
-            <label>Folha de ponto (PDF ou foto)</label>
+            <label>Folha de ponto (PDF ou foto) — inclui a assinatura, se houver</label>
             <input type="file" id="pArquivo" accept=".pdf,.jpg,.jpeg,.png">
             <div class="small" id="pArquivoNome"></div>
             <button type="button" class="btn-ghost" id="pArquivoRemover" style="display:none;font-size:11.5px;padding:6px 12px;margin-top:6px">✕ Remover arquivo / anexar outro</button>
@@ -412,14 +444,29 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
         </div>
         <button class="btn-primary" id="savePontoBtn">Salvar folha de ponto</button>
       </div>
+
+      <div class="card">
+        <h1 style="font-size:15px">Painel de Competência</h1>
+        <div class="small" style="margin-bottom:10px">Escolha um mês pra ver, de todos os funcionários, quem já entregou e quem ainda está faltando.</div>
+        <div class="row">
+          <div><label>Competência a conferir</label><input type="month" id="pPainelCompetencia"></div>
+          <div style="flex:none;display:flex;align-items:flex-end"><button class="btn-primary" id="pPainelVerBtn" style="width:auto">Ver competência</button></div>
+        </div>
+        <div id="pPainelStats" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin:10px 0"></div>
+        <table>
+          <thead><tr><th>Funcionário</th><th>Situação</th><th>Entregue em</th><th>Recebido</th><th>Assinatura</th><th>Arquivo</th></tr></thead>
+          <tbody id="pPainelBody"><tr><td colspan="6" class="small">Escolha uma competência e clique em "Ver competência".</td></tr></tbody>
+        </table>
+      </div>
+
       <div class="card">
         <div class="topbar" style="margin-bottom:12px">
-          <h1 style="font-size:15px">Folhas de ponto cadastradas</h1>
+          <h1 style="font-size:15px">Todas as folhas já lançadas</h1>
           <button class="btn-ghost" id="refreshPontoBtn">Atualizar lista</button>
         </div>
         <table>
-          <thead><tr><th>Funcionário</th><th>Cliente</th><th>Período</th><th>Enviada em</th><th>Situação</th><th></th></tr></thead>
-          <tbody id="pontoTableBody"><tr><td colspan="6" class="small">Carregando…</td></tr></tbody>
+          <thead><tr><th>Funcionário</th><th>Cliente</th><th>Competência</th><th>Entregue em</th><th>Recebido</th><th>Assinatura</th><th></th></tr></thead>
+          <tbody id="pontoTableBody"><tr><td colspan="7" class="small">Carregando…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -511,17 +558,19 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
           <button class="btn-ghost" id="refreshFeriasBtn">Atualizar lista</button>
         </div>
         <table>
-          <thead><tr><th>Funcionário</th><th>Início do período</th><th>Fim aquisitivo</th><th>Limite para gozar</th><th>Situação</th><th></th></tr></thead>
-          <tbody id="feriasTableBody"><tr><td colspan="6" class="small">Carregando…</td></tr></tbody>
+          <thead><tr><th>Funcionário</th><th>Início do período</th><th>Fim aquisitivo</th><th>Limite p/ 2ª gozar</th><th>Início das Férias</th><th>Dias de Gozo</th><th>Data de Retorno</th><th>Situação</th><th></th></tr></thead>
+          <tbody id="feriasTableBody"><tr><td colspan="9" class="small">Carregando…</td></tr></tbody>
         </table>
       </div>
       <div class="card hidden" id="gozoCard">
         <h1 style="font-size:15px">Registrar gozo de férias</h1>
         <div class="small" id="gozoFuncionarioNome" style="margin-bottom:10px"></div>
         <div class="row">
-          <div><label>Início do gozo *</label><input type="date" id="gozoInicio"></div>
-          <div><label>Fim do gozo *</label><input type="date" id="gozoFim"></div>
+          <div><label>Início das Férias *</label><input type="date" id="gozoInicio"></div>
+          <div><label>Dias de Gozo *</label><input type="number" id="gozoDias" value="30" min="1" max="30"></div>
+          <div><label>Data de Retorno</label><input type="date" id="gozoRetorno" disabled style="opacity:.7"></div>
         </div>
+        <div class="small" style="margin-bottom:12px">A Data de Retorno é calculada sozinha (Início das Férias + Dias de Gozo). O padrão é 30 dias — só mude se for férias fracionadas.</div>
         <button class="btn-primary" id="confirmarGozoBtn">Confirmar gozo (inicia novo período automaticamente)</button>
         <button class="btn-ghost" id="cancelarGozoBtn">Cancelar</button>
       </div>
@@ -717,13 +766,17 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     });
     document.getElementById('eEpiSelect').addEventListener('change', (e) => {
       document.getElementById('eEpiOutro').style.display = e.target.value === '__outro__' ? 'block' : 'none';
+      atualizarTrocaEpiAuto();
     });
+    document.getElementById('eEntrega').addEventListener('change', atualizarTrocaEpiAuto);
+    document.getElementById('eEpiOutro').addEventListener('input', atualizarTrocaEpiAuto);
 
     document.getElementById('saveAsoBtn').addEventListener('click', saveAso);
     document.getElementById('refreshAsoBtn').addEventListener('click', loadAsos);
     document.getElementById('saveEpiBtn').addEventListener('click', saveEpi);
     document.getElementById('refreshEpiBtn').addEventListener('click', loadEpis);
     document.getElementById('savePontoBtn').addEventListener('click', saveFolhaPonto);
+    document.getElementById('pPainelVerBtn').addEventListener('click', carregarPainelPonto);
     document.getElementById('refreshPontoBtn').addEventListener('click', loadFolhasPonto);
 
     // Anexo: se for imagem, tenta ler automaticamente (nunca aplica sozinho, sempre pede confirmação)
@@ -785,6 +838,8 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     document.getElementById('saveFeriasBtn').addEventListener('click', saveFerias);
     document.getElementById('refreshFeriasBtn').addEventListener('click', loadFerias);
     document.getElementById('confirmarGozoBtn').addEventListener('click', confirmarGozo);
+    document.getElementById('gozoInicio').addEventListener('input', calcularDataRetorno);
+    document.getElementById('gozoDias').addEventListener('input', calcularDataRetorno);
     document.getElementById('cancelarGozoBtn').addEventListener('click', () => document.getElementById('gozoCard').classList.add('hidden'));
   }
 
@@ -1053,7 +1108,14 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     if (tab === 'treino') { loadFuncionariosEm('tFuncionarioId'); loadTreinamentos(); }
     if (tab === 'aso') { loadFuncionariosEm('aFuncionarioId'); loadAsos(); }
     if (tab === 'epi') { loadFuncionariosEm('eFuncionarioId'); loadEpis(); }
-    if (tab === 'ponto') { loadFuncionariosEm('pFuncionarioId'); loadFolhasPonto(); }
+    if (tab === 'ponto') {
+      loadFuncionariosEm('pFuncionarioId'); loadFolhasPonto();
+      const hoje = new Date();
+      const mesAtualIso = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
+      if (!document.getElementById('pPainelCompetencia').value) document.getElementById('pPainelCompetencia').value = mesAtualIso;
+      if (!document.getElementById('pPeriodo').value) document.getElementById('pPeriodo').value = mesAtualIso;
+      carregarPainelPonto();
+    }
     if (tab === 'integ') { loadFuncionariosEm('iFuncionarioId'); loadIntegracoes(); }
     if (tab === 'ferias') { loadFuncionariosEm('vFuncionarioId'); loadFerias(); }
     if (tab === 'busca' && !funcionariosCache.length) loadFuncionariosEm('tFuncionarioId'); // só pra ter o cache pronto
@@ -1149,6 +1211,65 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     if (diasRestantes < 0) return 'bloqueado';
     if (diasRestantes <= 60) return 'pendente';
     return 'apto';
+  }
+
+  // ---------- Validade padrão por tipo de EPI (dias) — sempre o valor mais curto/conservador
+  // de cada faixa recomendada, por segurança (trocar mais cedo é mais seguro que trocar tarde) ----------
+  const EPI_VALIDADE = {
+    'Capacete de segurança': { anos: 3 },
+    'Óculos de segurança (impacto)': { dias: 180 },
+    'Óculos ampla visão': { dias: 180 },
+    'Protetor facial (Policarbonato/Acrílico)': { dias: 180 },
+    'Viseira / Protetor facial para solda': { dias: 180 },
+    'Máscara de solda (autoescurecimento)': { anos: 2 },
+    'Botina de couro (Bico de Aço)': { dias: 180 },
+    'Botina de couro (Bico de PVC/Composite)': { dias: 180 },
+    'Botina/Bota de PVC ou Borracha (Química)': { dias: 180 },
+    'Uniforme de trabalho (Brim/Algodão)': { dias: 180 },
+    'Cinto de segurança (tipo paraquedista)': { anos: 3 },
+    'Talabarte e trava-quedas': { anos: 3 },
+    'Luva de raspa': { dias: 7 },
+    'Luva de vaqueta': { dias: 30 },
+    'Luva nitrílica': { dias: 30 },
+    'Luva de neoprene/butyl (química)': { dias: 30 },
+    'Luva de alta voltagem/dielétrica': { dias: 180 },
+    'Luva para alta temperatura (Kevlar/Silicone)': { dias: 90 },
+    'Luva multitato': { dias: 15 },
+    'Avental de raspa': { dias: 90 },
+    'Avental de PVC/Impermeável (Químico)': { dias: 90 },
+    'Mangote de raspa/Kevlar': { dias: 90 },
+    'Perneira de raspa/proteção': { dias: 180 },
+    'Protetor auricular (tipo plug/inserção)': { dias: 30 },
+    'Protetor auricular (tipo concha/abafador)': { dias: 180 },
+    'Respirador PFF2/N95 (descartável)': { dias: 1 },
+    'Respirador semifacial (filtros trocáveis)': { anos: 1 },
+    'Capa de chuva / Conjunto de PVC': { dias: 90 },
+    'Protetor solar': { dias: 1 }, // não tem prazo legal fixo — segue a validade do produto; aqui força conferência frequente
+  };
+  // Compatibilidade: alguns trechos do código consultam se um EPI tem regra cadastrada
+  const EPI_VALIDADE_DIAS = Object.fromEntries(Object.keys(EPI_VALIDADE).map(k => [k, true]));
+  function calcularTrocaEpi(epi, entrega) {
+    const regra = EPI_VALIDADE[epi];
+    if (!regra || !entrega) return null;
+    const troca = new Date(entrega + 'T00:00:00');
+    if (regra.anos) troca.setFullYear(troca.getFullYear() + regra.anos); // anos usa setFullYear pra nunca errar por ano bissexto
+    else troca.setDate(troca.getDate() + regra.dias);
+    return troca.toISOString().slice(0, 10);
+  }
+  function atualizarTrocaEpiAuto() {
+    const epiSel = document.getElementById('eEpiSelect').value;
+    const epi = epiSel === '__outro__' ? document.getElementById('eEpiOutro').value.trim() : epiSel;
+    const entrega = document.getElementById('eEntrega').value;
+    const trocaCalculada = calcularTrocaEpi(epi, entrega);
+    const notaEl = document.getElementById('eTrocaAuto');
+    if (trocaCalculada) {
+      document.getElementById('eTroca').value = trocaCalculada;
+      notaEl.textContent = `Calculado automaticamente (validade padrão desse item). Pode ajustar se precisar.`;
+    } else if (EPI_VALIDADE_DIAS[epi] === undefined && epi) {
+      notaEl.textContent = 'Esse item não tem validade padrão cadastrada — preencha a data manualmente.';
+    } else {
+      notaEl.textContent = '';
+    }
   }
   // Converte data do banco (aaaa-mm-dd) para o padrão brasileiro (dd/mm/aaaa)
   function formatarDataBr(dataIso) {
@@ -1598,10 +1719,10 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     const docCol = (arquivo) => arquivo ? `<span class="file-link" data-baixar="${arquivo}">📥 Baixar</span>` : '<span class="small">sem arquivo</span>';
     const linhasAso = (asos.data || []).map(a => `<tr><td>${a.tipo || '—'}</td><td>${formatarDataBr(a.data_realizacao)}</td><td>${formatarDataBr(a.validade_data)}</td><td>${pill(a.validade_data)}</td><td>${docCol(a.arquivo)}</td></tr>`);
     const linhasTreino = (treinos.data || []).map(t => `<tr><td>${t.curso}</td><td>${formatarDataBr(t.data_realizacao)}</td><td>${formatarDataBr(t.validade_data)}</td><td>${pill(t.validade_data)}</td><td>${docCol(t.arquivo)}</td></tr>`);
-    const linhasEpi = (epis.data || []).map(e => `<tr><td>${e.epi}</td><td>${e.ca || '—'}</td><td>${formatarDataBr(e.entrega)}</td><td>${formatarDataBr(e.troca)}</td><td>${docCol(e.arquivo)}</td></tr>`);
+    const linhasEpi = (epis.data || []).map(e => `<tr><td>${e.epi}</td><td>${e.ca || '—'}</td><td>${formatarDataBr(e.entrega)}</td><td>${formatarDataBr(e.troca)}</td><td>${pill(e.troca)}</td><td>${docCol(e.arquivo)}</td></tr>`);
     const linhasInteg = (integs.data || []).map(i => `<tr><td>${i.empresa_integracao}</td><td>${i.obra || '—'}</td><td>${formatarDataBr(i.validade_data)}</td><td>${pill(i.validade_data)}</td><td>${docCol(i.arquivo)}</td></tr>`);
-    const linhasPonto = (pontos.data || []).map(p => `<tr><td>${p.cliente || '—'}</td><td>${p.periodo || '—'}</td><td>${formatarDataBr(p.data_envio)}</td><td>${docCol(p.arquivo)}</td></tr>`);
-    const linhasFerias = (ferias.data || []).map(v => `<tr><td>Início: ${formatarDataBr(v.inicio_periodo)}</td><td>Fim aquisitivo: ${formatarDataBr(v.fim_aquisitivo)}</td><td>Limite p/ gozar: ${formatarDataBr(v.limite_gozo)}</td><td>${pill(v.limite_gozo)}</td></tr>`);
+    const linhasPonto = (pontos.data || []).map(p => `<tr><td>${p.cliente || '—'}</td><td>${mesAnoParaTexto(p.periodo)}</td><td>${formatarDataBr(p.data_envio)}</td><td>Recebido: ${p.recebido ? 'Sim' : 'Não'} · Assinado: ${p.assinatura_funcionario ? 'Sim' : 'Não'}</td><td>${docCol(p.arquivo)}</td></tr>`);
+    const linhasFerias = (ferias.data || []).map(v => `<tr><td>Período: ${formatarDataBr(v.inicio_periodo)} a ${formatarDataBr(v.fim_aquisitivo)}</td><td>Limite p/ gozar: ${formatarDataBr(v.limite_gozo)}</td><td>${v.inicio_ferias ? `Últimas férias: ${formatarDataBr(v.inicio_ferias)} (${v.dias_gozo}d) — retorno ${formatarDataBr(v.data_retorno)}` : 'Ainda não gozou nesse período'}</td><td>${pill(v.limite_gozo)}</td></tr>`);
 
     resultDiv.innerHTML = `
       <div class="card" style="border:1px solid rgba(0,146,214,.5)">
@@ -1727,10 +1848,10 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
   let gozoFeriasIdAtual = null;
   async function loadFerias() {
     const tbody = document.getElementById('feriasTableBody');
-    tbody.innerHTML = '<tr><td colspan="6" class="small">Carregando…</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" class="small">Carregando…</td></tr>';
     const { data, error } = await sb.from('ferias').select('*, funcionarios(nome)').order('limite_gozo', { ascending: true });
-    if (error) { tbody.innerHTML = `<tr><td colspan="6" class="small" style="color:var(--danger)">Erro: ${error.message}</td></tr>`; return; }
-    if (!data.length) { tbody.innerHTML = '<tr><td colspan="6" class="small">Nenhum período cadastrado ainda.</td></tr>'; return; }
+    if (error) { tbody.innerHTML = `<tr><td colspan="9" class="small" style="color:var(--danger)">Erro: ${error.message}</td></tr>`; return; }
+    if (!data.length) { tbody.innerHTML = '<tr><td colspan="9" class="small">Nenhum período cadastrado ainda.</td></tr>'; return; }
     const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
     tbody.innerHTML = data.map(v => {
       const dias = v.limite_gozo ? Math.round((new Date(v.limite_gozo + 'T00:00:00') - hoje) / 86400000) : null;
@@ -1740,6 +1861,9 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
         <td>${formatarDataBr(v.inicio_periodo)}</td>
         <td>${formatarDataBr(v.fim_aquisitivo)}</td>
         <td>${formatarDataBr(v.limite_gozo)}</td>
+        <td>${formatarDataBr(v.inicio_ferias)}</td>
+        <td>${v.dias_gozo || '—'}</td>
+        <td>${formatarDataBr(v.data_retorno)}</td>
         <td><span class="pill ${status}">${status}${dias !== null ? ' (' + dias + 'd)' : ''}</span></td>
         <td>
           <button class="file-link" data-id="${v.id}" data-nome="${v.funcionarios ? v.funcionarios.nome : ''}">Registrar gozo</button>
@@ -1782,37 +1906,49 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     loadFerias();
   }
 
+  function calcularDataRetorno() {
+    const inicio = document.getElementById('gozoInicio').value;
+    const diasGozo = parseInt(document.getElementById('gozoDias').value) || 0;
+    if (!inicio || !diasGozo) { document.getElementById('gozoRetorno').value = ''; return null; }
+    const retorno = new Date(inicio + 'T00:00:00'); retorno.setDate(retorno.getDate() + diasGozo);
+    const retornoIso = retorno.toISOString().slice(0, 10);
+    document.getElementById('gozoRetorno').value = retornoIso;
+    return retornoIso;
+  }
+
   function abrirGozo(feriasId, nomeFuncionario) {
     gozoFeriasIdAtual = feriasId;
     document.getElementById('gozoFuncionarioNome').textContent = `Funcionário: ${nomeFuncionario}`;
     document.getElementById('gozoInicio').value = '';
-    document.getElementById('gozoFim').value = '';
+    document.getElementById('gozoDias').value = '30';
+    document.getElementById('gozoRetorno').value = '';
     document.getElementById('gozoCard').classList.remove('hidden');
     document.getElementById('gozoCard').scrollIntoView({ behavior: 'smooth' });
   }
 
   async function confirmarGozo() {
     const inicio = document.getElementById('gozoInicio').value;
-    const fim = document.getElementById('gozoFim').value;
-    if (!inicio || !fim) { showAppStatus('err', 'Preencha o início e o fim do gozo.'); return; }
-    if (fim < inicio) { showAppStatus('err', 'A data de fim não pode ser antes do início.'); return; }
+    const diasGozo = parseInt(document.getElementById('gozoDias').value) || 0;
+    if (!inicio) { showAppStatus('err', 'Preencha o início das férias.'); return; }
+    if (!diasGozo || diasGozo < 1) { showAppStatus('err', 'Dias de gozo precisa ser pelo menos 1.'); return; }
 
-    // O novo período aquisitivo começa no dia seguinte ao fim do gozo — reinicia o ciclo.
-    const novoInicio = new Date(fim + 'T00:00:00'); novoInicio.setDate(novoInicio.getDate() + 1);
-    const novoInicioIso = novoInicio.toISOString().slice(0, 10);
-    const novoFimAquisitivo = new Date(novoInicioIso + 'T00:00:00'); novoFimAquisitivo.setFullYear(novoFimAquisitivo.getFullYear() + 1);
-    const novoLimiteGozo = new Date(novoInicioIso + 'T00:00:00'); novoLimiteGozo.setFullYear(novoLimiteGozo.getFullYear() + 2);
+    const dataRetornoIso = calcularDataRetorno();
+
+    // O novo período aquisitivo começa no dia de retorno ao trabalho — reinicia o ciclo.
+    const novoFimAquisitivo = new Date(dataRetornoIso + 'T00:00:00'); novoFimAquisitivo.setFullYear(novoFimAquisitivo.getFullYear() + 1);
+    const novoLimiteGozo = new Date(dataRetornoIso + 'T00:00:00'); novoLimiteGozo.setFullYear(novoLimiteGozo.getFullYear() + 2);
     const dias = Math.round((novoLimiteGozo - new Date()) / 86400000);
 
     showAppStatus('info', 'Registrando gozo e iniciando novo período…');
     const { error } = await sb.from('ferias').update({
-      inicio_periodo: novoInicioIso,
+      inicio_periodo: dataRetornoIso,
       fim_aquisitivo: novoFimAquisitivo.toISOString().slice(0, 10),
       limite_gozo: novoLimiteGozo.toISOString().slice(0, 10),
+      inicio_ferias: inicio, dias_gozo: diasGozo, data_retorno: dataRetornoIso,
       status: calcularStatus(dias),
     }).eq('id', gozoFeriasIdAtual);
     if (error) { showAppStatus('err', 'Erro ao registrar gozo: ' + error.message); return; }
-    showAppStatus('ok', 'Gozo registrado — novo período aquisitivo já começou automaticamente.');
+    showAppStatus('ok', `Gozo registrado — retorno em ${formatarDataBr(dataRetornoIso)}, novo período aquisitivo já começou automaticamente.`);
     document.getElementById('gozoCard').classList.add('hidden');
     loadFerias();
   }
@@ -1839,7 +1975,7 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
       { nome: 'Funcionários', dados: funcs.data || [], icone: '👷', tab: 'func', semVencimento: true },
       { nome: 'ASOs', dados: asos.data || [], icone: '🩺', tab: 'aso', campoValidade: 'validade_data' },
       { nome: 'Treinamentos / NRs', dados: treinos.data || [], icone: '🎓', tab: 'treino', campoValidade: 'validade_data' },
-      { nome: 'EPIs', dados: epis.data || [], icone: '🦺', tab: 'epi', semVencimento: true },
+      { nome: 'EPIs', dados: epis.data || [], icone: '🦺', tab: 'epi', campoValidade: 'troca' },
       { nome: 'Integrações', dados: integs.data || [], icone: '🏢', tab: 'integ', campoValidade: 'validade_data' },
       { nome: 'Folha de Ponto', dados: pontos.data || [], icone: '🕒', tab: 'ponto', semVencimento: true },
       { nome: 'Férias', dados: ferias.data || [], icone: '🏖️', tab: 'ferias', campoValidade: 'limite_gozo' },
@@ -1879,7 +2015,7 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
         if (dias !== null && dias <= 60) {
           alertas.push({
             funcionario: d.funcionarios ? d.funcionarios.nome : '—',
-            oque: `${m.icone} ${m.nome}${d.curso ? ' — ' + d.curso : ''}${d.tipo ? ' — ' + d.tipo : ''}${d.empresa_integracao ? ' — ' + d.empresa_integracao : ''}`,
+            oque: `${m.icone} ${m.nome}${d.curso ? ' — ' + d.curso : ''}${d.tipo ? ' — ' + d.tipo : ''}${d.empresa_integracao ? ' — ' + d.empresa_integracao : ''}${d.epi ? ' — ' + d.epi : ''}`,
             validade: d[m.campoValidade], dias, tab: m.tab,
           });
         }
@@ -1907,10 +2043,10 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
   // ================= CRUD: ASOs =================
   async function loadAsos() {
     const tbody = document.getElementById('asoTableBody');
-    tbody.innerHTML = '<tr><td colspan="6" class="small">Carregando…</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="small">Carregando…</td></tr>';
     const { data, error } = await sb.from('asos').select('*, funcionarios(nome)').order('validade_data', { ascending: true });
-    if (error) { tbody.innerHTML = `<tr><td colspan="6" class="small" style="color:var(--danger)">Erro: ${error.message}</td></tr>`; return; }
-    if (!data.length) { tbody.innerHTML = '<tr><td colspan="6" class="small">Nenhum ASO cadastrado ainda.</td></tr>'; return; }
+    if (error) { tbody.innerHTML = `<tr><td colspan="8" class="small" style="color:var(--danger)">Erro: ${error.message}</td></tr>`; return; }
+    if (!data.length) { tbody.innerHTML = '<tr><td colspan="8" class="small">Nenhum ASO cadastrado ainda.</td></tr>'; return; }
     const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
     tbody.innerHTML = data.map(a => {
       const dias = a.validade_data ? Math.round((new Date(a.validade_data + 'T00:00:00') - hoje) / 86400000) : null;
@@ -1920,6 +2056,8 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
         <td>${a.tipo || '—'}</td>
         <td>${formatarDataBr(a.data_realizacao)}</td>
         <td>${formatarDataBr(a.validade_data)}</td>
+        <td>${a.medico_trabalho || '—'}</td>
+        <td>${a.clinica || '—'}</td>
         <td><span class="pill ${status}">${status}${dias !== null ? ' (' + dias + 'd)' : ''}</span></td>
         <td><button class="del-btn" data-id="${a.id}">Excluir</button></td>
       </tr>`;
@@ -1952,10 +2090,12 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     const { error } = await sb.from('asos').insert({
       funcionario_id: funcionarioId, tipo, data_realizacao: dataRealizacao,
       validade_data: validadeData, status: calcularStatus(diasRestantes), arquivo: caminhoArquivo,
+      medico_trabalho: document.getElementById('aMedico').value.trim() || null,
+      clinica: document.getElementById('aClinica').value.trim() || null,
     });
     if (error) { showAppStatus('err', 'Erro ao salvar: ' + error.message); return; }
     showAppStatus('ok', `ASO salvo — validade até ${formatarDataBr(validadeData)}.`);
-    ['aData', 'aArquivo', 'aFuncionarioBusca'].forEach(id => document.getElementById(id).value = '');
+    ['aData', 'aArquivo', 'aFuncionarioBusca', 'aMedico', 'aClinica'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('aTipo').value = '';
     document.getElementById('aArquivoNome').textContent = '';
     document.getElementById('aArquivoRemover').style.display = 'none';
@@ -1975,19 +2115,25 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
   // ================= CRUD: EPIs =================
   async function loadEpis() {
     const tbody = document.getElementById('epiTableBody');
-    tbody.innerHTML = '<tr><td colspan="7" class="small">Carregando…</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="small">Carregando…</td></tr>';
     const { data, error } = await sb.from('epis').select('*, funcionarios(nome)').order('troca', { ascending: true });
-    if (error) { tbody.innerHTML = `<tr><td colspan="7" class="small" style="color:var(--danger)">Erro: ${error.message}</td></tr>`; return; }
-    if (!data.length) { tbody.innerHTML = '<tr><td colspan="7" class="small">Nenhum EPI cadastrado ainda.</td></tr>'; return; }
-    tbody.innerHTML = data.map(e => `<tr>
+    if (error) { tbody.innerHTML = `<tr><td colspan="8" class="small" style="color:var(--danger)">Erro: ${error.message}</td></tr>`; return; }
+    if (!data.length) { tbody.innerHTML = '<tr><td colspan="8" class="small">Nenhum EPI cadastrado ainda.</td></tr>'; return; }
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    tbody.innerHTML = data.map(e => {
+      const dias = e.troca ? Math.round((new Date(e.troca + 'T00:00:00') - hoje) / 86400000) : null;
+      const status = dias !== null ? calcularStatus(dias) : null;
+      return `<tr>
         <td>${e.funcionarios ? e.funcionarios.nome : '—'}</td>
         <td>${e.epi}</td>
         <td>${e.ca || '—'}</td>
         <td>${formatarDataBr(e.entrega)}</td>
         <td>${formatarDataBr(e.troca)}</td>
+        <td>${status ? `<span class="pill ${status}">${status}${dias !== null ? ' (' + dias + 'd)' : ''}</span>` : '<span class="small">—</span>'}</td>
         <td>${e.arquivo ? `<span class="file-link" data-arquivo="${e.arquivo}">Ver</span> · <span class="file-link" data-baixar="${e.arquivo}">Baixar</span>` : '<span class="small">—</span>'}</td>
         <td><button class="del-btn" data-id="${e.id}">Excluir</button></td>
-      </tr>`).join('');
+      </tr>`;
+    }).join('');
     tbody.querySelectorAll('.del-btn').forEach(btn => btn.addEventListener('click', () => deleteEpi(btn.getAttribute('data-id'))));
     tbody.querySelectorAll('[data-arquivo]').forEach(link => link.addEventListener('click', () => abrirArquivo(link.getAttribute('data-arquivo'))));
     tbody.querySelectorAll('[data-baixar]').forEach(link => link.addEventListener('click', () => baixarArquivo(link.getAttribute('data-baixar'))));
@@ -1998,9 +2144,16 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     const epiSelecionado = document.getElementById('eEpiSelect').value;
     const epi = epiSelecionado === '__outro__' ? document.getElementById('eEpiOutro').value.trim() : epiSelecionado;
     const entrega = document.getElementById('eEntrega').value;
+    const troca = document.getElementById('eTroca').value || null;
     if (!funcionarioId) { showAppStatus('err', 'Selecione o funcionário.'); return; }
     if (!epi) { showAppStatus('err', 'Selecione (ou digite) o EPI.'); return; }
     if (!entrega) { showAppStatus('err', 'Digite a data de entrega.'); return; }
+
+    let status = 'apto';
+    if (troca) {
+      const dias = Math.round((new Date(troca + 'T00:00:00') - new Date()) / 86400000);
+      status = calcularStatus(dias);
+    }
 
     const arquivoFile = document.getElementById('eArquivo').files[0];
     let caminhoArquivo = null;
@@ -2014,16 +2167,16 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     const { error } = await sb.from('epis').insert({
       funcionario_id: funcionarioId, epi,
       ca: document.getElementById('eCa').value.trim() || null,
-      entrega, troca: document.getElementById('eTroca').value || null,
-      status: 'apto', arquivo: caminhoArquivo,
+      entrega, troca, status, arquivo: caminhoArquivo,
     });
     if (error) { showAppStatus('err', 'Erro ao salvar: ' + error.message); return; }
-    showAppStatus('ok', `EPI salvo com sucesso.${caminhoArquivo ? ' Ficha anexada.' : ''}`);
+    showAppStatus('ok', `EPI salvo com sucesso.${troca ? ` Próxima troca: ${formatarDataBr(troca)}.` : ''}${caminhoArquivo ? ' Ficha anexada.' : ''}`);
     ['eCa', 'eEntrega', 'eTroca', 'eEpiOutro', 'eFuncionarioBusca', 'eArquivo'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('eEpiSelect').value = '';
     document.getElementById('eEpiOutro').style.display = 'none';
     document.getElementById('eArquivoNome').textContent = '';
     document.getElementById('eArquivoRemover').style.display = 'none';
+    document.getElementById('eTrocaAuto').textContent = '';
     renderFuncionarioOptionsEm('eFuncionarioId', funcionariosCache);
     loadEpis();
   }
@@ -2037,25 +2190,38 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
   }
 
   // ================= CRUD: Folha de Ponto =================
+  function mesAnoParaTexto(mesAno) {
+    if (!mesAno) return '—';
+    // Se não estiver no formato aaaa-mm (ex: já for texto antigo tipo "Julho/2026",
+    // de antes dessa atualização), mostra como já está — evita "undefined/Julho/2026".
+    if (!/^\d{4}-\d{2}$/.test(mesAno)) return mesAno;
+    const [ano, mes] = mesAno.split('-');
+    const nomesMeses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    return `${nomesMeses[parseInt(mes) - 1]}/${ano}`;
+  }
+  // Converte "aaaa-mm" pro texto legado "Mês/aaaa", pra reconhecer registros salvos
+  // antes dessa atualização (que guardavam o período assim, em vez de aaaa-mm).
+  function mesAnoParaTextoLegado(mesAnoIso) {
+    const nomesMeses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    const [ano, mes] = mesAnoIso.split('-');
+    return `${nomesMeses[parseInt(mes) - 1]}/${ano}`;
+  }
+
   async function loadFolhasPonto() {
     const tbody = document.getElementById('pontoTableBody');
-    tbody.innerHTML = '<tr><td colspan="6" class="small">Carregando…</td></tr>';
-    const { data, error } = await sb.from('folhas_ponto').select('*, funcionarios(nome)').order('data_envio', { ascending: false });
-    if (error) { tbody.innerHTML = `<tr><td colspan="6" class="small" style="color:var(--danger)">Erro: ${error.message}</td></tr>`; return; }
-    if (!data.length) { tbody.innerHTML = '<tr><td colspan="6" class="small">Nenhuma folha de ponto cadastrada ainda.</td></tr>'; return; }
-    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
-    tbody.innerHTML = data.map(p => {
-      const dias = p.validade_data ? Math.round((new Date(p.validade_data + 'T00:00:00') - hoje) / 86400000) : null;
-      const status = dias !== null ? calcularStatus(dias) : (p.status || 'apto');
-      return `<tr>
+    tbody.innerHTML = '<tr><td colspan="7" class="small">Carregando…</td></tr>';
+    const { data, error } = await sb.from('folhas_ponto').select('*, funcionarios(nome)').order('periodo', { ascending: false });
+    if (error) { tbody.innerHTML = `<tr><td colspan="7" class="small" style="color:var(--danger)">Erro: ${error.message}</td></tr>`; return; }
+    if (!data.length) { tbody.innerHTML = '<tr><td colspan="7" class="small">Nenhuma folha de ponto cadastrada ainda.</td></tr>'; return; }
+    tbody.innerHTML = data.map(p => `<tr>
         <td>${p.funcionarios ? p.funcionarios.nome : '—'}</td>
         <td>${p.cliente || '—'}</td>
-        <td>${p.periodo || '—'}</td>
+        <td>${mesAnoParaTexto(p.periodo)}</td>
         <td>${formatarDataBr(p.data_envio)}</td>
-        <td><span class="pill ${status}">${status}</span></td>
+        <td>${p.recebido ? 'Sim' : 'Não'}</td>
+        <td>${p.assinatura_funcionario ? 'Sim' : 'Não'}</td>
         <td><button class="del-btn" data-id="${p.id}">Excluir</button></td>
-      </tr>`;
-    }).join('');
+      </tr>`).join('');
     tbody.querySelectorAll('.del-btn').forEach(btn => btn.addEventListener('click', () => deleteFolhaPonto(btn.getAttribute('data-id'))));
   }
 
@@ -2064,17 +2230,8 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     const periodoMes = document.getElementById('pPeriodo').value; // formato aaaa-mm do <input type=month>
     const dataEnvio = document.getElementById('pDataEnvio').value;
     if (!funcionarioId) { showAppStatus('err', 'Selecione o funcionário.'); return; }
-    if (!periodoMes) { showAppStatus('err', 'Selecione o período (mês/ano).'); return; }
-    if (!dataEnvio) { showAppStatus('err', 'Digite a data de envio.'); return; }
-
-    const [ano, mes] = periodoMes.split('-');
-    const nomesMeses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-    const periodoTexto = `${nomesMeses[parseInt(mes) - 1]}/${ano}`;
-
-    const dataVal = new Date(dataEnvio + 'T00:00:00');
-    dataVal.setDate(dataVal.getDate() + 30); // próxima folha em ~30 dias, ciclo mensal
-    const validadeData = dataVal.toISOString().slice(0, 10);
-    const diasRestantes = Math.round((dataVal - new Date()) / 86400000);
+    if (!periodoMes) { showAppStatus('err', 'Selecione a competência (mês/ano).'); return; }
+    if (!dataEnvio) { showAppStatus('err', 'Digite a data da entrega.'); return; }
 
     const arquivoFile = document.getElementById('pArquivo').files[0];
     let caminhoArquivo = null;
@@ -2087,17 +2244,23 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     showAppStatus('info', 'Salvando…');
     const { error } = await sb.from('folhas_ponto').insert({
       funcionario_id: funcionarioId, cliente: document.getElementById('pCliente').value.trim() || null,
-      obra: document.getElementById('pObra').value.trim() || null, periodo: periodoTexto,
-      data_envio: dataEnvio, validade_data: validadeData, status: calcularStatus(diasRestantes), arquivo: caminhoArquivo,
+      obra: document.getElementById('pObra').value.trim() || null, periodo: periodoMes,
+      data_envio: dataEnvio,
+      recebido: document.getElementById('pRecebido').value === 'sim',
+      assinatura_funcionario: document.getElementById('pAssinatura').value === 'sim',
+      arquivo: caminhoArquivo, status: 'entregue',
     });
     if (error) { showAppStatus('err', 'Erro ao salvar: ' + error.message); return; }
-    showAppStatus('ok', 'Folha de ponto salva com sucesso.');
+    showAppStatus('ok', `Folha de ponto de ${mesAnoParaTexto(periodoMes)} salva com sucesso — já aparece como Entregue.`);
     ['pCliente', 'pObra', 'pDataEnvio', 'pArquivo', 'pFuncionarioBusca'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('pPeriodo').value = '';
+    document.getElementById('pRecebido').value = 'sim';
+    document.getElementById('pAssinatura').value = 'sim';
     document.getElementById('pArquivoNome').textContent = '';
     document.getElementById('pArquivoRemover').style.display = 'none';
     renderFuncionarioOptionsEm('pFuncionarioId', funcionariosCache);
     loadFolhasPonto();
+    if (document.getElementById('pPainelCompetencia').value) carregarPainelPonto();
   }
 
   async function deleteFolhaPonto(id) {
@@ -2106,6 +2269,68 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     if (error) { showAppStatus('err', 'Erro ao excluir: ' + error.message); return; }
     showAppStatus('ok', 'Excluído do banco de dados.');
     loadFolhasPonto();
+    if (document.getElementById('pPainelCompetencia').value) carregarPainelPonto();
+  }
+
+  // ================= Painel de Competência — cruza todos os funcionários contra quem já entregou =================
+  async function carregarPainelPonto() {
+    const competencia = document.getElementById('pPainelCompetencia').value; // formato aaaa-mm
+    if (!competencia) { showAppStatus('err', 'Escolha uma competência.'); return; }
+
+    document.getElementById('pPainelBody').innerHTML = '<tr><td colspan="6" class="small">Carregando…</td></tr>';
+
+    const [funcs, folhas] = await Promise.all([
+      sb.from('funcionarios').select('*'),
+      sb.from('folhas_ponto').select('*'), // busca tudo e filtra abaixo, pra reconhecer registros antigos também
+    ]);
+    const todosFuncionarios = funcs.data || [];
+    // Reconhece a competência tanto no formato novo (aaaa-mm) quanto no formato antigo em texto
+    // (ex: "Julho/2026"), caso existam registros salvos antes dessa atualização.
+    const competenciaLegado = mesAnoParaTextoLegado(competencia);
+    const folhasDaCompetencia = (folhas.data || []).filter(p => p.periodo === competencia || p.periodo === competenciaLegado);
+
+    const hoje = new Date();
+    const anoAtual = hoje.getFullYear(), mesAtual = hoje.getMonth() + 1;
+    const [anoComp, mesComp] = competencia.split('-').map(Number);
+    // "atual ou futura" -> ainda dentro do prazo normal (amarelo); só "já passou" vira vermelho
+    const aindaNoPrazo = anoComp > anoAtual || (anoComp === anoAtual && mesComp >= mesAtual);
+
+    let entregues = 0, pendentes = 0, naoEntregues = 0;
+    const linhas = todosFuncionarios.map(f => {
+      const folha = folhasDaCompetencia.find(p => p.funcionario_id === f.id);
+      let situacao, corPill;
+      if (folha) { situacao = '🟢 Entregue'; corPill = 'apto'; entregues++; }
+      else if (aindaNoPrazo) { situacao = '🟡 Pendente'; corPill = 'pendente'; pendentes++; }
+      else { situacao = '🔴 Não Entregue'; corPill = 'bloqueado'; naoEntregues++; }
+      return `<tr>
+        <td>${f.nome}</td>
+        <td><span class="pill ${corPill}">${situacao}</span></td>
+        <td>${folha ? formatarDataBr(folha.data_envio) : '—'}</td>
+        <td>${folha ? (folha.recebido ? 'Sim' : 'Não') : '—'}</td>
+        <td>${folha ? (folha.assinatura_funcionario ? 'Sim' : 'Não') : '—'}</td>
+        <td>${folha && folha.arquivo ? `<span class="file-link" data-baixar="${folha.arquivo}">Baixar</span>` : '—'}</td>
+      </tr>`;
+    });
+
+    document.getElementById('pPainelBody').innerHTML = linhas.join('') || '<tr><td colspan="6" class="small">Nenhum funcionário cadastrado ainda.</td></tr>';
+    document.querySelectorAll('#pPainelBody [data-baixar]').forEach(link => link.addEventListener('click', () => baixarArquivo(link.getAttribute('data-baixar'))));
+
+    const total = todosFuncionarios.length;
+    const percentual = total ? Math.round((entregues / total) * 100) : 0;
+    document.getElementById('pPainelStats').innerHTML = `
+      <div class="card" style="text-align:center;padding:12px"><div style="font-size:20px;font-weight:800">${total}</div><div class="small">Total de funcionários</div></div>
+      <div class="card" style="text-align:center;padding:12px"><div style="font-size:20px;font-weight:800;color:var(--success)">${entregues}</div><div class="small">Entregues</div></div>
+      <div class="card" style="text-align:center;padding:12px"><div style="font-size:20px;font-weight:800;color:var(--warning)">${pendentes}</div><div class="small">Pendentes</div></div>
+      <div class="card" style="text-align:center;padding:12px"><div style="font-size:20px;font-weight:800;color:var(--danger)">${naoEntregues}</div><div class="small">Sem folha (não entregue)</div></div>
+      <div class="card" style="text-align:center;padding:12px"><div style="font-size:20px;font-weight:800">${percentual}%</div><div class="small">% de entrega</div></div>
+    `;
+
+    if (naoEntregues > 0 || pendentes > 0) {
+      const faltantes = todosFuncionarios.filter(f => !folhasDaCompetencia.some(p => p.funcionario_id === f.id));
+      showAppStatus('info', `${faltantes.length} funcionário(s) sem folha de ponto da competência ${mesAnoParaTexto(competencia)}.`);
+    } else {
+      showAppStatus('ok', `Todos entregaram a folha de ${mesAnoParaTexto(competencia)}.`);
+    }
   }
 
   boot();
