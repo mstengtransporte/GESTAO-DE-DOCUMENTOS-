@@ -22,6 +22,10 @@ h1{font-size:20px;margin:0 0 4px;}
 .sub{color:var(--text-secondary);font-size:13px;margin-bottom:20px;}
 label{display:block;font-size:11.5px;color:var(--text-secondary);margin-bottom:5px;font-weight:600;}
 input,select{width:100%;background:var(--surface-1);border:1px solid var(--surface-border);border-radius:9px;padding:9px 12px;color:var(--text-primary);font-size:13px;margin-bottom:12px;font-family:inherit;}
+/* A lista suspensa aberta usa o tema do sistema operacional em muitos navegadores, que ignora o
+   fundo semi-transparente do select — por isso as opções ficam explícitas com fundo sólido e texto
+   escuro em negrito, garantindo que sempre apareçam legíveis, não importa o navegador. */
+select option{background:#ffffff;color:#0b1220;font-weight:600;padding:6px;}
 button{cursor:pointer;font-weight:600;font-size:13px;border-radius:9px;padding:9px 16px;border:1px solid transparent;font-family:inherit;}
 .btn-primary{background:linear-gradient(135deg,var(--blue-500),#0b6fb0);color:#fff;}
 .btn-ghost{background:var(--surface-1);border-color:var(--surface-border);color:var(--text-primary);}
@@ -95,17 +99,46 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     </div>
 
     <div class="row" style="margin-bottom:16px">
+      <button class="btn-ghost" id="tabBuscaBtn" style="flex:none">🔍 Ficha Completa</button>
       <button class="btn-primary" id="tabFuncBtn" style="flex:none">Funcionários</button>
       <button class="btn-ghost" id="tabTreinoBtn" style="flex:none">Treinamentos / NRs</button>
       <button class="btn-ghost" id="tabAsoBtn" style="flex:none">ASOs</button>
       <button class="btn-ghost" id="tabEpiBtn" style="flex:none">EPIs</button>
       <button class="btn-ghost" id="tabPontoBtn" style="flex:none">Folha de Ponto</button>
+      <button class="btn-ghost" id="tabIntegBtn" style="flex:none">Integração de Cliente</button>
+      <button class="btn-ghost" id="tabFeriasBtn" style="flex:none">Férias</button>
+      <button class="btn-ghost" id="tabDashBtn" style="flex:none">📊 Dashboard</button>
     </div>
 
     <div id="appStatus" class="status"></div>
 
     <!-- ============ ABA: FUNCIONÁRIOS ============ -->
-    <div id="tabFuncionarios">
+    <!-- ============ ABA: FICHA COMPLETA (busca tudo de um funcionário) ============ -->
+    <div id="tabBusca" class="hidden">
+      <div class="card">
+        <h1 style="font-size:15px">🔍 Buscar tudo de um funcionário</h1>
+        <div class="small" style="margin-bottom:10px">Digite o nome ou o CPF — o sistema vai varrer todas as seções (ASOs, NRs, EPIs, Integrações, Folha de Ponto, Férias) e trazer tudo o que estiver registrado dessa pessoa, mesmo estando cada coisa numa seção diferente.</div>
+        <div class="row">
+          <div style="flex:2"><input type="text" id="buscaTermo" placeholder="Nome ou CPF…"></div>
+          <div style="flex:none"><button class="btn-primary" id="buscaBtn" style="width:auto">Buscar</button></div>
+        </div>
+      </div>
+      <div id="fichaResultado"></div>
+    </div>
+
+    <div id="tabFuncionarios" class="hidden">
+      <div class="card" style="border:1px solid rgba(0,146,214,.4)">
+        <h1 style="font-size:15px">📋 Importação Completa — uma planilha com tudo</h1>
+        <div class="small" style="margin-bottom:10px">
+          Cole aqui uma planilha do Excel com <b>uma linha por funcionário</b> e quantas colunas quiser — o sistema lê o
+          <b>nome de cada coluna</b> (a primeira linha) e distribui sozinho cada informação pro lugar certo: funcionário,
+          ASO, cada NR, integração, férias. Colunas que você não usar podem ficar em branco ou nem existir.
+        </div>
+        <button class="btn-ghost" id="baixarModeloBtn" style="margin-bottom:10px">⬇️ Baixar modelo (.csv) para preencher no Excel</button>
+        <textarea id="importCompletaArea" style="min-height:140px" placeholder="Cole aqui a planilha inteira (com a linha de cabeçalho no topo)…"></textarea>
+        <button class="btn-primary" id="importCompletaBtn">Importar tudo</button>
+        <div id="importResumo" class="hidden" style="margin-top:12px;background:rgba(0,0,0,.2);border-radius:9px;padding:12px;font-size:12px;white-space:pre-wrap"></div>
+      </div>
       <div class="card">
         <h1 style="font-size:15px">Novo funcionário</h1>
         <div class="row">
@@ -150,7 +183,7 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
       <div class="card">
         <h1 style="font-size:15px">Cadastro em massa — vários funcionários de uma vez</h1>
         <div class="small" style="margin-bottom:10px">
-          Cole uma linha por funcionário, nessa ordem: <b>Nome, CPF, Cargo, Telefone</b> — separado por Tab, vírgula ou ponto e vírgula (do jeito que copia do Excel).
+          Cole direto do Excel (colunas: <b>Nome, CPF, Cargo, Telefone</b>) — o sistema reconhece sozinho o separador, não precisa arrumar vírgula nem ponto e vírgula.
         </div>
         <textarea id="fBulkArea" placeholder="João Pedro Alves, 111.111.111-11, Soldador, (11) 90000-0001&#10;Marcia Souza Lima, 222.222.222-22, Encarregada, (11) 90000-0002"></textarea>
         <button class="btn-primary" id="fBulkBtn">Cadastrar todos</button>
@@ -233,7 +266,7 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
       <div class="card">
         <h1 style="font-size:15px">Cadastro em massa — vários treinamentos de uma vez</h1>
         <div class="small" style="margin-bottom:10px">
-          Cole uma linha por treinamento, nessa ordem: <b>Nome do funcionário (já cadastrado), Curso/NR, Data de realização (dd/mm/aaaa)</b>.
+          Cole direto do Excel (colunas: <b>Nome do funcionário já cadastrado, Curso/NR, Data de realização dd/mm/aaaa</b>) — o sistema reconhece sozinho o separador.
         </div>
         <textarea id="tBulkArea" placeholder="Carlos Andrade, NR-35 Trabalho em Altura, 15/01/2026&#10;Marcia Souza Lima, NR-10 Segurança em Eletricidade, 20/02/2026"></textarea>
         <button class="btn-primary" id="tBulkBtn">Cadastrar todos</button>
@@ -390,6 +423,128 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
         </table>
       </div>
     </div>
+
+    <!-- ============ ABA: INTEGRAÇÃO DE CLIENTE ============ -->
+    <div id="tabInteg" class="hidden">
+      <div class="card">
+        <h1 style="font-size:15px">Nova Integração de Cliente</h1>
+        <div class="small" style="margin-bottom:12px">Validade padrão de 1 ano. Aviso de vencimento começa 60 dias antes.</div>
+        <label>Buscar funcionário</label>
+        <input type="text" id="iFuncionarioBusca" placeholder="Digite o nome pra filtrar a lista abaixo…">
+        <div class="row">
+          <div style="flex:2"><label>Funcionário *</label><select id="iFuncionarioId"><option value="">Carregando…</option></select></div>
+          <div><label>Data de realização *</label><input type="date" id="iData"></div>
+        </div>
+        <div class="row">
+          <div><label>Empresa / Cliente *</label>
+            <select id="iEmpresaSelect">
+              <option value="">Selecionar…</option>
+              <option value="ABL">ABL</option>
+              <option value="CARIFLEX">CARIFLEX</option>
+              <option value="COMBIO">COMBIO</option>
+              <option value="CRODA">CRODA</option>
+              <option value="HENKEL ITAPEVI">HENKEL ITAPEVI</option>
+              <option value="HENKEL JUNDIAÍ">HENKEL JUNDIAÍ</option>
+              <option value="IPIRANGA POOL PAULÍNIA">IPIRANGA POOL PAULÍNIA</option>
+              <option value="MESSER">MESSER</option>
+              <option value="NOURYON ITUPEVA">NOURYON ITUPEVA</option>
+              <option value="NOURYON JUNDIAÍ">NOURYON JUNDIAÍ</option>
+              <option value="ORION">ORION</option>
+              <option value="SYENSQO ITATIBA">SYENSQO ITATIBA</option>
+              <option value="SYENSQO TABOÃO DA SERRA">SYENSQO TABOÃO DA SERRA</option>
+              <option value="UNILEVER">UNILEVER</option>
+              <option value="ZOETIS CAMPINAS">ZOETIS CAMPINAS</option>
+              <option value="ZOETIS PAULÍNIA">ZOETIS PAULÍNIA</option>
+              <option value="__outro__">Outra empresa (digitar)</option>
+            </select>
+            <input type="text" id="iEmpresaOutro" placeholder="Nome da empresa" style="display:none">
+          </div>
+          <div><label>Obra</label><input type="text" id="iObra"></div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Certificado de integração (PDF ou foto)</label>
+            <input type="file" id="iArquivo" accept=".pdf,.jpg,.jpeg,.png">
+            <div class="small" id="iArquivoNome"></div>
+            <button type="button" class="btn-ghost" id="iArquivoRemover" style="display:none;font-size:11.5px;padding:6px 12px;margin-top:6px">✕ Remover arquivo / anexar outro</button>
+          </div>
+        </div>
+        <div id="ocrSuggestionBoxInteg" class="hidden" style="background:var(--warning-bg);border:1px solid rgba(232,163,61,.4);border-radius:9px;padding:12px 14px;margin-bottom:12px;font-size:12.5px">
+          <b style="color:var(--warning)">🔍 Leitura automática — campos já preenchidos, confira:</b>
+          <div id="ocrSuggestionTextInteg" style="margin:6px 0;color:var(--text-secondary)"></div>
+          <button class="btn-ghost" id="ocrApplyBtnInteg" style="font-size:11.5px;padding:6px 12px">OK, entendi</button>
+          <button class="btn-ghost" id="ocrDismissBtnInteg" style="font-size:11.5px;padding:6px 12px">Desfazer preenchimento</button>
+        </div>
+        <button class="btn-primary" id="saveIntegBtn">Salvar integração</button>
+      </div>
+      <div class="card">
+        <div class="topbar" style="margin-bottom:12px">
+          <h1 style="font-size:15px">Integrações cadastradas</h1>
+          <button class="btn-ghost" id="refreshIntegBtn">Atualizar lista</button>
+        </div>
+        <table>
+          <thead><tr><th>Funcionário</th><th>Empresa</th><th>Obra</th><th>Realizado em</th><th>Válido até</th><th>Situação</th><th></th></tr></thead>
+          <tbody id="integTableBody"><tr><td colspan="7" class="small">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============ ABA: FÉRIAS ============ -->
+    <div id="tabFerias" class="hidden">
+      <div class="card">
+        <h1 style="font-size:15px">Novo período de férias</h1>
+        <div class="small" style="margin-bottom:12px">
+          O período aquisitivo dura 1 ano a partir da data de início. O limite legal para gozar é 2 anos depois do início —
+          passar disso é uma infração que nunca pode acontecer. Aviso começa 60 dias antes do limite.
+        </div>
+        <label>Buscar funcionário</label>
+        <input type="text" id="vFuncionarioBusca" placeholder="Digite o nome pra filtrar a lista abaixo…">
+        <div class="row">
+          <div style="flex:2"><label>Funcionário *</label><select id="vFuncionarioId"><option value="">Carregando…</option></select></div>
+          <div><label>Início do período aquisitivo *</label><input type="date" id="vInicio"></div>
+        </div>
+        <button class="btn-primary" id="saveFeriasBtn">Salvar período</button>
+      </div>
+      <div class="card">
+        <div class="topbar" style="margin-bottom:12px">
+          <h1 style="font-size:15px">Controle de Férias</h1>
+          <button class="btn-ghost" id="refreshFeriasBtn">Atualizar lista</button>
+        </div>
+        <table>
+          <thead><tr><th>Funcionário</th><th>Início do período</th><th>Fim aquisitivo</th><th>Limite para gozar</th><th>Situação</th><th></th></tr></thead>
+          <tbody id="feriasTableBody"><tr><td colspan="6" class="small">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="card hidden" id="gozoCard">
+        <h1 style="font-size:15px">Registrar gozo de férias</h1>
+        <div class="small" id="gozoFuncionarioNome" style="margin-bottom:10px"></div>
+        <div class="row">
+          <div><label>Início do gozo *</label><input type="date" id="gozoInicio"></div>
+          <div><label>Fim do gozo *</label><input type="date" id="gozoFim"></div>
+        </div>
+        <button class="btn-primary" id="confirmarGozoBtn">Confirmar gozo (inicia novo período automaticamente)</button>
+        <button class="btn-ghost" id="cancelarGozoBtn">Cancelar</button>
+      </div>
+    </div>
+
+    <!-- ============ ABA: DASHBOARD ============ -->
+    <div id="tabDash" class="hidden">
+      <div class="card">
+        <h1 style="font-size:15px">Buscar funcionário</h1>
+        <div class="row">
+          <div style="flex:2"><input type="text" id="dashBuscaTermo" placeholder="Nome ou CPF…"></div>
+          <div style="flex:none"><button class="btn-primary" id="dashBuscaBtn" style="width:auto">Buscar ficha completa</button></div>
+        </div>
+      </div>
+      <div id="dashCards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:16px"></div>
+      <div class="card">
+        <h1 style="font-size:15px">⚠️ Vencendo nos próximos 60 dias ou já vencido</h1>
+        <table>
+          <thead><tr><th>Funcionário</th><th>O quê</th><th>Válido até</th><th>Situação</th><th></th></tr></thead>
+          <tbody id="dashAlertasBody"><tr><td colspan="5" class="small">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -458,7 +613,7 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     document.getElementById('authScreen').classList.add('hidden');
     document.getElementById('appScreen').classList.remove('hidden');
     document.getElementById('loggedAs').textContent = 'Logado como: ' + user.email;
-    loadFuncionarios();
+    switchTab('dash');
   }
 
   function wireAuthForm() {
@@ -480,7 +635,7 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
       showAuthStatus('info', isSignupMode ? 'Criando conta…' : 'Entrando…');
       try {
         if (isSignupMode) {
-          const { data, error } = await sb.auth.signUp({ email, password, options: { data: { nome } } });
+          const { data, error } = await sb.auth.signUp({ email, password, options: { data: { nome }, emailRedirectTo: window.location.href.split('#')[0] } });
           if (error) throw error;
           if (data.session) {
             showApp(data.user);
@@ -548,7 +703,7 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     document.getElementById('tBulkBtn').addEventListener('click', bulkTreinamentos);
 
     // Busca/filtro do funcionário em cada formulário de lançamento
-    [['tFuncionarioBusca', 'tFuncionarioId'], ['aFuncionarioBusca', 'aFuncionarioId'], ['eFuncionarioBusca', 'eFuncionarioId'], ['pFuncionarioBusca', 'pFuncionarioId']].forEach(([buscaId, selectId]) => {
+    [['tFuncionarioBusca', 'tFuncionarioId'], ['aFuncionarioBusca', 'aFuncionarioId'], ['eFuncionarioBusca', 'eFuncionarioId'], ['pFuncionarioBusca', 'pFuncionarioId'], ['iFuncionarioBusca', 'iFuncionarioId'], ['vFuncionarioBusca', 'vFuncionarioId']].forEach(([buscaId, selectId]) => {
       document.getElementById(buscaId).addEventListener('input', (e) => {
         const termo = e.target.value.trim().toLowerCase();
         const filtrados = termo ? funcionariosCache.filter(f => f.nome.toLowerCase().includes(termo)) : funcionariosCache;
@@ -572,8 +727,9 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     document.getElementById('refreshPontoBtn').addEventListener('click', loadFolhasPonto);
 
     // Anexo: se for imagem, tenta ler automaticamente (nunca aplica sozinho, sempre pede confirmação)
-    const ALVO_TREINO = { boxId: 'ocrSuggestionBox', textId: 'ocrSuggestionText', applyBtnId: 'ocrApplyBtn', dismissBtnId: 'ocrDismissBtn', funcionarioSelectId: 'tFuncionarioId', dataFieldId: 'tData', cursoSelectId: 'tCursoSelect', cursoOutroId: 'tCursoOutro', nomeCampoId: 'tArquivoNome' };
+    const ALVO_TREINO = { boxId: 'ocrSuggestionBox', textId: 'ocrSuggestionText', applyBtnId: 'ocrApplyBtn', dismissBtnId: 'ocrDismissBtn', funcionarioSelectId: 'tFuncionarioId', dataFieldId: 'tData', cursoSelectId: 'tCursoSelect', cursoOutroId: 'tCursoOutro', nomeCampoId: 'tArquivoNome', cargaFieldId: 'tCarga' };
     const ALVO_ASO = { boxId: 'ocrSuggestionBoxAso', textId: 'ocrSuggestionTextAso', applyBtnId: 'ocrApplyBtnAso', dismissBtnId: 'ocrDismissBtnAso', funcionarioSelectId: 'aFuncionarioId', dataFieldId: 'aData', nomeCampoId: 'aArquivoNome' };
+    const ALVO_INTEG = { boxId: 'ocrSuggestionBoxInteg', textId: 'ocrSuggestionTextInteg', applyBtnId: 'ocrApplyBtnInteg', dismissBtnId: 'ocrDismissBtnInteg', funcionarioSelectId: 'iFuncionarioId', dataFieldId: 'iData', nomeCampoId: 'iArquivoNome' };
 
     // Função genérica que liga: seleção de arquivo (mostra botão de remover + tenta ler) e o botão de remover em si
     function ligarCampoDeArquivo(inputId, nomeId, removerBtnId, boxSugestaoId, alvo) {
@@ -600,12 +756,36 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     ligarCampoDeArquivo('aArquivo', 'aArquivoNome', 'aArquivoRemover', 'ocrSuggestionBoxAso', ALVO_ASO);
     ligarCampoDeArquivo('pArquivo', 'pArquivoNome', 'pArquivoRemover', null, null);
     ligarCampoDeArquivo('eArquivo', 'eArquivoNome', 'eArquivoRemover', null, null);
+    ligarCampoDeArquivo('iArquivo', 'iArquivoNome', 'iArquivoRemover', 'ocrSuggestionBoxInteg', ALVO_INTEG);
 
     document.getElementById('tabFuncBtn').addEventListener('click', () => switchTab('func'));
     document.getElementById('tabTreinoBtn').addEventListener('click', () => switchTab('treino'));
     document.getElementById('tabAsoBtn').addEventListener('click', () => switchTab('aso'));
     document.getElementById('tabEpiBtn').addEventListener('click', () => switchTab('epi'));
     document.getElementById('tabPontoBtn').addEventListener('click', () => switchTab('ponto'));
+    document.getElementById('tabBuscaBtn').addEventListener('click', () => switchTab('busca'));
+    document.getElementById('buscaBtn').addEventListener('click', buscarFichaCompleta);
+    document.getElementById('buscaTermo').addEventListener('keydown', (e) => { if (e.key === 'Enter') buscarFichaCompleta(); });
+    document.getElementById('tabIntegBtn').addEventListener('click', () => switchTab('integ'));
+    document.getElementById('tabFeriasBtn').addEventListener('click', () => switchTab('ferias'));
+    document.getElementById('tabDashBtn').addEventListener('click', () => switchTab('dash'));
+    document.getElementById('dashBuscaBtn').addEventListener('click', () => {
+      switchTab('busca');
+      document.getElementById('buscaTermo').value = document.getElementById('dashBuscaTermo').value;
+      buscarFichaCompleta();
+    });
+    document.getElementById('dashBuscaTermo').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('dashBuscaBtn').click(); });
+
+    document.getElementById('saveIntegBtn').addEventListener('click', saveInteg);
+    document.getElementById('refreshIntegBtn').addEventListener('click', loadIntegracoes);
+    document.getElementById('iEmpresaSelect').addEventListener('change', (e) => {
+      document.getElementById('iEmpresaOutro').style.display = e.target.value === '__outro__' ? 'block' : 'none';
+    });
+
+    document.getElementById('saveFeriasBtn').addEventListener('click', saveFerias);
+    document.getElementById('refreshFeriasBtn').addEventListener('click', loadFerias);
+    document.getElementById('confirmarGozoBtn').addEventListener('click', confirmarGozo);
+    document.getElementById('cancelarGozoBtn').addEventListener('click', () => document.getElementById('gozoCard').classList.add('hidden'));
   }
 
   function marcarNomeArquivo(f, sufixoHtml, campoId) {
@@ -752,6 +932,18 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     // "NR-06", "NR 06", "NR06", "NR: 06", "NR.06", ou pela frase "norma regulamentadora nº 06"
     let nr = texto.match(/N\s*R[\s\u2013\u2014:.-]*0?(\d{1,2})\b/i);
     if (!nr) nr = texto.match(/norma\s+regulamentadora\w*\s*n?[ºo°.:]*\s*0?(\d{1,2})/i);
+
+    // CPF — bem tolerante com o separador, porque o OCR às vezes troca ponto por espaço
+    // (ex: "762.448 226-68" em vez de "762.448.226-68")
+    let cpfEncontrado = null;
+    const cpfMatch = texto.match(/(\d{3})[.\s]?(\d{3})[.\s]?(\d{3})[-.\s]?(\d{2})\b/);
+    if (cpfMatch) cpfEncontrado = `${cpfMatch[1]}.${cpfMatch[2]}.${cpfMatch[3]}-${cpfMatch[4]}`;
+
+    // Carga horária — "Carga horária: 03 horas", "carga horaria 8h", etc.
+    let cargaEncontrada = null;
+    const cargaMatch = texto.match(/carga\s+hor[aá]ria\s*:?\s*(\d{1,3})\s*h(?:oras?)?/i);
+    if (cargaMatch) cargaEncontrada = `${cargaMatch[1]}h`;
+
     // data por extenso (prioriza a do rodapé/assinatura "Cidade, dd de Mês de aaaa")
     let dataEncontrada = null;
     const rodape = texto.match(/[A-Za-zÀ-ú]+\s*,\s*(\d{1,2})\s*de\s*([A-Za-zçÇãÃéÉ]+)\s*de\s*(\d{4})/i);
@@ -765,22 +957,31 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
       if (numerica) dataEncontrada = `${numerica[3]}-${numerica[2]}-${numerica[1]}`;
     }
 
-    // Busca o funcionário por PALAVRAS do nome, não pelo nome inteiro de uma vez —
+    // Busca o funcionário — PRIORIDADE 1: por CPF (é único e muito mais confiável que o nome,
+    // já que o OCR erra letra com muito mais facilidade do que dígito de CPF).
+    // PRIORIDADE 2, se não achar por CPF: por PALAVRAS do nome, não pelo nome inteiro de uma vez —
     // assim, mesmo se o OCR errar uma letra ou juntar/separar palavras diferente do esperado,
     // ainda reconhece a pessoa se a maioria das palavras do nome aparecer no texto lido.
     // Procura em TODOS os funcionários (não só os que estão filtrados no momento pela busca),
     // pra nunca deixar de reconhecer alguém só porque o campo de busca estava com outro texto digitado.
-    const textoNormalizado = texto.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    let funcionarioEncontrado = null, melhorPontuacao = 0;
-    funcionariosCache.forEach(f => {
-      const palavrasNome = f.nome.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/\s+/).filter(p => p.length > 2);
-      if (!palavrasNome.length) return;
-      const acertos = palavrasNome.filter(p => textoNormalizado.includes(p)).length;
-      const pontuacao = acertos / palavrasNome.length;
-      if (pontuacao >= 0.5 && pontuacao > melhorPontuacao) { melhorPontuacao = pontuacao; funcionarioEncontrado = f; }
-    });
+    let funcionarioEncontrado = null;
+    if (cpfEncontrado) {
+      const cpfLimpo = cpfEncontrado.replace(/\D/g, '');
+      funcionarioEncontrado = funcionariosCache.find(f => f.cpf && f.cpf.replace(/\D/g, '') === cpfLimpo) || null;
+    }
+    if (!funcionarioEncontrado) {
+      const textoNormalizado = texto.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      let melhorPontuacao = 0;
+      funcionariosCache.forEach(f => {
+        const palavrasNome = f.nome.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/\s+/).filter(p => p.length > 2);
+        if (!palavrasNome.length) return;
+        const acertos = palavrasNome.filter(p => textoNormalizado.includes(p)).length;
+        const pontuacao = acertos / palavrasNome.length;
+        if (pontuacao >= 0.5 && pontuacao > melhorPontuacao) { melhorPontuacao = pontuacao; funcionarioEncontrado = f; }
+      });
+    }
 
-    ocrSugestaoAtual = { nr: nr ? `NR-${nr[1].padStart(2,'0')}` : null, data: dataEncontrada, funcionarioId: funcionarioEncontrado ? funcionarioEncontrado.id : null, funcionarioNome: funcionarioEncontrado ? funcionarioEncontrado.nome : null, alvo };
+    ocrSugestaoAtual = { nr: nr ? `NR-${nr[1].padStart(2,'0')}` : null, data: dataEncontrada, cpf: cpfEncontrado, carga: cargaEncontrada, funcionarioId: funcionarioEncontrado ? funcionarioEncontrado.id : null, funcionarioNome: funcionarioEncontrado ? funcionarioEncontrado.nome : null, alvo };
 
     // Preenche os campos de verdade IMEDIATAMENTE (sem precisar clicar em nada) — mas nada é salvo
     // no banco ainda, só nos campos do formulário, que continuam 100% editáveis antes de "Salvar".
@@ -789,10 +990,12 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     const buscaId = alvo.funcionarioSelectId === 'tFuncionarioId' ? 'tFuncionarioBusca'
       : alvo.funcionarioSelectId === 'aFuncionarioId' ? 'aFuncionarioBusca'
       : alvo.funcionarioSelectId === 'eFuncionarioId' ? 'eFuncionarioBusca'
-      : alvo.funcionarioSelectId === 'pFuncionarioId' ? 'pFuncionarioBusca' : null;
+      : alvo.funcionarioSelectId === 'pFuncionarioId' ? 'pFuncionarioBusca'
+      : alvo.funcionarioSelectId === 'iFuncionarioId' ? 'iFuncionarioBusca' : null;
     if (buscaId) { document.getElementById(buscaId).value = ''; renderFuncionarioOptionsEm(alvo.funcionarioSelectId, funcionariosCache); }
 
     if (dataEncontrada) document.getElementById(alvo.dataFieldId).value = dataEncontrada;
+    if (cargaEncontrada && alvo.cargaFieldId) document.getElementById(alvo.cargaFieldId).value = cargaEncontrada;
     if (ocrSugestaoAtual.nr && alvo.cursoSelectId) {
       const sel = document.getElementById(alvo.cursoSelectId);
       const match = Array.from(sel.options).find(o => o.value.toUpperCase().startsWith(ocrSugestaoAtual.nr));
@@ -804,8 +1007,10 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     const partes = [];
     if (alvo.cursoSelectId) partes.push(ocrSugestaoAtual.nr ? `Norma: <b>${ocrSugestaoAtual.nr}</b> ✅ preenchido` : 'Norma: não identificada — preencha manualmente');
     partes.push(dataEncontrada ? `Data: <b>${formatarDataBr(dataEncontrada)}</b> ✅ preenchido` : 'Data: não identificada — preencha manualmente');
-    partes.push(funcionarioEncontrado ? `Funcionário: <b>${funcionarioEncontrado.nome}</b> ✅ preenchido` : 'Funcionário: não identificado — selecione manualmente na lista');
-    document.getElementById(alvo.textId).innerHTML = partes.join(' · ') +
+    if (alvo.cargaFieldId) partes.push(cargaEncontrada ? `Carga horária: <b>${cargaEncontrada}</b> ✅ preenchido` : 'Carga horária: não identificada');
+    partes.push(cpfEncontrado ? `CPF lido: <b>${cpfEncontrado}</b>` : null);
+    partes.push(funcionarioEncontrado ? `Funcionário: <b>${funcionarioEncontrado.nome}</b> ✅ preenchido${cpfEncontrado && funcionarioEncontrado.cpf ? ' (achado pelo CPF)' : ''}` : 'Funcionário: não identificado — selecione manualmente na lista');
+    document.getElementById(alvo.textId).innerHTML = partes.filter(Boolean).join(' · ') +
       '<br><span style="opacity:.8">Os campos já foram preenchidos sozinhos — confira e corrija se precisar, antes de salvar.</span>' +
       `<details style="margin-top:8px"><summary style="cursor:pointer;color:var(--blue-400);font-size:11px">Ver texto que a leitura encontrou (pra copiar e enviar se algo não bater)</summary>
         <div style="background:rgba(0,0,0,.25);border-radius:7px;padding:8px;margin-top:6px;font-size:10.5px;font-family:ui-monospace,monospace;white-space:pre-wrap;user-select:all">${textoOriginal.replace(/</g, '&lt;')}</div>
@@ -830,24 +1035,29 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    [['ocrApplyBtn', 'ocrDismissBtn', 'ocrSuggestionBox'], ['ocrApplyBtnAso', 'ocrDismissBtnAso', 'ocrSuggestionBoxAso']].forEach(([applyId, dismissId, boxId]) => {
+    [['ocrApplyBtn', 'ocrDismissBtn', 'ocrSuggestionBox'], ['ocrApplyBtnAso', 'ocrDismissBtnAso', 'ocrSuggestionBoxAso'], ['ocrApplyBtnInteg', 'ocrDismissBtnInteg', 'ocrSuggestionBoxInteg']].forEach(([applyId, dismissId, boxId]) => {
       document.getElementById(applyId)?.addEventListener('click', aplicarSugestaoOcr);
       document.getElementById(dismissId)?.addEventListener('click', desfazerSugestaoOcr);
     });
   });
 
-  const TABS = ['func', 'treino', 'aso', 'epi', 'ponto'];
-  const TAB_DIV = { func: 'tabFuncionarios', treino: 'tabTreinamentos', aso: 'tabAsos', epi: 'tabEpis', ponto: 'tabPonto' };
-  const TAB_BTN = { func: 'tabFuncBtn', treino: 'tabTreinoBtn', aso: 'tabAsoBtn', epi: 'tabEpiBtn', ponto: 'tabPontoBtn' };
+  const TABS = ['dash', 'busca', 'func', 'treino', 'aso', 'epi', 'ponto', 'integ', 'ferias'];
+  const TAB_DIV = { dash: 'tabDash', busca: 'tabBusca', func: 'tabFuncionarios', treino: 'tabTreinamentos', aso: 'tabAsos', epi: 'tabEpis', ponto: 'tabPonto', integ: 'tabInteg', ferias: 'tabFerias' };
+  const TAB_BTN = { dash: 'tabDashBtn', busca: 'tabBuscaBtn', func: 'tabFuncBtn', treino: 'tabTreinoBtn', aso: 'tabAsoBtn', epi: 'tabEpiBtn', ponto: 'tabPontoBtn', integ: 'tabIntegBtn', ferias: 'tabFeriasBtn' };
   function switchTab(tab) {
     TABS.forEach(t => {
       document.getElementById(TAB_DIV[t]).classList.toggle('hidden', t !== tab);
       document.getElementById(TAB_BTN[t]).className = t === tab ? 'btn-primary' : 'btn-ghost';
     });
+    if (tab === 'func') loadFuncionarios();
     if (tab === 'treino') { loadFuncionariosEm('tFuncionarioId'); loadTreinamentos(); }
     if (tab === 'aso') { loadFuncionariosEm('aFuncionarioId'); loadAsos(); }
     if (tab === 'epi') { loadFuncionariosEm('eFuncionarioId'); loadEpis(); }
     if (tab === 'ponto') { loadFuncionariosEm('pFuncionarioId'); loadFolhasPonto(); }
+    if (tab === 'integ') { loadFuncionariosEm('iFuncionarioId'); loadIntegracoes(); }
+    if (tab === 'ferias') { loadFuncionariosEm('vFuncionarioId'); loadFerias(); }
+    if (tab === 'busca' && !funcionariosCache.length) loadFuncionariosEm('tFuncionarioId'); // só pra ter o cache pronto
+    if (tab === 'dash') carregarDashboard();
   }
 
   // ---------- CRUD Funcionários ----------
@@ -1084,17 +1294,196 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
   }
 
   // ---------- Cadastro em massa (colar do Excel) ----------
-  function detectarDelimitador(texto) {
-    const primeiraLinha = texto.split('\n')[0] || '';
-    if (primeiraLinha.includes('\t')) return '\t';
-    if (primeiraLinha.includes(';')) return ';';
-    return ',';
-  }
+  // Detecta o separador testando várias opções (Tab do Excel, ponto e vírgula, vírgula, 2+ espaços)
+  // e escolhe automaticamente a que resulta em colunas mais consistentes — assim não depende de
+  // digitar vírgula/ponto e vírgula na mão, funciona colando direto do Excel do jeito que vier.
   function parseLinhas(texto) {
-    const linhas = texto.split('\n').map(l => l.trim()).filter(Boolean);
+    const linhas = texto.split('\n').map(l => l.replace(/\r/g, '')).filter(l => l.trim());
     if (!linhas.length) return [];
-    const delim = detectarDelimitador(texto);
-    return linhas.map(l => l.split(delim).map(c => c.trim()));
+
+    const candidatos = [
+      { nome: 'tab', re: /\t/ },
+      { nome: 'ponto e vírgula', re: /;/ },
+      { nome: 'vírgula', re: /,/ },
+      { nome: '2+ espaços', re: /\s{2,}/ },
+    ];
+
+    let melhor = { colunas: 1, re: null };
+    candidatos.forEach(c => {
+      const contagens = linhas.map(l => l.split(c.re).length);
+      const maxColunas = Math.max(...contagens);
+      // só considera válido se pelo menos metade das linhas realmente tiver mais de 1 coluna com esse separador
+      const linhasComMultiplasColunas = contagens.filter(n => n > 1).length;
+      if (maxColunas > melhor.colunas && linhasComMultiplasColunas >= Math.ceil(linhas.length / 2)) {
+        melhor = { colunas: maxColunas, re: c.re };
+      }
+    });
+
+    if (!melhor.re) {
+      // Nenhum separador funcionou de forma consistente — trata cada linha como só 1 valor
+      // (por exemplo, uma lista de nomes, um por linha, sem mais colunas). Não trava, não dá erro.
+      return linhas.map(l => [l.trim()]);
+    }
+    return linhas.map(l => l.split(melhor.re).map(c => c.trim()).filter((c, i, arr) => !(c === '' && i === arr.length - 1)));
+  }
+
+  // ================= IMPORTAÇÃO COMPLETA — uma planilha, distribui pra cada tabela =================
+  function converterDataBrParaIso(dataBr) {
+    if (!dataBr) return null;
+    const limpo = dataBr.trim();
+    // aceita dd/mm/aaaa, dd-mm-aaaa, ou já em aaaa-mm-dd
+    let m = limpo.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+    m = limpo.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (m) return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+    return null;
+  }
+
+  function detectarTipoColuna(header) {
+    const h = (header || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    if (/^nome/.test(h)) return { tipo: 'nome' };
+    if (/^cpf/.test(h)) return { tipo: 'cpf' };
+    if (/^cargo|^func[ao]o/.test(h)) return { tipo: 'cargo' };
+    if (/^telefone|^tel\b/.test(h)) return { tipo: 'telefone' };
+    if (/^admiss/.test(h)) return { tipo: 'admissao' };
+    if (/aso.*tipo/.test(h)) return { tipo: 'aso_tipo' };
+    if (/^aso/.test(h)) return { tipo: 'aso_data' };
+    const nrMatch = h.match(/^nr[\s-]?0?(\d{1,2})/);
+    if (nrMatch) return { tipo: 'nr', numero: nrMatch[1].padStart(2, '0') };
+    if (/integra.*empresa|empresa.*integra/.test(h)) return { tipo: 'integracao_empresa' };
+    if (/integra/.test(h)) return { tipo: 'integracao_data' };
+    if (/ferias/.test(h)) return { tipo: 'ferias_inicio' };
+    return { tipo: 'ignorar' };
+  }
+
+  document.getElementById('baixarModeloBtn')?.addEventListener('click', () => {
+    const linhas = [
+      'Nome,CPF,Cargo,Telefone,Admissão,ASO Tipo,ASO Data,NR-06,NR-10,NR-33,NR-35,Integração Empresa,Integração Data,Férias Início',
+      'João Pedro Alves,111.111.111-11,Soldador,(11) 90000-0001,01/03/2024,ASO Admissional,01/03/2024,15/03/2024,,,20/03/2024,ABL,25/03/2024,01/03/2024',
+    ];
+    const blob = new Blob([linhas.join('\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'modelo_importacao_master_energy.csv'; a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById('importCompletaBtn')?.addEventListener('click', importarCompleta);
+
+  async function importarCompleta() {
+    const texto = document.getElementById('importCompletaArea').value;
+    const linhas = parseLinhas(texto);
+    if (linhas.length < 2) { showAppStatus('err', 'Cole a linha de cabeçalho e pelo menos uma linha de dados.'); return; }
+
+    const cabecalho = linhas[0];
+    const colunas = cabecalho.map(detectarTipoColuna);
+    const dados = linhas.slice(1);
+
+    if (!colunas.some(c => c.tipo === 'nome')) {
+      showAppStatus('err', 'Não encontrei uma coluna de "Nome" no cabeçalho — confira se a primeira linha colada é mesmo o cabeçalho.');
+      return;
+    }
+
+    showAppStatus('info', `Importando ${dados.length} linha(s)…`);
+    const { data: existentes, error: errBusca } = await sb.from('funcionarios').select('id, nome, cpf');
+    if (errBusca) { showAppStatus('err', 'Erro ao verificar funcionários existentes: ' + errBusca.message); return; }
+
+    const resumo = { funcionariosCriados: 0, funcionariosExistentes: 0, asos: 0, porNr: {}, integracoes: 0, ferias: 0, erros: [] };
+
+    for (const linha of dados) {
+      const obter = (tipo, numero) => {
+        const idx = colunas.findIndex(c => c.tipo === tipo && (numero === undefined || c.numero === numero));
+        return idx >= 0 ? (linha[idx] || '').trim() : '';
+      };
+      const nome = obter('nome');
+      if (!nome) continue;
+
+      const cpf = obter('cpf') || null;
+      const cpfLimpo = cpf ? cpf.replace(/\D/g, '') : null;
+      let funcionarioId;
+      const existente = existentes.find(f => (cpfLimpo && f.cpf && f.cpf.replace(/\D/g, '') === cpfLimpo) || f.nome.trim().toLowerCase() === nome.toLowerCase());
+
+      if (existente) {
+        funcionarioId = existente.id;
+        resumo.funcionariosExistentes++;
+      } else {
+        const admissaoIso = converterDataBrParaIso(obter('admissao'));
+        const { data: novo, error } = await sb.from('funcionarios')
+          .insert({ nome, cpf, cargo: obter('cargo') || null, telefone: obter('telefone') || null, admissao: admissaoIso, status: 'pendente' })
+          .select().single();
+        if (error) { resumo.erros.push(`Funcionário "${nome}": ${error.message}`); continue; }
+        funcionarioId = novo.id;
+        existentes.push({ id: funcionarioId, nome, cpf });
+        resumo.funcionariosCriados++;
+      }
+
+      // ASO
+      const asoDataIso = converterDataBrParaIso(obter('aso_data'));
+      if (asoDataIso) {
+        const dataVal = new Date(asoDataIso + 'T00:00:00'); dataVal.setFullYear(dataVal.getFullYear() + 1);
+        const validadeData = dataVal.toISOString().slice(0, 10);
+        const dias = Math.round((dataVal - new Date()) / 86400000);
+        const { error } = await sb.from('asos').insert({ funcionario_id: funcionarioId, tipo: obter('aso_tipo') || 'ASO Periódico', data_realizacao: asoDataIso, validade_data: validadeData, status: calcularStatus(dias) });
+        if (error) resumo.erros.push(`ASO de "${nome}": ${error.message}`); else resumo.asos++;
+      }
+
+      // Qualquer coluna de NR (podem ser várias na mesma linha)
+      for (let idx = 0; idx < colunas.length; idx++) {
+        if (colunas[idx].tipo !== 'nr') continue;
+        const valorBr = (linha[idx] || '').trim();
+        if (!valorBr) continue;
+        const dataIso = converterDataBrParaIso(valorBr);
+        if (!dataIso) { resumo.erros.push(`NR-${colunas[idx].numero} de "${nome}": data "${valorBr}" não reconhecida (use dd/mm/aaaa).`); continue; }
+        const cursoNome = `NR-${colunas[idx].numero}`;
+        const anos = anosDeValidade(cursoNome);
+        const dataVal = new Date(dataIso + 'T00:00:00'); dataVal.setFullYear(dataVal.getFullYear() + anos);
+        const validadeData = dataVal.toISOString().slice(0, 10);
+        const dias = Math.round((dataVal - new Date()) / 86400000);
+        const { error } = await sb.from('treinamentos').insert({ funcionario_id: funcionarioId, curso: cursoNome, data_realizacao: dataIso, validade_data: validadeData, status: calcularStatus(dias) });
+        if (error) resumo.erros.push(`${cursoNome} de "${nome}": ${error.message}`);
+        else resumo.porNr[cursoNome] = (resumo.porNr[cursoNome] || 0) + 1;
+      }
+
+      // Integração
+      const integDataIso = converterDataBrParaIso(obter('integracao_data'));
+      if (integDataIso) {
+        const dataVal = new Date(integDataIso + 'T00:00:00'); dataVal.setFullYear(dataVal.getFullYear() + 1);
+        const validadeData = dataVal.toISOString().slice(0, 10);
+        const dias = Math.round((dataVal - new Date()) / 86400000);
+        const { error } = await sb.from('integracoes').insert({ funcionario_id: funcionarioId, empresa_integracao: obter('integracao_empresa') || 'Não informado', data_realizacao: integDataIso, validade_data: validadeData, status: calcularStatus(dias) });
+        if (error) resumo.erros.push(`Integração de "${nome}": ${error.message}`); else resumo.integracoes++;
+      }
+
+      // Férias — período aquisitivo de 1 ano, limite de 2 anos pra gozar
+      const feriasIso = converterDataBrParaIso(obter('ferias_inicio'));
+      if (feriasIso) {
+        const fimAquisitivo = new Date(feriasIso + 'T00:00:00'); fimAquisitivo.setFullYear(fimAquisitivo.getFullYear() + 1);
+        const limiteGozo = new Date(feriasIso + 'T00:00:00'); limiteGozo.setFullYear(limiteGozo.getFullYear() + 2);
+        const dias = Math.round((limiteGozo - new Date()) / 86400000);
+        const { error } = await sb.from('ferias').insert({
+          funcionario_id: funcionarioId, inicio_periodo: feriasIso,
+          fim_aquisitivo: fimAquisitivo.toISOString().slice(0, 10), limite_gozo: limiteGozo.toISOString().slice(0, 10),
+          status: calcularStatus(dias),
+        });
+        if (error) resumo.erros.push(`Férias de "${nome}": ${error.message}`); else resumo.ferias++;
+      }
+    }
+
+    const linhasResumo = [
+      `✅ Importação concluída.`,
+      `Funcionários novos: ${resumo.funcionariosCriados} | Já existiam (dados extras mesclados): ${resumo.funcionariosExistentes}`,
+      `ASOs cadastrados: ${resumo.asos}`,
+      ...Object.entries(resumo.porNr).map(([nr, n]) => `${nr}: ${n} cadastrado(s)`),
+      `Integrações cadastradas: ${resumo.integracoes}`,
+      `Férias cadastradas: ${resumo.ferias}`,
+    ];
+    if (resumo.erros.length) linhasResumo.push('', '⚠️ Avisos/erros:', ...resumo.erros);
+
+    document.getElementById('importResumo').textContent = linhasResumo.join('\n');
+    document.getElementById('importResumo').classList.remove('hidden');
+    showAppStatus('ok', 'Importação completa concluída — veja o resumo abaixo.');
+    document.getElementById('importCompletaArea').value = '';
+    loadFuncionarios();
   }
 
   async function bulkFuncionarios() {
@@ -1138,6 +1527,76 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     loadFuncionarios();
   }
 
+  // ================= FICHA COMPLETA — busca em todas as seções de uma vez =================
+  async function buscarFichaCompleta() {
+    const termo = document.getElementById('buscaTermo').value.trim();
+    const resultDiv = document.getElementById('fichaResultado');
+    if (!termo) { showAppStatus('err', 'Digite o nome ou o CPF pra buscar.'); return; }
+
+    resultDiv.innerHTML = '<div class="card small">Buscando…</div>';
+    const { data: todos, error: errBusca } = await sb.from('funcionarios').select('*');
+    if (errBusca) { resultDiv.innerHTML = `<div class="card small" style="color:var(--danger)">Erro: ${errBusca.message}</div>`; return; }
+
+    const termoLower = termo.toLowerCase();
+    const termoCpfLimpo = termo.replace(/\D/g, '');
+    const encontrado = todos.find(f =>
+      f.nome.toLowerCase().includes(termoLower) ||
+      (termoCpfLimpo.length >= 4 && f.cpf && f.cpf.replace(/\D/g, '').includes(termoCpfLimpo))
+    );
+
+    if (!encontrado) {
+      resultDiv.innerHTML = `<div class="card small">Nenhum funcionário encontrado com "${termo}".</div>`;
+      return;
+    }
+
+    const fid = encontrado.id;
+    const [asos, treinos, epis, integs, pontos, ferias] = await Promise.all([
+      sb.from('asos').select('*').eq('funcionario_id', fid),
+      sb.from('treinamentos').select('*').eq('funcionario_id', fid),
+      sb.from('epis').select('*').eq('funcionario_id', fid),
+      sb.from('integracoes').select('*').eq('funcionario_id', fid),
+      sb.from('folhas_ponto').select('*').eq('funcionario_id', fid),
+      sb.from('ferias').select('*').eq('funcionario_id', fid),
+    ]);
+
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    const statusDe = (validadeIso) => {
+      if (!validadeIso) return null;
+      const dias = Math.round((new Date(validadeIso + 'T00:00:00') - hoje) / 86400000);
+      return { status: calcularStatus(dias), dias };
+    };
+    const pill = (validadeIso) => {
+      const s = statusDe(validadeIso);
+      if (!s) return '<span class="small">—</span>';
+      return `<span class="pill ${s.status}">${s.status} (${s.dias}d)</span>`;
+    };
+    const secao = (titulo, linhas) => `
+      <div class="card">
+        <h1 style="font-size:14px">${titulo} <span class="small">(${linhas.length})</span></h1>
+        ${linhas.length ? `<table><tbody>${linhas.join('')}</tbody></table>` : '<div class="small">Nenhum registro nessa seção.</div>'}
+      </div>`;
+
+    const linhasAso = (asos.data || []).map(a => `<tr><td>${a.tipo || '—'}</td><td>${formatarDataBr(a.data_realizacao)}</td><td>${formatarDataBr(a.validade_data)}</td><td>${pill(a.validade_data)}</td></tr>`);
+    const linhasTreino = (treinos.data || []).map(t => `<tr><td>${t.curso}</td><td>${formatarDataBr(t.data_realizacao)}</td><td>${formatarDataBr(t.validade_data)}</td><td>${pill(t.validade_data)}</td></tr>`);
+    const linhasEpi = (epis.data || []).map(e => `<tr><td>${e.epi}</td><td>${e.ca || '—'}</td><td>${formatarDataBr(e.entrega)}</td><td>${formatarDataBr(e.troca)}</td></tr>`);
+    const linhasInteg = (integs.data || []).map(i => `<tr><td>${i.empresa_integracao}</td><td>${i.obra || '—'}</td><td>${formatarDataBr(i.validade_data)}</td><td>${pill(i.validade_data)}</td></tr>`);
+    const linhasPonto = (pontos.data || []).map(p => `<tr><td>${p.cliente || '—'}</td><td>${p.periodo || '—'}</td><td>${formatarDataBr(p.data_envio)}</td></tr>`);
+    const linhasFerias = (ferias.data || []).map(v => `<tr><td>Início: ${formatarDataBr(v.inicio_periodo)}</td><td>Fim aquisitivo: ${formatarDataBr(v.fim_aquisitivo)}</td><td>Limite p/ gozar: ${formatarDataBr(v.limite_gozo)}</td><td>${pill(v.limite_gozo)}</td></tr>`);
+
+    resultDiv.innerHTML = `
+      <div class="card" style="border:1px solid rgba(0,146,214,.5)">
+        <h1 style="font-size:17px">${encontrado.nome}</h1>
+        <div class="small">CPF: ${encontrado.cpf || '—'} · Cargo: ${encontrado.cargo || '—'} · Status geral: <span class="pill ${encontrado.status}">${encontrado.status}</span></div>
+      </div>
+      ${secao('🩺 ASOs', linhasAso)}
+      ${secao('🎓 Treinamentos / NRs', linhasTreino)}
+      ${secao('🦺 EPIs', linhasEpi)}
+      ${secao('🏢 Integrações de Cliente', linhasInteg)}
+      ${secao('🕒 Folhas de Ponto', linhasPonto)}
+      ${secao('🏖️ Férias', linhasFerias)}
+    `;
+  }
+
   async function bulkTreinamentos() {
     const texto = document.getElementById('tBulkArea').value;
     const linhas = parseLinhas(texto);
@@ -1170,6 +1629,258 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     showAppStatus('ok', `${payload.length} treinamento(s) cadastrado(s).${naoEncontrados.length ? ' Não encontrados (confira o nome exato): ' + naoEncontrados.join(', ') : ''}`);
     document.getElementById('tBulkArea').value = '';
     loadTreinamentos();
+  }
+
+  // ================= CRUD: Integração de Cliente =================
+  async function loadIntegracoes() {
+    const tbody = document.getElementById('integTableBody');
+    tbody.innerHTML = '<tr><td colspan="7" class="small">Carregando…</td></tr>';
+    const { data, error } = await sb.from('integracoes').select('*, funcionarios(nome)').order('validade_data', { ascending: true });
+    if (error) { tbody.innerHTML = `<tr><td colspan="7" class="small" style="color:var(--danger)">Erro: ${error.message}</td></tr>`; return; }
+    if (!data.length) { tbody.innerHTML = '<tr><td colspan="7" class="small">Nenhuma integração cadastrada ainda.</td></tr>'; return; }
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    tbody.innerHTML = data.map(i => {
+      const dias = i.validade_data ? Math.round((new Date(i.validade_data + 'T00:00:00') - hoje) / 86400000) : null;
+      const status = dias !== null ? calcularStatus(dias) : (i.status || 'apto');
+      return `<tr>
+        <td>${i.funcionarios ? i.funcionarios.nome : '—'}</td>
+        <td>${i.empresa_integracao}</td>
+        <td>${i.obra || '—'}</td>
+        <td>${formatarDataBr(i.data_realizacao)}</td>
+        <td>${formatarDataBr(i.validade_data)}</td>
+        <td><span class="pill ${status}">${status}${dias !== null ? ' (' + dias + 'd)' : ''}</span></td>
+        <td><button class="del-btn" data-id="${i.id}">Excluir</button></td>
+      </tr>`;
+    }).join('');
+    tbody.querySelectorAll('.del-btn').forEach(btn => btn.addEventListener('click', () => deleteInteg(btn.getAttribute('data-id'))));
+  }
+
+  async function saveInteg() {
+    const funcionarioId = document.getElementById('iFuncionarioId').value;
+    const empresaSelecionada = document.getElementById('iEmpresaSelect').value;
+    const empresa = empresaSelecionada === '__outro__' ? document.getElementById('iEmpresaOutro').value.trim() : empresaSelecionada;
+    const dataRealizacao = document.getElementById('iData').value;
+    if (!funcionarioId) { showAppStatus('err', 'Selecione o funcionário.'); return; }
+    if (!empresa) { showAppStatus('err', 'Selecione (ou digite) a empresa/cliente.'); return; }
+    if (!dataRealizacao) { showAppStatus('err', 'Digite a data de realização.'); return; }
+
+    const dataVal = new Date(dataRealizacao + 'T00:00:00');
+    dataVal.setFullYear(dataVal.getFullYear() + 1); // validade padrão de 1 ano
+    const validadeData = dataVal.toISOString().slice(0, 10);
+    const diasRestantes = Math.round((dataVal - new Date()) / 86400000);
+
+    const arquivoFile = document.getElementById('iArquivo').files[0];
+    let caminhoArquivo = null;
+    if (arquivoFile) {
+      showAppStatus('info', 'Enviando certificado…');
+      try { caminhoArquivo = await subirArquivoTreinamento(arquivoFile, funcionarioId); }
+      catch (e) { showAppStatus('err', 'Erro ao enviar o arquivo: ' + e.message); return; }
+    }
+
+    showAppStatus('info', 'Salvando…');
+    const { error } = await sb.from('integracoes').insert({
+      funcionario_id: funcionarioId, empresa_integracao: empresa, obra: document.getElementById('iObra').value.trim() || null,
+      data_realizacao: dataRealizacao, validade_data: validadeData, status: calcularStatus(diasRestantes), arquivo: caminhoArquivo,
+    });
+    if (error) { showAppStatus('err', 'Erro ao salvar: ' + error.message); return; }
+    showAppStatus('ok', `Integração salva — validade até ${formatarDataBr(validadeData)}.`);
+    ['iData', 'iObra', 'iArquivo', 'iEmpresaOutro', 'iFuncionarioBusca'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('iEmpresaSelect').value = '';
+    document.getElementById('iEmpresaOutro').style.display = 'none';
+    document.getElementById('iArquivoNome').textContent = '';
+    document.getElementById('iArquivoRemover').style.display = 'none';
+    document.getElementById('ocrSuggestionBoxInteg').classList.add('hidden');
+    renderFuncionarioOptionsEm('iFuncionarioId', funcionariosCache);
+    loadIntegracoes();
+  }
+
+  async function deleteInteg(id) {
+    if (!confirm('Excluir esta integração definitivamente do banco de dados?')) return;
+    const { error } = await sb.from('integracoes').delete().eq('id', id);
+    if (error) { showAppStatus('err', 'Erro ao excluir: ' + error.message); return; }
+    showAppStatus('ok', 'Excluído do banco de dados.');
+    loadIntegracoes();
+  }
+
+  // ================= CRUD: Férias =================
+  let gozoFeriasIdAtual = null;
+  async function loadFerias() {
+    const tbody = document.getElementById('feriasTableBody');
+    tbody.innerHTML = '<tr><td colspan="6" class="small">Carregando…</td></tr>';
+    const { data, error } = await sb.from('ferias').select('*, funcionarios(nome)').order('limite_gozo', { ascending: true });
+    if (error) { tbody.innerHTML = `<tr><td colspan="6" class="small" style="color:var(--danger)">Erro: ${error.message}</td></tr>`; return; }
+    if (!data.length) { tbody.innerHTML = '<tr><td colspan="6" class="small">Nenhum período cadastrado ainda.</td></tr>'; return; }
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    tbody.innerHTML = data.map(v => {
+      const dias = v.limite_gozo ? Math.round((new Date(v.limite_gozo + 'T00:00:00') - hoje) / 86400000) : null;
+      const status = dias !== null ? calcularStatus(dias) : (v.status || 'apto');
+      return `<tr>
+        <td>${v.funcionarios ? v.funcionarios.nome : '—'}</td>
+        <td>${formatarDataBr(v.inicio_periodo)}</td>
+        <td>${formatarDataBr(v.fim_aquisitivo)}</td>
+        <td>${formatarDataBr(v.limite_gozo)}</td>
+        <td><span class="pill ${status}">${status}${dias !== null ? ' (' + dias + 'd)' : ''}</span></td>
+        <td>
+          <button class="file-link" data-id="${v.id}" data-nome="${v.funcionarios ? v.funcionarios.nome : ''}">Registrar gozo</button>
+          <button class="del-btn" data-id="${v.id}">Excluir</button>
+        </td>
+      </tr>`;
+    }).join('');
+    tbody.querySelectorAll('.del-btn').forEach(btn => btn.addEventListener('click', () => deleteFerias(btn.getAttribute('data-id'))));
+    tbody.querySelectorAll('.file-link').forEach(btn => btn.addEventListener('click', () => abrirGozo(btn.getAttribute('data-id'), btn.getAttribute('data-nome'))));
+  }
+
+  async function saveFerias() {
+    const funcionarioId = document.getElementById('vFuncionarioId').value;
+    const inicio = document.getElementById('vInicio').value;
+    if (!funcionarioId) { showAppStatus('err', 'Selecione o funcionário.'); return; }
+    if (!inicio) { showAppStatus('err', 'Digite o início do período aquisitivo.'); return; }
+
+    const fimAquisitivo = new Date(inicio + 'T00:00:00'); fimAquisitivo.setFullYear(fimAquisitivo.getFullYear() + 1);
+    const limiteGozo = new Date(inicio + 'T00:00:00'); limiteGozo.setFullYear(limiteGozo.getFullYear() + 2);
+    const dias = Math.round((limiteGozo - new Date()) / 86400000);
+
+    showAppStatus('info', 'Salvando…');
+    const { error } = await sb.from('ferias').insert({
+      funcionario_id: funcionarioId, inicio_periodo: inicio,
+      fim_aquisitivo: fimAquisitivo.toISOString().slice(0, 10), limite_gozo: limiteGozo.toISOString().slice(0, 10),
+      status: calcularStatus(dias),
+    });
+    if (error) { showAppStatus('err', 'Erro ao salvar: ' + error.message); return; }
+    showAppStatus('ok', `Período de férias salvo — limite para gozar: ${formatarDataBr(limiteGozo.toISOString().slice(0, 10))}.`);
+    ['vInicio', 'vFuncionarioBusca'].forEach(id => document.getElementById(id).value = '');
+    renderFuncionarioOptionsEm('vFuncionarioId', funcionariosCache);
+    loadFerias();
+  }
+
+  async function deleteFerias(id) {
+    if (!confirm('Excluir este período de férias definitivamente do banco de dados?')) return;
+    const { error } = await sb.from('ferias').delete().eq('id', id);
+    if (error) { showAppStatus('err', 'Erro ao excluir: ' + error.message); return; }
+    showAppStatus('ok', 'Excluído do banco de dados.');
+    loadFerias();
+  }
+
+  function abrirGozo(feriasId, nomeFuncionario) {
+    gozoFeriasIdAtual = feriasId;
+    document.getElementById('gozoFuncionarioNome').textContent = `Funcionário: ${nomeFuncionario}`;
+    document.getElementById('gozoInicio').value = '';
+    document.getElementById('gozoFim').value = '';
+    document.getElementById('gozoCard').classList.remove('hidden');
+    document.getElementById('gozoCard').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  async function confirmarGozo() {
+    const inicio = document.getElementById('gozoInicio').value;
+    const fim = document.getElementById('gozoFim').value;
+    if (!inicio || !fim) { showAppStatus('err', 'Preencha o início e o fim do gozo.'); return; }
+    if (fim < inicio) { showAppStatus('err', 'A data de fim não pode ser antes do início.'); return; }
+
+    // O novo período aquisitivo começa no dia seguinte ao fim do gozo — reinicia o ciclo.
+    const novoInicio = new Date(fim + 'T00:00:00'); novoInicio.setDate(novoInicio.getDate() + 1);
+    const novoInicioIso = novoInicio.toISOString().slice(0, 10);
+    const novoFimAquisitivo = new Date(novoInicioIso + 'T00:00:00'); novoFimAquisitivo.setFullYear(novoFimAquisitivo.getFullYear() + 1);
+    const novoLimiteGozo = new Date(novoInicioIso + 'T00:00:00'); novoLimiteGozo.setFullYear(novoLimiteGozo.getFullYear() + 2);
+    const dias = Math.round((novoLimiteGozo - new Date()) / 86400000);
+
+    showAppStatus('info', 'Registrando gozo e iniciando novo período…');
+    const { error } = await sb.from('ferias').update({
+      inicio_periodo: novoInicioIso,
+      fim_aquisitivo: novoFimAquisitivo.toISOString().slice(0, 10),
+      limite_gozo: novoLimiteGozo.toISOString().slice(0, 10),
+      status: calcularStatus(dias),
+    }).eq('id', gozoFeriasIdAtual);
+    if (error) { showAppStatus('err', 'Erro ao registrar gozo: ' + error.message); return; }
+    showAppStatus('ok', 'Gozo registrado — novo período aquisitivo já começou automaticamente.');
+    document.getElementById('gozoCard').classList.add('hidden');
+    loadFerias();
+  }
+
+  // ================= DASHBOARD =================
+  async function carregarDashboard() {
+    document.getElementById('dashCards').innerHTML = '<div class="card small">Carregando…</div>';
+    document.getElementById('dashAlertasBody').innerHTML = '<tr><td colspan="5" class="small">Carregando…</td></tr>';
+
+    const [funcs, asos, treinos, epis, integs, pontos, ferias] = await Promise.all([
+      sb.from('funcionarios').select('*'),
+      sb.from('asos').select('*, funcionarios(nome)'),
+      sb.from('treinamentos').select('*, funcionarios(nome)'),
+      sb.from('epis').select('*, funcionarios(nome)'),
+      sb.from('integracoes').select('*, funcionarios(nome)'),
+      sb.from('folhas_ponto').select('*, funcionarios(nome)'),
+      sb.from('ferias').select('*, funcionarios(nome)'),
+    ]);
+
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    const diasDe = (validadeIso) => validadeIso ? Math.round((new Date(validadeIso + 'T00:00:00') - hoje) / 86400000) : null;
+
+    const modulos = [
+      { nome: 'Funcionários', dados: funcs.data || [], icone: '👷', tab: 'func', semVencimento: true },
+      { nome: 'ASOs', dados: asos.data || [], icone: '🩺', tab: 'aso', campoValidade: 'validade_data' },
+      { nome: 'Treinamentos / NRs', dados: treinos.data || [], icone: '🎓', tab: 'treino', campoValidade: 'validade_data' },
+      { nome: 'EPIs', dados: epis.data || [], icone: '🦺', tab: 'epi', semVencimento: true },
+      { nome: 'Integrações', dados: integs.data || [], icone: '🏢', tab: 'integ', campoValidade: 'validade_data' },
+      { nome: 'Folha de Ponto', dados: pontos.data || [], icone: '🕒', tab: 'ponto', semVencimento: true },
+      { nome: 'Férias', dados: ferias.data || [], icone: '🏖️', tab: 'ferias', campoValidade: 'limite_gozo' },
+    ];
+
+    // Cartões clicáveis, cada um leva direto pra aba correspondente
+    document.getElementById('dashCards').innerHTML = modulos.map(m => {
+      let vencidos = 0, pendentes = 0;
+      if (!m.semVencimento) {
+        m.dados.forEach(d => {
+          const dias = diasDe(d[m.campoValidade]);
+          if (dias !== null) { if (dias < 0) vencidos++; else if (dias <= 60) pendentes++; }
+        });
+      }
+      return `
+        <div class="card" style="cursor:pointer;text-align:center" data-tab="${m.tab}">
+          <div style="font-size:24px">${m.icone}</div>
+          <div style="font-size:22px;font-weight:800">${m.dados.length}</div>
+          <div class="small">${m.nome}</div>
+          ${!m.semVencimento ? `<div style="margin-top:6px;font-size:10.5px">
+            ${vencidos ? `<span style="color:var(--danger)">${vencidos} vencido(s)</span>` : ''}
+            ${vencidos && pendentes ? ' · ' : ''}
+            ${pendentes ? `<span style="color:var(--warning)">${pendentes} vencendo</span>` : ''}
+            ${!vencidos && !pendentes ? '<span style="color:var(--success)">tudo em dia</span>' : ''}
+          </div>` : ''}
+        </div>`;
+    }).join('');
+    document.querySelectorAll('#dashCards [data-tab]').forEach(card => {
+      card.addEventListener('click', () => switchTab(card.getAttribute('data-tab')));
+    });
+
+    // Lista de alertas: tudo que está vencido ou vencendo em 60 dias, juntando todos os módulos com data
+    const alertas = [];
+    modulos.filter(m => !m.semVencimento).forEach(m => {
+      m.dados.forEach(d => {
+        const dias = diasDe(d[m.campoValidade]);
+        if (dias !== null && dias <= 60) {
+          alertas.push({
+            funcionario: d.funcionarios ? d.funcionarios.nome : '—',
+            oque: `${m.icone} ${m.nome}${d.curso ? ' — ' + d.curso : ''}${d.tipo ? ' — ' + d.tipo : ''}${d.empresa_integracao ? ' — ' + d.empresa_integracao : ''}`,
+            validade: d[m.campoValidade], dias, tab: m.tab,
+          });
+        }
+      });
+    });
+    alertas.sort((a, b) => a.dias - b.dias);
+
+    if (!alertas.length) {
+      document.getElementById('dashAlertasBody').innerHTML = '<tr><td colspan="5" class="small">Nada vencido ou vencendo nos próximos 60 dias. Tudo em dia.</td></tr>';
+    } else {
+      document.getElementById('dashAlertasBody').innerHTML = alertas.map(a => `
+        <tr>
+          <td>${a.funcionario}</td>
+          <td>${a.oque}</td>
+          <td>${formatarDataBr(a.validade)}</td>
+          <td><span class="pill ${calcularStatus(a.dias)}">${calcularStatus(a.dias)} (${a.dias}d)</span></td>
+          <td><button class="file-link" data-tab="${a.tab}">Ver</button></td>
+        </tr>`).join('');
+      document.querySelectorAll('#dashAlertasBody [data-tab]').forEach(btn => {
+        btn.addEventListener('click', () => switchTab(btn.getAttribute('data-tab')));
+      });
+    }
   }
 
   // ================= CRUD: ASOs =================
