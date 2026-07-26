@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Master Energy — Piloto Supabase (Login + Funcionários)</title>
+<style>
+:root{
+  --navy-950:#04182c; --navy-900:#0b3b6e; --blue-500:#0092d6; --blue-400:#29abe2;
+  --white:#ffffff; --gray-100:#f2f4f7; --gray-600:#5b6472;
+  --success:#1fa97a; --success-bg:rgba(31,169,122,.14);
+  --warning:#e8a33d; --warning-bg:rgba(232,163,61,.14);
+  --danger:#e5484d; --danger-bg:rgba(229,72,77,.14);
+  --surface-1: rgba(255,255,255,.05); --surface-border: rgba(255,255,255,.1);
+  --text-primary:#f3f6fb; --text-secondary:#a9b4c4; --text-tertiary:#6d7889;
+}
+*{box-sizing:border-box;}
+body{margin:0;font-family:Inter,Arial,sans-serif;background:radial-gradient(1200px 800px at 85% -10%,#0f4a80 0%,transparent 55%),var(--navy-950);color:var(--text-primary);min-height:100vh;}
+.wrap{max-width:900px;margin:0 auto;padding:40px 20px;}
+.card{background:rgba(255,255,255,.04);border:1px solid var(--surface-border);border-radius:18px;padding:28px;margin-bottom:20px;backdrop-filter:blur(14px);}
+h1{font-size:20px;margin:0 0 4px;}
+.sub{color:var(--text-secondary);font-size:13px;margin-bottom:20px;}
+label{display:block;font-size:11.5px;color:var(--text-secondary);margin-bottom:5px;font-weight:600;}
+input,select{width:100%;background:var(--surface-1);border:1px solid var(--surface-border);border-radius:9px;padding:9px 12px;color:var(--text-primary);font-size:13px;margin-bottom:12px;font-family:inherit;}
+button{cursor:pointer;font-weight:600;font-size:13px;border-radius:9px;padding:9px 16px;border:1px solid transparent;font-family:inherit;}
+.btn-primary{background:linear-gradient(135deg,var(--blue-500),#0b6fb0);color:#fff;}
+.btn-ghost{background:var(--surface-1);border-color:var(--surface-border);color:var(--text-primary);}
+.status{padding:10px 14px;border-radius:9px;font-size:12.5px;margin-bottom:14px;display:none;}
+.status.ok{background:var(--success-bg);color:var(--success);display:block;}
+.status.err{background:var(--danger-bg);color:var(--danger);display:block;}
+.status.info{background:var(--warning-bg);color:var(--warning);display:block;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--surface-border);}
+th{color:var(--text-tertiary);text-transform:uppercase;font-size:10.5px;letter-spacing:.05em;}
+.pill{padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700;}
+.pill.apto{background:var(--success-bg);color:var(--success);}
+.pill.pendente{background:var(--warning-bg);color:var(--warning);}
+.pill.bloqueado{background:var(--danger-bg);color:var(--danger);}
+.row{display:flex;gap:10px;flex-wrap:wrap;}
+.row > div{flex:1;min-width:140px;}
+.hidden{display:none !important;}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
+.small{font-size:11px;color:var(--text-tertiary);}
+a.link{color:var(--blue-400);cursor:pointer;font-size:12.5px;}
+.del-btn{background:none;border:none;color:var(--danger);cursor:pointer;font-size:12px;}
+textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-border);border-radius:9px;padding:9px 12px;color:var(--text-primary);font-size:12px;font-family:ui-monospace,monospace;min-height:100px;margin-bottom:10px;resize:vertical;}
+.file-link{color:var(--blue-400);font-size:11.5px;cursor:pointer;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ===================== TELA DE LOGIN / CADASTRO ===================== -->
+  <div id="authScreen" class="card">
+    <h1 id="authTitle">Entrar no sistema</h1>
+    <div class="sub">Master Energy — Piloto conectado ao Supabase</div>
+    <div id="authStatus" class="status"></div>
+    <label>E-mail</label>
+    <input type="email" id="authEmail" placeholder="voce@masterenergy.com.br">
+    <label>Senha</label>
+    <input type="password" id="authPassword" placeholder="mínimo 6 caracteres">
+    <div id="authNomeWrap" class="hidden">
+      <label>Seu nome</label>
+      <input type="text" id="authNome" placeholder="Nome completo">
+    </div>
+    <div class="row" style="margin-top:6px">
+      <button class="btn-primary" id="authSubmitBtn" style="flex:1">Entrar</button>
+    </div>
+    <div style="margin-top:14px;font-size:12.5px;color:var(--text-secondary)">
+      <span id="authToggleText">Ainda não tem conta?</span> <a class="link" id="authToggleLink">Criar conta</a>
+    </div>
+    <div style="margin-top:8px;font-size:12.5px" id="forgotWrap">
+      <a class="link" id="forgotLink">Esqueci minha senha</a>
+    </div>
+  </div>
+
+  <!-- ===================== TELA: DEFINIR NOVA SENHA (após clicar no link do e-mail) ===================== -->
+  <div id="resetScreen" class="card hidden">
+    <h1>Criar nova senha</h1>
+    <div class="sub">Você chegou aqui pelo link enviado por e-mail. Digite sua nova senha abaixo.</div>
+    <div id="resetStatus" class="status"></div>
+    <label>Nova senha</label>
+    <input type="password" id="resetNewPassword" placeholder="mínimo 6 caracteres">
+    <button class="btn-primary" id="resetConfirmBtn" style="width:100%">Salvar nova senha</button>
+  </div>
+
+  <!-- ===================== APP (só aparece logado) ===================== -->
+  <div id="appScreen" class="hidden">
+    <div class="topbar">
+      <div>
+        <h1>Master Energy — Piloto</h1>
+        <div class="small" id="loggedAs"></div>
+      </div>
+      <button class="btn-ghost" id="logoutBtn">Sair</button>
+    </div>
+
+    <div class="row" style="margin-bottom:16px">
+      <button class="btn-primary" id="tabFuncBtn" style="flex:none">Funcionários</button>
+      <button class="btn-ghost" id="tabTreinoBtn" style="flex:none">Treinamentos / NRs</button>
+      <button class="btn-ghost" id="tabAsoBtn" style="flex:none">ASOs</button>
+      <button class="btn-ghost" id="tabEpiBtn" style="flex:none">EPIs</button>
+      <button class="btn-ghost" id="tabPontoBtn" style="flex:none">Folha de Ponto</button>
+    </div>
+
+    <div id="appStatus" class="status"></div>
+
+    <!-- ============ ABA: FUNCIONÁRIOS ============ -->
+    <div id="tabFuncionarios">
+      <div class="card">
+        <h1 style="font-size:15px">Novo funcionário</h1>
+        <div class="row">
+          <div><label>Nome completo *</label><input type="text" id="fNome"></div>
+          <div><label>CPF</label><input type="text" id="fCpf" placeholder="000.000.000-00"></div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Cargo</label>
+            <select id="fCargoSelect">
+              <option value="">Selecionar…</option>
+              <option value="Soldador">Soldador</option>
+              <option value="Caldeireiro">Caldeireiro</option>
+              <option value="Montador Industrial">Montador Industrial</option>
+              <option value="Encarregado">Encarregado</option>
+              <option value="Técnico de Segurança">Técnico de Segurança</option>
+              <option value="Rigger">Rigger</option>
+              <option value="Operador de Munck">Operador de Munck</option>
+              <option value="Eletricista Industrial">Eletricista Industrial</option>
+              <option value="Instrumentista">Instrumentista</option>
+              <option value="Supervisor de Obra">Supervisor de Obra</option>
+              <option value="Andaimista">Andaimista</option>
+              <option value="__outro__">Outro (digitar manualmente)</option>
+            </select>
+            <input type="text" id="fCargo" placeholder="Digite o cargo" style="display:none">
+          </div>
+          <div><label>Telefone</label><input type="text" id="fTelefone"></div>
+        </div>
+        <div class="row">
+          <div><label>Status</label>
+            <select id="fStatus">
+              <option value="apto">Apto</option>
+              <option value="pendente" selected>Pendente</option>
+              <option value="bloqueado">Bloqueado</option>
+            </select>
+          </div>
+          <div><label>Admissão</label><input type="date" id="fAdmissao"></div>
+        </div>
+        <button class="btn-primary" id="saveEmpBtn">Salvar funcionário</button>
+      </div>
+
+      <div class="card">
+        <h1 style="font-size:15px">Cadastro em massa — vários funcionários de uma vez</h1>
+        <div class="small" style="margin-bottom:10px">
+          Cole uma linha por funcionário, nessa ordem: <b>Nome, CPF, Cargo, Telefone</b> — separado por Tab, vírgula ou ponto e vírgula (do jeito que copia do Excel).
+        </div>
+        <textarea id="fBulkArea" placeholder="João Pedro Alves, 111.111.111-11, Soldador, (11) 90000-0001&#10;Marcia Souza Lima, 222.222.222-22, Encarregada, (11) 90000-0002"></textarea>
+        <button class="btn-primary" id="fBulkBtn">Cadastrar todos</button>
+      </div>
+
+      <div class="card">
+        <div class="topbar" style="margin-bottom:12px">
+          <h1 style="font-size:15px">Funcionários cadastrados</h1>
+          <button class="btn-ghost" id="refreshBtn">Atualizar lista</button>
+        </div>
+        <table>
+          <thead><tr><th>Nome</th><th>CPF</th><th>Cargo</th><th>Status</th><th>Telefone</th><th></th></tr></thead>
+          <tbody id="empTableBody"><tr><td colspan="6" class="small">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============ ABA: TREINAMENTOS / NRs ============ -->
+    <div id="tabTreinamentos" class="hidden">
+      <div class="card">
+        <h1 style="font-size:15px">Novo treinamento / NR</h1>
+        <div class="small" style="margin-bottom:12px">
+          A validade é calculada sozinha: NR-35 e NR-10 = 2 anos · NR-33 e NR-18 = 1 ano · outros cursos = 1 ano (padrão).
+          O aviso de vencimento começa 60 dias antes, igual em todo o sistema.
+        </div>
+
+        <label>Buscar funcionário</label>
+        <input type="text" id="tFuncionarioBusca" placeholder="Digite o nome pra filtrar a lista abaixo…">
+        <div class="row">
+          <div style="flex:2">
+            <label>Funcionário *</label>
+            <select id="tFuncionarioId"><option value="">Carregando funcionários…</option></select>
+          </div>
+          <div><label>Data de realização *</label><input type="date" id="tData"></div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Curso / NR *</label>
+            <select id="tCursoSelect">
+              <option value="">Selecionar…</option>
+              <option value="NR-01 Disposições Gerais e Gerenciamento de Riscos Ocupacionais">NR-01 · Gerenciamento de Riscos</option>
+              <option value="NR-05 CIPA">NR-05 · CIPA</option>
+              <option value="NR-06 Equipamento de Proteção Individual (EPI)">NR-06 · EPI</option>
+              <option value="NR-10 Segurança em Instalações e Serviços em Eletricidade">NR-10 · Segurança em Eletricidade</option>
+              <option value="NR-11 Operador de Empilhadeira">NR-11 · Operador de Empilhadeira</option>
+              <option value="NR-12 Segurança em Máquinas e Equipamentos">NR-12 · Máquinas e Equipamentos</option>
+              <option value="NR-13 Caldeiras, Vasos de Pressão e Tubulações">NR-13 · Caldeiras e Vasos de Pressão</option>
+              <option value="NR-17 Ergonomia">NR-17 · Ergonomia</option>
+              <option value="NR-18 Operador de PEMT">NR-18 · Operador de PEMT</option>
+              <option value="NR-18 Montador de Andaimes">NR-18 · Montador de Andaimes</option>
+              <option value="NR-20 Inflamáveis e Combustíveis">NR-20 · Inflamáveis e Combustíveis</option>
+              <option value="NR-23 Brigada de Incêndio">NR-23 · Brigada de Incêndio</option>
+              <option value="NR-33 Espaço Confinado">NR-33 · Espaço Confinado</option>
+              <option value="NR-34 Indústria da Construção e Reparação Naval">NR-34 · Construção e Reparação Naval</option>
+              <option value="NR-35 Trabalho em Altura">NR-35 · Trabalho em Altura</option>
+              <option value="__outro__">Outro (digitar manualmente)</option>
+            </select>
+            <input type="text" id="tCursoOutro" placeholder="Digite o nome do curso" style="display:none">
+          </div>
+          <div><label>Instrutor</label><input type="text" id="tInstrutor"></div>
+          <div><label>Carga horária</label><input type="text" id="tCarga" placeholder="Ex: 8h"></div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Certificado (PDF, foto ou print) — leitura automática tenta preencher os campos</label>
+            <input type="file" id="tArquivo" accept=".pdf,.jpg,.jpeg,.png">
+            <div class="small" id="tArquivoNome"></div>
+            <button type="button" class="btn-ghost" id="tArquivoRemover" style="display:none;font-size:11.5px;padding:6px 12px;margin-top:6px">✕ Remover arquivo / anexar outro</button>
+          </div>
+        </div>
+        <div id="ocrSuggestionBox" class="hidden" style="background:var(--warning-bg);border:1px solid rgba(232,163,61,.4);border-radius:9px;padding:12px 14px;margin-bottom:12px;font-size:12.5px">
+          <b style="color:var(--warning)">🔍 Leitura automática — campos já preenchidos, confira:</b>
+          <div id="ocrSuggestionText" style="margin:6px 0;color:var(--text-secondary)"></div>
+          <button class="btn-ghost" id="ocrApplyBtn" style="font-size:11.5px;padding:6px 12px">OK, entendi</button>
+          <button class="btn-ghost" id="ocrDismissBtn" style="font-size:11.5px;padding:6px 12px">Desfazer preenchimento</button>
+        </div>
+        <button class="btn-primary" id="saveTreinoBtn">Salvar treinamento</button>
+      </div>
+
+      <div class="card">
+        <h1 style="font-size:15px">Cadastro em massa — vários treinamentos de uma vez</h1>
+        <div class="small" style="margin-bottom:10px">
+          Cole uma linha por treinamento, nessa ordem: <b>Nome do funcionário (já cadastrado), Curso/NR, Data de realização (dd/mm/aaaa)</b>.
+        </div>
+        <textarea id="tBulkArea" placeholder="Carlos Andrade, NR-35 Trabalho em Altura, 15/01/2026&#10;Marcia Souza Lima, NR-10 Segurança em Eletricidade, 20/02/2026"></textarea>
+        <button class="btn-primary" id="tBulkBtn">Cadastrar todos</button>
+      </div>
+
+      <div class="card">
+        <div class="topbar" style="margin-bottom:12px">
+          <h1 style="font-size:15px">Treinamentos cadastrados</h1>
+          <button class="btn-ghost" id="refreshTreinoBtn">Atualizar lista</button>
+        </div>
+        <table>
+          <thead><tr><th>Funcionário</th><th>Curso</th><th>Realizado em</th><th>Válido até</th><th>Situação</th><th>Certificado</th><th></th></tr></thead>
+          <tbody id="treinoTableBody"><tr><td colspan="7" class="small">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============ ABA: ASOs ============ -->
+    <div id="tabAsos" class="hidden">
+      <div class="card">
+        <h1 style="font-size:15px">Novo ASO</h1>
+        <div class="small" style="margin-bottom:12px">Validade padrão de 1 ano. Aviso de vencimento começa 60 dias antes.</div>
+        <label>Buscar funcionário</label>
+        <input type="text" id="aFuncionarioBusca" placeholder="Digite o nome pra filtrar a lista abaixo…">
+        <div class="row">
+          <div style="flex:2"><label>Funcionário *</label><select id="aFuncionarioId"><option value="">Carregando…</option></select></div>
+          <div><label>Data do exame *</label><input type="date" id="aData"></div>
+        </div>
+        <div class="row">
+          <div><label>Tipo de ASO *</label>
+            <select id="aTipo">
+              <option value="">Selecionar…</option>
+              <option value="ASO Admissional">Admissional</option>
+              <option value="ASO Periódico">Periódico</option>
+              <option value="ASO de Mudança de Função">Mudança de Função</option>
+              <option value="ASO de Retorno ao Trabalho">Retorno ao Trabalho</option>
+              <option value="ASO Demissional">Demissional</option>
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Atestado (PDF, foto ou print) — leitura automática tenta preencher os campos</label>
+            <input type="file" id="aArquivo" accept=".pdf,.jpg,.jpeg,.png">
+            <div class="small" id="aArquivoNome"></div>
+            <button type="button" class="btn-ghost" id="aArquivoRemover" style="display:none;font-size:11.5px;padding:6px 12px;margin-top:6px">✕ Remover arquivo / anexar outro</button>
+          </div>
+        </div>
+        <div id="ocrSuggestionBoxAso" class="hidden" style="background:var(--warning-bg);border:1px solid rgba(232,163,61,.4);border-radius:9px;padding:12px 14px;margin-bottom:12px;font-size:12.5px">
+          <b style="color:var(--warning)">🔍 Leitura automática — campos já preenchidos, confira:</b>
+          <div id="ocrSuggestionTextAso" style="margin:6px 0;color:var(--text-secondary)"></div>
+          <button class="btn-ghost" id="ocrApplyBtnAso" style="font-size:11.5px;padding:6px 12px">OK, entendi</button>
+          <button class="btn-ghost" id="ocrDismissBtnAso" style="font-size:11.5px;padding:6px 12px">Desfazer preenchimento</button>
+        </div>
+        <button class="btn-primary" id="saveAsoBtn">Salvar ASO</button>
+      </div>
+      <div class="card">
+        <div class="topbar" style="margin-bottom:12px">
+          <h1 style="font-size:15px">ASOs cadastrados</h1>
+          <button class="btn-ghost" id="refreshAsoBtn">Atualizar lista</button>
+        </div>
+        <table>
+          <thead><tr><th>Funcionário</th><th>Tipo</th><th>Data do exame</th><th>Válido até</th><th>Situação</th><th></th></tr></thead>
+          <tbody id="asoTableBody"><tr><td colspan="6" class="small">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============ ABA: EPIs ============ -->
+    <div id="tabEpis" class="hidden">
+      <div class="card">
+        <h1 style="font-size:15px">Nova Ficha de EPI</h1>
+        <label>Buscar funcionário</label>
+        <input type="text" id="eFuncionarioBusca" placeholder="Digite o nome pra filtrar a lista abaixo…">
+        <div class="row">
+          <div style="flex:2"><label>Funcionário *</label><select id="eFuncionarioId"><option value="">Carregando…</option></select></div>
+          <div><label>Data de entrega *</label><input type="date" id="eEntrega"></div>
+        </div>
+        <div class="row">
+          <div><label>EPI *</label>
+            <select id="eEpiSelect">
+              <option value="">Selecionar…</option>
+              <option value="Capacete de Segurança">Capacete de Segurança</option>
+              <option value="Óculos de Proteção">Óculos de Proteção</option>
+              <option value="Protetor Auricular">Protetor Auricular</option>
+              <option value="Luva de Raspa">Luva de Raspa</option>
+              <option value="Botina de Segurança">Botina de Segurança</option>
+              <option value="Cinto Paraquedista">Cinto Paraquedista (trabalho em altura)</option>
+              <option value="Máscara PFF2">Máscara PFF2</option>
+              <option value="Protetor Facial">Protetor Facial</option>
+              <option value="Colete Refletivo">Colete Refletivo</option>
+              <option value="__outro__">Outro (digitar manualmente)</option>
+            </select>
+            <input type="text" id="eEpiOutro" placeholder="Digite o nome do EPI" style="display:none">
+          </div>
+          <div><label>CA (Certificado de Aprovação)</label><input type="text" id="eCa" placeholder="Ex: 31469"></div>
+          <div><label>Próxima troca</label><input type="date" id="eTroca"></div>
+        </div>
+        <button class="btn-primary" id="saveEpiBtn">Salvar EPI</button>
+      </div>
+      <div class="card">
+        <div class="topbar" style="margin-bottom:12px">
+          <h1 style="font-size:15px">EPIs cadastrados</h1>
+          <button class="btn-ghost" id="refreshEpiBtn">Atualizar lista</button>
+        </div>
+        <table>
+          <thead><tr><th>Funcionário</th><th>EPI</th><th>CA</th><th>Entrega</th><th>Próxima troca</th><th></th></tr></thead>
+          <tbody id="epiTableBody"><tr><td colspan="6" class="small">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============ ABA: FOLHA DE PONTO ============ -->
+    <div id="tabPonto" class="hidden">
+      <div class="card">
+        <h1 style="font-size:15px">Nova Folha de Ponto</h1>
+        <label>Buscar funcionário</label>
+        <input type="text" id="pFuncionarioBusca" placeholder="Digite o nome pra filtrar a lista abaixo…">
+        <div class="row">
+          <div style="flex:2"><label>Funcionário *</label><select id="pFuncionarioId"><option value="">Carregando…</option></select></div>
+          <div><label>Período (mês/ano) *</label><input type="month" id="pPeriodo"></div>
+        </div>
+        <div class="row">
+          <div><label>Cliente</label><input type="text" id="pCliente"></div>
+          <div><label>Obra</label><input type="text" id="pObra"></div>
+          <div><label>Data de envio *</label><input type="date" id="pDataEnvio"></div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Folha de ponto (PDF ou foto)</label>
+            <input type="file" id="pArquivo" accept=".pdf,.jpg,.jpeg,.png">
+            <div class="small" id="pArquivoNome"></div>
+            <button type="button" class="btn-ghost" id="pArquivoRemover" style="display:none;font-size:11.5px;padding:6px 12px;margin-top:6px">✕ Remover arquivo / anexar outro</button>
+          </div>
+        </div>
+        <button class="btn-primary" id="savePontoBtn">Salvar folha de ponto</button>
+      </div>
+      <div class="card">
+        <div class="topbar" style="margin-bottom:12px">
+          <h1 style="font-size:15px">Folhas de ponto cadastradas</h1>
+          <button class="btn-ghost" id="refreshPontoBtn">Atualizar lista</button>
+        </div>
+        <table>
+          <thead><tr><th>Funcionário</th><th>Cliente</th><th>Período</th><th>Enviada em</th><th>Situação</th><th></th></tr></thead>
+          <tbody id="pontoTableBody"><tr><td colspan="6" class="small">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script>
+  // ================= CONFIGURAÇÃO — já preenchido com o seu projeto =================
+  const SUPABASE_URL = 'https://bddjdpyfypsiwnirbyhv.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkZGpkcHlmeXBzaXduaXJieWh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NDk1MjgsImV4cCI6MjEwMDQyNTUyOH0.0HnH7caYH6sLp5n68izQXqbCJ-cLqTyxELl1EqoHHww';
+
+  let sb = null;
+  let isSignupMode = false;
+
+  function boot() {
+    if (typeof supabase === 'undefined') {
+      showAuthStatus('err', 'Não foi possível carregar a biblioteca do Supabase (verifique sua internet e recarregue a página).');
+      return;
+    }
+    sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    wireAuthForm();
+    wireAppForm();
+    wireResetForm();
+
+    // Detecta quando a pessoa chega pelo link de "esqueci minha senha" vindo do e-mail
+    sb.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        document.getElementById('authScreen').classList.add('hidden');
+        document.getElementById('appScreen').classList.add('hidden');
+        document.getElementById('resetScreen').classList.remove('hidden');
+      }
+    });
+
+    checkSession();
+  }
+
+  function showAuthStatus(type, msg) {
+    const el = document.getElementById('authStatus');
+    el.className = 'status ' + type;
+    el.textContent = msg;
+  }
+  function showAppStatus(type, msg) {
+    const el = document.getElementById('appStatus');
+    el.className = 'status ' + type;
+    el.textContent = msg;
+    if (type === 'ok') setTimeout(() => { el.className = 'status'; }, 3000);
+  }
+
+  // ---------- Sessão / Login / Cadastro ----------
+  async function checkSession() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      showApp(session.user);
+    } else {
+      showAuth();
+    }
+  }
+
+  function showAuth() {
+    document.getElementById('authScreen').classList.remove('hidden');
+    document.getElementById('appScreen').classList.add('hidden');
+  }
+
+  function showApp(user) {
+    document.getElementById('authScreen').classList.add('hidden');
+    document.getElementById('appScreen').classList.remove('hidden');
+    document.getElementById('loggedAs').textContent = 'Logado como: ' + user.email;
+    loadFuncionarios();
+  }
+
+  function wireAuthForm() {
+    document.getElementById('authToggleLink').addEventListener('click', () => {
+      isSignupMode = !isSignupMode;
+      document.getElementById('authTitle').textContent = isSignupMode ? 'Criar conta' : 'Entrar no sistema';
+      document.getElementById('authSubmitBtn').textContent = isSignupMode ? 'Criar conta' : 'Entrar';
+      document.getElementById('authNomeWrap').classList.toggle('hidden', !isSignupMode);
+      document.getElementById('authToggleText').textContent = isSignupMode ? 'Já tem conta?' : 'Ainda não tem conta?';
+      document.getElementById('authToggleLink').textContent = isSignupMode ? 'Entrar' : 'Criar conta';
+    });
+
+    document.getElementById('authSubmitBtn').addEventListener('click', async () => {
+      const email = document.getElementById('authEmail').value.trim();
+      const password = document.getElementById('authPassword').value;
+      const nome = document.getElementById('authNome').value.trim();
+      if (!email || !password) { showAuthStatus('err', 'Preencha e-mail e senha.'); return; }
+
+      showAuthStatus('info', isSignupMode ? 'Criando conta…' : 'Entrando…');
+      try {
+        if (isSignupMode) {
+          const { data, error } = await sb.auth.signUp({ email, password, options: { data: { nome } } });
+          if (error) throw error;
+          if (data.session) {
+            showApp(data.user);
+          } else {
+            showAuthStatus('ok', 'Conta criada! Se o projeto exigir confirmação por e-mail, confira sua caixa de entrada antes de entrar.');
+          }
+        } else {
+          const { data, error } = await sb.auth.signInWithPassword({ email, password });
+          if (error) throw error;
+          showApp(data.user);
+        }
+      } catch (e) {
+        showAuthStatus('err', 'Erro: ' + e.message);
+      }
+    });
+
+    document.getElementById('forgotLink').addEventListener('click', async () => {
+      const email = document.getElementById('authEmail').value.trim();
+      if (!email) { showAuthStatus('err', 'Digite seu e-mail no campo acima primeiro, depois clique em "Esqueci minha senha".'); return; }
+      showAuthStatus('info', 'Enviando e-mail de redefinição…');
+      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.href.split('#')[0] });
+      if (error) { showAuthStatus('err', 'Erro: ' + error.message); return; }
+      showAuthStatus('ok', `Enviamos um link para ${email}. Abra o e-mail e clique no link para criar uma senha nova (confira também a caixa de spam).`);
+    });
+  }
+
+  function wireResetForm() {
+    document.getElementById('resetConfirmBtn').addEventListener('click', async () => {
+      const novaSenha = document.getElementById('resetNewPassword').value;
+      if (!novaSenha || novaSenha.length < 6) {
+        document.getElementById('resetStatus').className = 'status err';
+        document.getElementById('resetStatus').textContent = 'A senha precisa ter no mínimo 6 caracteres.';
+        return;
+      }
+      document.getElementById('resetStatus').className = 'status info';
+      document.getElementById('resetStatus').textContent = 'Salvando nova senha…';
+      const { error } = await sb.auth.updateUser({ password: novaSenha });
+      if (error) {
+        document.getElementById('resetStatus').className = 'status err';
+        document.getElementById('resetStatus').textContent = 'Erro: ' + error.message;
+        return;
+      }
+      document.getElementById('resetStatus').className = 'status ok';
+      document.getElementById('resetStatus').textContent = 'Senha alterada com sucesso! Redirecionando…';
+      setTimeout(() => {
+        document.getElementById('resetScreen').classList.add('hidden');
+        checkSession();
+      }, 1200);
+    });
+  }
+
+  function wireAppForm() {
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await sb.auth.signOut();
+      showAuth();
+    });
+    document.getElementById('refreshBtn').addEventListener('click', loadFuncionarios);
+    document.getElementById('saveEmpBtn').addEventListener('click', saveFuncionario);
+    document.getElementById('fCargoSelect').addEventListener('change', (e) => {
+      document.getElementById('fCargo').style.display = e.target.value === '__outro__' ? 'block' : 'none';
+    });
+    document.getElementById('refreshTreinoBtn').addEventListener('click', loadTreinamentos);
+    document.getElementById('saveTreinoBtn').addEventListener('click', saveTreinamento);
+    document.getElementById('fBulkBtn').addEventListener('click', bulkFuncionarios);
+    document.getElementById('tBulkBtn').addEventListener('click', bulkTreinamentos);
+
+    // Busca/filtro do funcionário em cada formulário de lançamento
+    [['tFuncionarioBusca', 'tFuncionarioId'], ['aFuncionarioBusca', 'aFuncionarioId'], ['eFuncionarioBusca', 'eFuncionarioId'], ['pFuncionarioBusca', 'pFuncionarioId']].forEach(([buscaId, selectId]) => {
+      document.getElementById(buscaId).addEventListener('input', (e) => {
+        const termo = e.target.value.trim().toLowerCase();
+        const filtrados = termo ? funcionariosCache.filter(f => f.nome.toLowerCase().includes(termo)) : funcionariosCache;
+        renderFuncionarioOptionsEm(selectId, filtrados);
+      });
+    });
+
+    // Curso/NR: alterna entre lista e campo livre quando escolhe "Outro"
+    document.getElementById('tCursoSelect').addEventListener('change', (e) => {
+      document.getElementById('tCursoOutro').style.display = e.target.value === '__outro__' ? 'block' : 'none';
+    });
+    document.getElementById('eEpiSelect').addEventListener('change', (e) => {
+      document.getElementById('eEpiOutro').style.display = e.target.value === '__outro__' ? 'block' : 'none';
+    });
+
+    document.getElementById('saveAsoBtn').addEventListener('click', saveAso);
+    document.getElementById('refreshAsoBtn').addEventListener('click', loadAsos);
+    document.getElementById('saveEpiBtn').addEventListener('click', saveEpi);
+    document.getElementById('refreshEpiBtn').addEventListener('click', loadEpis);
+    document.getElementById('savePontoBtn').addEventListener('click', saveFolhaPonto);
+    document.getElementById('refreshPontoBtn').addEventListener('click', loadFolhasPonto);
+
+    // Anexo: se for imagem, tenta ler automaticamente (nunca aplica sozinho, sempre pede confirmação)
+    const ALVO_TREINO = { boxId: 'ocrSuggestionBox', textId: 'ocrSuggestionText', applyBtnId: 'ocrApplyBtn', dismissBtnId: 'ocrDismissBtn', funcionarioSelectId: 'tFuncionarioId', dataFieldId: 'tData', cursoSelectId: 'tCursoSelect', cursoOutroId: 'tCursoOutro', nomeCampoId: 'tArquivoNome' };
+    const ALVO_ASO = { boxId: 'ocrSuggestionBoxAso', textId: 'ocrSuggestionTextAso', applyBtnId: 'ocrApplyBtnAso', dismissBtnId: 'ocrDismissBtnAso', funcionarioSelectId: 'aFuncionarioId', dataFieldId: 'aData', nomeCampoId: 'aArquivoNome' };
+
+    // Função genérica que liga: seleção de arquivo (mostra botão de remover + tenta ler) e o botão de remover em si
+    function ligarCampoDeArquivo(inputId, nomeId, removerBtnId, boxSugestaoId, alvo) {
+      document.getElementById(inputId).addEventListener('change', async (e) => {
+        const f = e.target.files[0];
+        document.getElementById(nomeId).textContent = f ? `Selecionado: ${f.name}` : '';
+        document.getElementById(removerBtnId).style.display = f ? 'inline-block' : 'none';
+        if (boxSugestaoId) document.getElementById(boxSugestaoId).classList.add('hidden');
+        if (!f) return;
+        if (f.type === 'application/pdf' && alvo) { await processarPdf(f, alvo); return; }
+        if (f.type.startsWith('image/') && alvo) { await processarImagem(f, alvo); return; }
+      });
+      document.getElementById(removerBtnId).addEventListener('click', () => {
+        const input = document.getElementById(inputId);
+        input.value = ''; // limpa o arquivo escolhido de verdade
+        document.getElementById(nomeId).textContent = '';
+        document.getElementById(removerBtnId).style.display = 'none';
+        if (boxSugestaoId) document.getElementById(boxSugestaoId).classList.add('hidden');
+        showAppStatus('info', 'Arquivo removido. Você pode anexar outro quando quiser.');
+      });
+    }
+
+    ligarCampoDeArquivo('tArquivo', 'tArquivoNome', 'tArquivoRemover', 'ocrSuggestionBox', ALVO_TREINO);
+    ligarCampoDeArquivo('aArquivo', 'aArquivoNome', 'aArquivoRemover', 'ocrSuggestionBoxAso', ALVO_ASO);
+    ligarCampoDeArquivo('pArquivo', 'pArquivoNome', 'pArquivoRemover', null, null);
+
+    document.getElementById('tabFuncBtn').addEventListener('click', () => switchTab('func'));
+    document.getElementById('tabTreinoBtn').addEventListener('click', () => switchTab('treino'));
+    document.getElementById('tabAsoBtn').addEventListener('click', () => switchTab('aso'));
+    document.getElementById('tabEpiBtn').addEventListener('click', () => switchTab('epi'));
+    document.getElementById('tabPontoBtn').addEventListener('click', () => switchTab('ponto'));
+  }
+
+  function marcarNomeArquivo(f, sufixoHtml, campoId) {
+    document.getElementById(campoId || 'tArquivoNome').innerHTML = `Selecionado: ${f.name}${sufixoHtml || ''}`;
+  }
+
+  // ---------- Leitura automática de IMAGEM (foto, print) ----------
+  // Tenta ler a imagem em 4 posições (0°, 90°, 180°, 270°) e usa a que o motor de leitura
+  // teve mais confiança — resolve o caso de foto tirada com o celular de lado/rotacionado.
+  async function girarImagem(bitmap, graus) {
+    const canvas = document.createElement('canvas');
+    const vertical = graus === 90 || graus === 270;
+    canvas.width = vertical ? bitmap.height : bitmap.width;
+    canvas.height = vertical ? bitmap.width : bitmap.height;
+    const ctx = canvas.getContext('2d');
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate(graus * Math.PI / 180);
+    ctx.drawImage(bitmap, -bitmap.width / 2, -bitmap.height / 2);
+    return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+  }
+
+  async function ocrComRotacaoAutomatica(fonteImagem, atualizarProgresso) {
+    const bitmap = await createImageBitmap(fonteImagem);
+    const rotacoes = [0, 90, 270, 180];
+    let melhor = { texto: '', pontuacao: -1, graus: 0 };
+    for (let i = 0; i < rotacoes.length; i++) {
+      const graus = rotacoes[i];
+      if (atualizarProgresso) atualizarProgresso(i + 1, rotacoes.length, graus);
+      const blob = graus === 0 ? fonteImagem : await girarImagem(bitmap, graus);
+      const { data: { text, confidence } } = await Tesseract.recognize(blob, 'por');
+      if (confidence > melhor.pontuacao) melhor = { texto: text, pontuacao: confidence, graus };
+      // se já achou uma leitura bem confiante, não precisa testar as outras rotações (mais rápido)
+      if (confidence >= 88) break;
+    }
+    return melhor;
+  }
+
+  async function processarImagem(f, alvo) {
+    alvo = alvo || { nomeCampoId: 'tArquivoNome' };
+    marcarNomeArquivo(f, ' <b style="color:var(--warning)">— lendo automaticamente, aguarde…</b>', alvo.nomeCampoId);
+    showAppStatus('info', 'Lendo a imagem automaticamente (OCR)… isso pode levar de 15 segundos a 1-2 minutos, porque testa a imagem em diferentes posições (caso a foto esteja de lado).');
+
+    if (typeof Tesseract === 'undefined') {
+      marcarNomeArquivo(f, ' <b style="color:var(--danger)">— leitura automática indisponível agora</b>', alvo.nomeCampoId);
+      showAppStatus('err', 'A biblioteca de leitura automática não carregou (verifique sua internet e recarregue a página). Preencha os campos manualmente por enquanto.');
+      return;
+    }
+    try {
+      const resultado = await ocrComRotacaoAutomatica(f, (etapa, total, graus) => {
+        showAppStatus('info', `Testando leitura (${etapa}/${total}, posição ${graus}°)…`);
+      });
+      marcarNomeArquivo(f, resultado.graus !== 0 ? ` <span class="small">(lida girando ${resultado.graus}°)</span>` : '', alvo.nomeCampoId);
+      if (!resultado.texto || !resultado.texto.trim()) {
+        showAppStatus('err', 'A leitura terminou mas não encontrou nenhum texto legível nessa imagem, em nenhuma posição testada. Preencha os campos manualmente.');
+        return;
+      }
+      mostrarSugestaoOcr(resultado.texto, alvo);
+      showAppStatus('ok', `Leitura concluída${resultado.graus !== 0 ? ` (a imagem estava girada ${resultado.graus}°, corrigido automaticamente)` : ''} — confira a sugestão logo abaixo do campo de anexo.`);
+    } catch (err) {
+      marcarNomeArquivo(f, ' <b style="color:var(--danger)">— erro na leitura</b>', alvo.nomeCampoId);
+      showAppStatus('err', 'Não foi possível ler a imagem automaticamente: ' + err.message + '. Preencha os campos manualmente.');
+    }
+  }
+
+  // ---------- Leitura automática de PDF (texto digital OU escaneado/foto) ----------
+  async function processarPdf(f, alvo) {
+    alvo = alvo || { nomeCampoId: 'tArquivoNome' };
+    marcarNomeArquivo(f, ' <b style="color:var(--warning)">— abrindo o PDF, aguarde…</b>', alvo.nomeCampoId);
+    showAppStatus('info', 'Lendo o PDF automaticamente…');
+
+    if (typeof pdfjsLib === 'undefined') {
+      marcarNomeArquivo(f, ' <b style="color:var(--danger)">— leitura automática indisponível agora</b>', alvo.nomeCampoId);
+      showAppStatus('err', 'A biblioteca de leitura de PDF não carregou (verifique sua internet e recarregue a página). Preencha os campos manualmente por enquanto.');
+      return;
+    }
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+
+    try {
+      const arrayBuffer = await f.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+      // 1ª tentativa: o PDF já tem texto digital embutido (rápido e mais preciso — não é OCR, é leitura direta)
+      const page1 = await pdf.getPage(1);
+      const conteudo = await page1.getTextContent();
+      const textoDigital = conteudo.items.map(item => item.str).join(' ').trim();
+
+      if (textoDigital.length > 25) {
+        marcarNomeArquivo(f, '', alvo.nomeCampoId);
+        mostrarSugestaoOcr(textoDigital, alvo);
+        showAppStatus('ok', 'PDF lido com sucesso (texto digital) — confira a sugestão logo abaixo do campo de anexo.');
+        return;
+      }
+
+      // 2ª tentativa: PDF sem texto digital (provavelmente um certificado escaneado/foto colada em PDF) —
+      // converte a página em imagem e aplica a mesma leitura usada em fotos.
+      marcarNomeArquivo(f, ' <b style="color:var(--warning)">— PDF parece ser escaneado, convertendo em imagem e lendo…</b>', alvo.nomeCampoId);
+      showAppStatus('info', 'Esse PDF não tem texto digital (parece ser uma foto/scan) — convertendo em imagem para ler. Pode levar mais tempo.');
+
+      if (typeof Tesseract === 'undefined') {
+        marcarNomeArquivo(f, ' <b style="color:var(--danger)">— leitura automática indisponível agora</b>', alvo.nomeCampoId);
+        showAppStatus('err', 'A biblioteca de leitura de imagem não carregou. Preencha os campos manualmente.');
+        return;
+      }
+
+      const viewport = page1.getViewport({ scale: 2 });
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      await page1.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+
+      const resultado = await ocrComRotacaoAutomatica(blob, (etapa, total, graus) => {
+        showAppStatus('info', `Testando leitura do PDF escaneado (${etapa}/${total}, posição ${graus}°)…`);
+      });
+      marcarNomeArquivo(f, '', alvo.nomeCampoId);
+      if (!resultado.texto || !resultado.texto.trim()) {
+        showAppStatus('err', 'A leitura terminou mas não encontrou nenhum texto legível nesse PDF. Preencha os campos manualmente.');
+        return;
+      }
+      mostrarSugestaoOcr(resultado.texto, alvo);
+      showAppStatus('ok', `PDF escaneado lido com sucesso${resultado.graus !== 0 ? ` (corrigido ${resultado.graus}° de rotação)` : ''} — confira a sugestão logo abaixo do campo de anexo.`);
+    } catch (err) {
+      marcarNomeArquivo(f, ' <b style="color:var(--danger)">— erro na leitura</b>', alvo.nomeCampoId);
+      showAppStatus('err', 'Não foi possível ler o PDF automaticamente: ' + err.message + '. Preencha os campos manualmente.');
+    }
+  }
+
+  // ---------- OCR: sugestão de curso, data e funcionário (nunca aplica sozinho) ----------
+  const MESES_PT = { janeiro:'01', fevereiro:'02', marco:'03', março:'03', abril:'04', maio:'05', junho:'06', julho:'07', agosto:'08', setembro:'09', outubro:'10', novembro:'11', dezembro:'12' };
+  function mesParaNumero(mesTxt) {
+    const chave = (mesTxt || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return MESES_PT[chave] || null;
+  }
+  let ocrSugestaoAtual = null;
+  function mostrarSugestaoOcr(textoOriginal, alvo) {
+    // alvo: { boxId, textId, applyBtnId, dismissBtnId, funcionarioSelectId, dataFieldId, cursoSelectId (opcional), cursoOutroId (opcional) }
+    alvo = alvo || { boxId: 'ocrSuggestionBox', textId: 'ocrSuggestionText', applyBtnId: 'ocrApplyBtn', dismissBtnId: 'ocrDismissBtn', funcionarioSelectId: 'tFuncionarioId', dataFieldId: 'tData', cursoSelectId: 'tCursoSelect', cursoOutroId: 'tCursoOutro' };
+
+    // Normaliza espaços/quebras de linha antes de tudo — o OCR costuma quebrar uma mesma
+    // palavra ou "NR-06" em duas linhas separadas, o que quebrava a leitura antes desse ajuste.
+    const texto = textoOriginal.replace(/\s+/g, ' ').trim();
+
+    const nr = texto.match(/N\s*R[\s\u2013\u2014-]*0?(\d{1,2})/i);
+    // data por extenso (prioriza a do rodapé/assinatura "Cidade, dd de Mês de aaaa")
+    let dataEncontrada = null;
+    const rodape = texto.match(/[A-Za-zÀ-ú]+\s*,\s*(\d{1,2})\s*de\s*([A-Za-zçÇãÃéÉ]+)\s*de\s*(\d{4})/i);
+    if (rodape) { const mm = mesParaNumero(rodape[2]); if (mm) dataEncontrada = `${rodape[3]}-${mm}-${rodape[1].padStart(2,'0')}`; }
+    if (!dataEncontrada) {
+      const extenso = texto.match(/(\d{1,2})\s*de\s*([A-Za-zçÇãÃéÉ]+)\s*de\s*(\d{4})/i);
+      if (extenso) { const mm = mesParaNumero(extenso[2]); if (mm) dataEncontrada = `${extenso[3]}-${mm}-${extenso[1].padStart(2,'0')}`; }
+    }
+    if (!dataEncontrada) {
+      const numerica = texto.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+      if (numerica) dataEncontrada = `${numerica[3]}-${numerica[2]}-${numerica[1]}`;
+    }
+
+    // Busca o funcionário por PALAVRAS do nome, não pelo nome inteiro de uma vez —
+    // assim, mesmo se o OCR errar uma letra ou juntar/separar palavras diferente do esperado,
+    // ainda reconhece a pessoa se a maioria das palavras do nome aparecer no texto lido.
+    // Procura em TODOS os funcionários (não só os que estão filtrados no momento pela busca),
+    // pra nunca deixar de reconhecer alguém só porque o campo de busca estava com outro texto digitado.
+    const textoNormalizado = texto.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    let funcionarioEncontrado = null, melhorPontuacao = 0;
+    funcionariosCache.forEach(f => {
+      const palavrasNome = f.nome.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/\s+/).filter(p => p.length > 2);
+      if (!palavrasNome.length) return;
+      const acertos = palavrasNome.filter(p => textoNormalizado.includes(p)).length;
+      const pontuacao = acertos / palavrasNome.length;
+      if (pontuacao >= 0.5 && pontuacao > melhorPontuacao) { melhorPontuacao = pontuacao; funcionarioEncontrado = f; }
+    });
+
+    ocrSugestaoAtual = { nr: nr ? `NR-${nr[1].padStart(2,'0')}` : null, data: dataEncontrada, funcionarioId: funcionarioEncontrado ? funcionarioEncontrado.id : null, funcionarioNome: funcionarioEncontrado ? funcionarioEncontrado.nome : null, alvo };
+
+    // Preenche os campos de verdade IMEDIATAMENTE (sem precisar clicar em nada) — mas nada é salvo
+    // no banco ainda, só nos campos do formulário, que continuam 100% editáveis antes de "Salvar".
+    // Limpa o filtro de busca do funcionário primeiro, pra garantir que ele apareça na lista mesmo
+    // que o campo de busca tivesse outro nome digitado.
+    const buscaId = alvo.funcionarioSelectId === 'tFuncionarioId' ? 'tFuncionarioBusca'
+      : alvo.funcionarioSelectId === 'aFuncionarioId' ? 'aFuncionarioBusca'
+      : alvo.funcionarioSelectId === 'eFuncionarioId' ? 'eFuncionarioBusca'
+      : alvo.funcionarioSelectId === 'pFuncionarioId' ? 'pFuncionarioBusca' : null;
+    if (buscaId) { document.getElementById(buscaId).value = ''; renderFuncionarioOptionsEm(alvo.funcionarioSelectId, funcionariosCache); }
+
+    if (dataEncontrada) document.getElementById(alvo.dataFieldId).value = dataEncontrada;
+    if (ocrSugestaoAtual.nr && alvo.cursoSelectId) {
+      const sel = document.getElementById(alvo.cursoSelectId);
+      const match = Array.from(sel.options).find(o => o.value.toUpperCase().startsWith(ocrSugestaoAtual.nr));
+      if (match) { sel.value = match.value; document.getElementById(alvo.cursoOutroId).style.display = 'none'; }
+      else { sel.value = '__outro__'; document.getElementById(alvo.cursoOutroId).style.display = 'block'; document.getElementById(alvo.cursoOutroId).value = ocrSugestaoAtual.nr; }
+    }
+    if (funcionarioEncontrado) document.getElementById(alvo.funcionarioSelectId).value = funcionarioEncontrado.id;
+
+    const partes = [];
+    if (alvo.cursoSelectId) partes.push(ocrSugestaoAtual.nr ? `Norma: <b>${ocrSugestaoAtual.nr}</b> ✅ preenchido` : 'Norma: não identificada — preencha manualmente');
+    partes.push(dataEncontrada ? `Data: <b>${formatarDataBr(dataEncontrada)}</b> ✅ preenchido` : 'Data: não identificada — preencha manualmente');
+    partes.push(funcionarioEncontrado ? `Funcionário: <b>${funcionarioEncontrado.nome}</b> ✅ preenchido` : 'Funcionário: não identificado — selecione manualmente na lista');
+    document.getElementById(alvo.textId).innerHTML = partes.join(' · ') + '<br><span style="opacity:.8">Os campos já foram preenchidos sozinhos — confira e corrija se precisar, antes de salvar.</span>';
+    document.getElementById(alvo.boxId).classList.remove('hidden');
+  }
+
+  function aplicarSugestaoOcr() {
+    // O preenchimento já acontece na hora (em mostrarSugestaoOcr) — esse botão agora só fecha o aviso.
+    if (!ocrSugestaoAtual) return;
+    document.getElementById(ocrSugestaoAtual.alvo.boxId).classList.add('hidden');
+  }
+
+  function desfazerSugestaoOcr() {
+    if (!ocrSugestaoAtual) return;
+    const alvo = ocrSugestaoAtual.alvo;
+    document.getElementById(alvo.dataFieldId).value = '';
+    if (alvo.cursoSelectId) { document.getElementById(alvo.cursoSelectId).value = ''; document.getElementById(alvo.cursoOutroId).style.display = 'none'; document.getElementById(alvo.cursoOutroId).value = ''; }
+    document.getElementById(alvo.funcionarioSelectId).value = '';
+    document.getElementById(alvo.boxId).classList.add('hidden');
+    showAppStatus('info', 'Preenchimento automático desfeito — os campos foram limpos.');
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    [['ocrApplyBtn', 'ocrDismissBtn', 'ocrSuggestionBox'], ['ocrApplyBtnAso', 'ocrDismissBtnAso', 'ocrSuggestionBoxAso']].forEach(([applyId, dismissId, boxId]) => {
+      document.getElementById(applyId)?.addEventListener('click', aplicarSugestaoOcr);
+      document.getElementById(dismissId)?.addEventListener('click', desfazerSugestaoOcr);
+    });
+  });
+
+  const TABS = ['func', 'treino', 'aso', 'epi', 'ponto'];
+  const TAB_DIV = { func: 'tabFuncionarios', treino: 'tabTreinamentos', aso: 'tabAsos', epi: 'tabEpis', ponto: 'tabPonto' };
+  const TAB_BTN = { func: 'tabFuncBtn', treino: 'tabTreinoBtn', aso: 'tabAsoBtn', epi: 'tabEpiBtn', ponto: 'tabPontoBtn' };
+  function switchTab(tab) {
+    TABS.forEach(t => {
+      document.getElementById(TAB_DIV[t]).classList.toggle('hidden', t !== tab);
+      document.getElementById(TAB_BTN[t]).className = t === tab ? 'btn-primary' : 'btn-ghost';
+    });
+    if (tab === 'treino') { loadFuncionariosEm('tFuncionarioId'); loadTreinamentos(); }
+    if (tab === 'aso') { loadFuncionariosEm('aFuncionarioId'); loadAsos(); }
+    if (tab === 'epi') { loadFuncionariosEm('eFuncionarioId'); loadEpis(); }
+    if (tab === 'ponto') { loadFuncionariosEm('pFuncionarioId'); loadFolhasPonto(); }
+  }
+
+  // ---------- CRUD Funcionários ----------
+  async function loadFuncionarios() {
+    const tbody = document.getElementById('empTableBody');
+    tbody.innerHTML = '<tr><td colspan="6" class="small">Carregando…</td></tr>';
+    const { data, error } = await sb.from('funcionarios').select('*').order('nome', { ascending: true });
+    if (error) {
+      tbody.innerHTML = `<tr><td colspan="6" class="small" style="color:var(--danger)">Erro ao carregar: ${error.message}</td></tr>`;
+      showAppStatus('err', 'Erro ao carregar funcionários: ' + error.message);
+      return;
+    }
+    if (!data.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="small">Nenhum funcionário cadastrado ainda.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.map(f => `
+      <tr>
+        <td>${f.nome}</td>
+        <td>${f.cpf || '—'}</td>
+        <td>${f.cargo || '—'}</td>
+        <td><span class="pill ${f.status}">${f.status}</span></td>
+        <td>${f.telefone || '—'}</td>
+        <td><button class="del-btn" data-id="${f.id}">Excluir</button></td>
+      </tr>`).join('');
+
+    tbody.querySelectorAll('.del-btn').forEach(btn => {
+      btn.addEventListener('click', () => deleteFuncionario(btn.getAttribute('data-id')));
+    });
+  }
+
+  async function saveFuncionario() {
+    const nome = document.getElementById('fNome').value.trim();
+    const cpf = document.getElementById('fCpf').value.trim() || null;
+    if (!nome) { showAppStatus('err', 'Digite o nome do funcionário.'); return; }
+
+    // ---- Verifica se esse funcionário já existe (por CPF ou nome exato) antes de cadastrar ----
+    showAppStatus('info', 'Verificando se esse funcionário já está cadastrado…');
+    const { data: existentes, error: errBusca } = await sb.from('funcionarios').select('id, nome, cpf');
+    if (errBusca) { showAppStatus('err', 'Erro ao verificar duplicidade: ' + errBusca.message); return; }
+    const duplicadoPorCpf = cpf ? existentes.find(f => f.cpf && f.cpf.replace(/\D/g, '') === cpf.replace(/\D/g, '')) : null;
+    const duplicadoPorNome = existentes.find(f => f.nome.trim().toLowerCase() === nome.toLowerCase());
+    const duplicado = duplicadoPorCpf || duplicadoPorNome;
+    if (duplicado) {
+      showAppStatus('err',
+        `"${duplicado.nome}" já está cadastrado (${duplicadoPorCpf ? 'mesmo CPF' : 'mesmo nome'}). ` +
+        `Não recadastre a pessoa pra adicionar um curso — vá na aba "Treinamentos / NRs" e selecione ${duplicado.nome} na lista de lá, o curso novo se junta ao mesmo cadastro dele.`);
+      return;
+    }
+
+    const payload = {
+      nome, cpf,
+      cargo: (() => { const sel = document.getElementById('fCargoSelect').value; return sel === '__outro__' ? document.getElementById('fCargo').value.trim() || null : sel || null; })(),
+      telefone: document.getElementById('fTelefone').value.trim() || null,
+      status: document.getElementById('fStatus').value,
+      admissao: document.getElementById('fAdmissao').value || null,
+    };
+    showAppStatus('info', 'Salvando…');
+    const { error } = await sb.from('funcionarios').insert(payload);
+    if (error) {
+      if (error.code === '23505') { showAppStatus('err', 'Esse CPF já está cadastrado para outro funcionário.'); return; }
+      showAppStatus('err', 'Erro ao salvar: ' + error.message); return;
+    }
+    showAppStatus('ok', 'Funcionário salvo com sucesso no banco de dados.');
+    ['fNome', 'fCpf', 'fCargo', 'fTelefone', 'fAdmissao'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('fCargoSelect').value = '';
+    document.getElementById('fCargo').style.display = 'none';
+    loadFuncionarios();
+  }
+
+  async function deleteFuncionario(id) {
+    if (!confirm('Excluir este funcionário definitivamente do banco de dados?')) return;
+    const { error } = await sb.from('funcionarios').delete().eq('id', id);
+    if (error) { showAppStatus('err', 'Erro ao excluir: ' + error.message); return; }
+    showAppStatus('ok', 'Excluído do banco de dados.');
+    loadFuncionarios();
+  }
+
+  // ---------- Regra de validade por NR (mesma regra usada no resto do sistema) ----------
+  function anosDeValidade(curso) {
+    const c = (curso || '').toLowerCase();
+    if (/nr[\s-]?0?35/.test(c)) return 2;
+    if (/nr[\s-]?0?33/.test(c)) return 1;
+    if (/nr[\s-]?0?18/.test(c)) return 1;
+    if (/nr[\s-]?0?10/.test(c)) return 2;
+    return 1;
+  }
+  function calcularStatus(diasRestantes) {
+    if (diasRestantes < 0) return 'bloqueado';
+    if (diasRestantes <= 60) return 'pendente';
+    return 'apto';
+  }
+  // Converte data do banco (aaaa-mm-dd) para o padrão brasileiro (dd/mm/aaaa)
+  function formatarDataBr(dataIso) {
+    if (!dataIso) return '—';
+    const [yyyy, mm, dd] = dataIso.split('-');
+    if (!yyyy || !mm || !dd) return dataIso;
+    return `${dd}/${mm}/${yyyy}`;
+  }
+
+  // ---------- Funcionários (compartilhado por todas as abas de lançamento) ----------
+  let funcionariosCache = [];
+  async function loadFuncionariosEm(selectId) {
+    const sel = document.getElementById(selectId);
+    if (!funcionariosCache.length) {
+      const { data, error } = await sb.from('funcionarios').select('id, nome').order('nome');
+      if (error) { sel.innerHTML = '<option value="">Erro ao carregar funcionários</option>'; return; }
+      funcionariosCache = data;
+    }
+    renderFuncionarioOptionsEm(selectId, funcionariosCache);
+  }
+  function renderFuncionarioOptionsEm(selectId, lista) {
+    const sel = document.getElementById(selectId);
+    const selecionadoAntes = sel.value;
+    sel.innerHTML = '<option value="">Selecionar funcionário…</option>' +
+      lista.map(f => `<option value="${f.id}">${f.nome}</option>`).join('');
+    if (lista.some(f => f.id === selecionadoAntes)) sel.value = selecionadoAntes;
+  }
+  function nomeDoFuncionario(id) {
+    const f = funcionariosCache.find(x => x.id === id);
+    return f ? f.nome : '—';
+  }
+
+  async function loadTreinamentos() {
+    const tbody = document.getElementById('treinoTableBody');
+    tbody.innerHTML = '<tr><td colspan="7" class="small">Carregando…</td></tr>';
+    // "funcionarios(nome)" busca o nome do funcionário automaticamente pela relação entre as tabelas
+    const { data, error } = await sb.from('treinamentos').select('*, funcionarios(nome)').order('validade_data', { ascending: true });
+    if (error) {
+      tbody.innerHTML = `<tr><td colspan="7" class="small" style="color:var(--danger)">Erro ao carregar: ${error.message}</td></tr>`;
+      showAppStatus('err', 'Erro ao carregar treinamentos: ' + error.message);
+      return;
+    }
+    if (!data.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="small">Nenhum treinamento cadastrado ainda.</td></tr>';
+      return;
+    }
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    tbody.innerHTML = data.map(t => {
+      const diasRestantes = t.validade_data ? Math.round((new Date(t.validade_data + 'T00:00:00') - hoje) / 86400000) : null;
+      const status = diasRestantes !== null ? calcularStatus(diasRestantes) : (t.status || 'apto');
+      return `
+      <tr>
+        <td>${t.funcionarios ? t.funcionarios.nome : '—'}</td>
+        <td>${t.curso}</td>
+        <td>${formatarDataBr(t.data_realizacao)}</td>
+        <td>${formatarDataBr(t.validade_data)}</td>
+        <td><span class="pill ${status}">${status}${diasRestantes !== null ? ' (' + diasRestantes + 'd)' : ''}</span></td>
+        <td>${t.arquivo ? `<span class="file-link" data-arquivo="${t.arquivo}">Ver arquivo</span>` : '<span class="small">—</span>'}</td>
+        <td><button class="del-btn" data-id="${t.id}">Excluir</button></td>
+      </tr>`;
+    }).join('');
+
+    tbody.querySelectorAll('.del-btn').forEach(btn => {
+      btn.addEventListener('click', () => deleteTreinamento(btn.getAttribute('data-id')));
+    });
+    tbody.querySelectorAll('.file-link').forEach(link => {
+      link.addEventListener('click', () => abrirArquivo(link.getAttribute('data-arquivo')));
+    });
+  }
+
+  // ---------- Upload / visualização de arquivo real (Supabase Storage) ----------
+  async function subirArquivoTreinamento(file, funcionarioId) {
+    const caminho = `treinamentos/${funcionarioId}/${Date.now()}_${file.name}`;
+    const { error } = await sb.storage.from('documentos').upload(caminho, file, { upsert: true });
+    if (error) throw error;
+    return caminho;
+  }
+
+  async function abrirArquivo(caminho) {
+    const { data, error } = await sb.storage.from('documentos').createSignedUrl(caminho, 60 * 10); // link válido por 10 min
+    if (error) { showAppStatus('err', 'Erro ao abrir arquivo: ' + error.message); return; }
+    window.open(data.signedUrl, '_blank');
+  }
+
+  async function saveTreinamento() {
+    const funcionarioId = document.getElementById('tFuncionarioId').value;
+    const cursoSelecionado = document.getElementById('tCursoSelect').value;
+    const curso = cursoSelecionado === '__outro__' ? document.getElementById('tCursoOutro').value.trim() : cursoSelecionado;
+    const dataRealizacao = document.getElementById('tData').value;
+    const arquivoFile = document.getElementById('tArquivo').files[0];
+    if (!funcionarioId) { showAppStatus('err', 'Selecione o funcionário.'); return; }
+    if (!curso) { showAppStatus('err', 'Selecione (ou digite) o curso/NR.'); return; }
+    if (!dataRealizacao) { showAppStatus('err', 'Digite a data de realização.'); return; }
+
+    const anos = anosDeValidade(curso);
+    const dataVal = new Date(dataRealizacao + 'T00:00:00');
+    dataVal.setFullYear(dataVal.getFullYear() + anos);
+    const validadeData = dataVal.toISOString().slice(0, 10);
+    const diasRestantes = Math.round((dataVal - new Date()) / 86400000);
+
+    let caminhoArquivo = null;
+    if (arquivoFile) {
+      showAppStatus('info', 'Enviando certificado…');
+      try {
+        caminhoArquivo = await subirArquivoTreinamento(arquivoFile, funcionarioId);
+      } catch (e) {
+        showAppStatus('err', 'Erro ao enviar o arquivo: ' + e.message);
+        return;
+      }
+    }
+
+    const payload = {
+      funcionario_id: funcionarioId,
+      curso,
+      instrutor: document.getElementById('tInstrutor').value.trim() || null,
+      carga: document.getElementById('tCarga').value.trim() || null,
+      data_realizacao: dataRealizacao,
+      validade_data: validadeData,
+      status: calcularStatus(diasRestantes),
+      arquivo: caminhoArquivo,
+    };
+    showAppStatus('info', 'Salvando…');
+    const { error } = await sb.from('treinamentos').insert(payload);
+    if (error) { showAppStatus('err', 'Erro ao salvar: ' + error.message); return; }
+    showAppStatus('ok', `Treinamento salvo — validade calculada automaticamente: ${anos} ano(s), vence em ${validadeData}.${caminhoArquivo ? ' Certificado anexado.' : ''}`);
+    ['tCursoOutro', 'tInstrutor', 'tCarga', 'tData', 'tArquivo', 'tFuncionarioBusca'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('tCursoSelect').value = '';
+    document.getElementById('tCursoOutro').style.display = 'none';
+    document.getElementById('tArquivoNome').textContent = '';
+    document.getElementById('tArquivoRemover').style.display = 'none';
+    document.getElementById('ocrSuggestionBox').classList.add('hidden');
+    renderFuncionarioOptionsEm('tFuncionarioId', funcionariosCache);
+    document.getElementById('tFuncionarioId').value = '';
+    loadTreinamentos();
+  }
+
+  async function deleteTreinamento(id) {
+    if (!confirm('Excluir este treinamento definitivamente do banco de dados?')) return;
+    const { error } = await sb.from('treinamentos').delete().eq('id', id);
+    if (error) { showAppStatus('err', 'Erro ao excluir: ' + error.message); return; }
+    showAppStatus('ok', 'Excluído do banco de dados.');
+    loadTreinamentos();
+  }
+
+  // ---------- Cadastro em massa (colar do Excel) ----------
+  function detectarDelimitador(texto) {
+    const primeiraLinha = texto.split('\n')[0] || '';
+    if (primeiraLinha.includes('\t')) return '\t';
+    if (primeiraLinha.includes(';')) return ';';
+    return ',';
+  }
+  function parseLinhas(texto) {
+    const linhas = texto.split('\n').map(l => l.trim()).filter(Boolean);
+    if (!linhas.length) return [];
+    const delim = detectarDelimitador(texto);
+    return linhas.map(l => l.split(delim).map(c => c.trim()));
+  }
+
+  async function bulkFuncionarios() {
+    const texto = document.getElementById('fBulkArea').value;
+    const linhas = parseLinhas(texto);
+    const validas = linhas.filter(c => c[0]);
+    if (!validas.length) { showAppStatus('err', 'Cole ao menos uma linha com o nome do funcionário.'); return; }
+
+    showAppStatus('info', 'Verificando duplicados…');
+    const { data: existentes, error: errBusca } = await sb.from('funcionarios').select('nome, cpf');
+    if (errBusca) { showAppStatus('err', 'Erro ao verificar duplicidade: ' + errBusca.message); return; }
+
+    const jaVistosNesteLote = new Set();
+    const novos = [], duplicados = [];
+    validas.forEach(c => {
+      const nome = c[0], cpf = c[1] || null;
+      const nomeChave = nome.trim().toLowerCase();
+      const cpfChave = cpf ? cpf.replace(/\D/g, '') : null;
+      const existeNoBanco = existentes.some(f => (cpfChave && f.cpf && f.cpf.replace(/\D/g, '') === cpfChave) || f.nome.trim().toLowerCase() === nomeChave);
+      const duplicadoNoProprioLote = jaVistosNesteLote.has(nomeChave) || (cpfChave && jaVistosNesteLote.has(cpfChave));
+      if (existeNoBanco || duplicadoNoProprioLote) {
+        duplicados.push(nome);
+      } else {
+        jaVistosNesteLote.add(nomeChave);
+        if (cpfChave) jaVistosNesteLote.add(cpfChave);
+        novos.push({ nome, cpf, cargo: c[2] || null, telefone: c[3] || null, status: 'pendente' });
+      }
+    });
+
+    if (!novos.length) {
+      showAppStatus('err', `Nenhum cadastrado — todos já existiam: ${duplicados.join(', ')}. Pra adicionar curso a eles, use a aba Treinamentos.`);
+      return;
+    }
+    showAppStatus('info', `Cadastrando ${novos.length} funcionário(s) novo(s)…`);
+    const { error } = await sb.from('funcionarios').insert(novos);
+    if (error) { showAppStatus('err', 'Erro no cadastro em massa: ' + error.message); return; }
+    showAppStatus('ok',
+      `${novos.length} funcionário(s) novo(s) cadastrado(s).` +
+      (duplicados.length ? ` ${duplicados.length} já existia(m) e foram ignorados (não duplicados): ${duplicados.join(', ')}.` : ''));
+    document.getElementById('fBulkArea').value = '';
+    loadFuncionarios();
+  }
+
+  async function bulkTreinamentos() {
+    const texto = document.getElementById('tBulkArea').value;
+    const linhas = parseLinhas(texto);
+    const validas = linhas.filter(c => c[0] && c[1] && c[2]);
+    if (!validas.length) { showAppStatus('err', 'Cole ao menos uma linha completa: Nome, Curso, Data.'); return; }
+
+    showAppStatus('info', `Cadastrando ${validas.length} treinamento(s)…`);
+    const { data: funcionarios, error: errF } = await sb.from('funcionarios').select('id, nome');
+    if (errF) { showAppStatus('err', 'Erro ao buscar funcionários: ' + errF.message); return; }
+
+    const payload = []; const naoEncontrados = [];
+    validas.forEach(c => {
+      const [nome, curso, dataBr] = c;
+      const emp = funcionarios.find(f => f.nome.toLowerCase() === nome.toLowerCase());
+      if (!emp) { naoEncontrados.push(nome); return; }
+      const [dd, mm, yyyy] = dataBr.split('/');
+      if (!dd || !mm || !yyyy) return;
+      const dataRealizacao = `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
+      const anos = anosDeValidade(curso);
+      const dataVal = new Date(dataRealizacao + 'T00:00:00');
+      dataVal.setFullYear(dataVal.getFullYear() + anos);
+      const validadeData = dataVal.toISOString().slice(0, 10);
+      const diasRestantes = Math.round((dataVal - new Date()) / 86400000);
+      payload.push({ funcionario_id: emp.id, curso, data_realizacao: dataRealizacao, validade_data: validadeData, status: calcularStatus(diasRestantes) });
+    });
+
+    if (!payload.length) { showAppStatus('err', 'Nenhuma linha válida — confira se os nomes batem exatamente com os funcionários já cadastrados.'); return; }
+    const { error } = await sb.from('treinamentos').insert(payload);
+    if (error) { showAppStatus('err', 'Erro no cadastro em massa: ' + error.message); return; }
+    showAppStatus('ok', `${payload.length} treinamento(s) cadastrado(s).${naoEncontrados.length ? ' Não encontrados (confira o nome exato): ' + naoEncontrados.join(', ') : ''}`);
+    document.getElementById('tBulkArea').value = '';
+    loadTreinamentos();
+  }
+
+  // ================= CRUD: ASOs =================
+  async function loadAsos() {
+    const tbody = document.getElementById('asoTableBody');
+    tbody.innerHTML = '<tr><td colspan="6" class="small">Carregando…</td></tr>';
+    const { data, error } = await sb.from('asos').select('*, funcionarios(nome)').order('validade_data', { ascending: true });
+    if (error) { tbody.innerHTML = `<tr><td colspan="6" class="small" style="color:var(--danger)">Erro: ${error.message}</td></tr>`; return; }
+    if (!data.length) { tbody.innerHTML = '<tr><td colspan="6" class="small">Nenhum ASO cadastrado ainda.</td></tr>'; return; }
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    tbody.innerHTML = data.map(a => {
+      const dias = a.validade_data ? Math.round((new Date(a.validade_data + 'T00:00:00') - hoje) / 86400000) : null;
+      const status = dias !== null ? calcularStatus(dias) : (a.status || 'apto');
+      return `<tr>
+        <td>${a.funcionarios ? a.funcionarios.nome : '—'}</td>
+        <td>${a.tipo || '—'}</td>
+        <td>${formatarDataBr(a.data_realizacao)}</td>
+        <td>${formatarDataBr(a.validade_data)}</td>
+        <td><span class="pill ${status}">${status}${dias !== null ? ' (' + dias + 'd)' : ''}</span></td>
+        <td><button class="del-btn" data-id="${a.id}">Excluir</button></td>
+      </tr>`;
+    }).join('');
+    tbody.querySelectorAll('.del-btn').forEach(btn => btn.addEventListener('click', () => deleteAso(btn.getAttribute('data-id'))));
+  }
+
+  async function saveAso() {
+    const funcionarioId = document.getElementById('aFuncionarioId').value;
+    const tipo = document.getElementById('aTipo').value;
+    const dataRealizacao = document.getElementById('aData').value;
+    if (!funcionarioId) { showAppStatus('err', 'Selecione o funcionário.'); return; }
+    if (!tipo) { showAppStatus('err', 'Selecione o tipo de ASO.'); return; }
+    if (!dataRealizacao) { showAppStatus('err', 'Digite a data do exame.'); return; }
+
+    const dataVal = new Date(dataRealizacao + 'T00:00:00');
+    dataVal.setFullYear(dataVal.getFullYear() + 1); // ASO — validade padrão de 1 ano
+    const validadeData = dataVal.toISOString().slice(0, 10);
+    const diasRestantes = Math.round((dataVal - new Date()) / 86400000);
+
+    const arquivoFile = document.getElementById('aArquivo').files[0];
+    let caminhoArquivo = null;
+    if (arquivoFile) {
+      showAppStatus('info', 'Enviando atestado…');
+      try { caminhoArquivo = await subirArquivoTreinamento(arquivoFile, funcionarioId); }
+      catch (e) { showAppStatus('err', 'Erro ao enviar o arquivo: ' + e.message); return; }
+    }
+
+    showAppStatus('info', 'Salvando…');
+    const { error } = await sb.from('asos').insert({
+      funcionario_id: funcionarioId, tipo, data_realizacao: dataRealizacao,
+      validade_data: validadeData, status: calcularStatus(diasRestantes), arquivo: caminhoArquivo,
+    });
+    if (error) { showAppStatus('err', 'Erro ao salvar: ' + error.message); return; }
+    showAppStatus('ok', `ASO salvo — validade até ${formatarDataBr(validadeData)}.`);
+    ['aData', 'aArquivo', 'aFuncionarioBusca'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('aTipo').value = '';
+    document.getElementById('aArquivoNome').textContent = '';
+    document.getElementById('aArquivoRemover').style.display = 'none';
+    document.getElementById('ocrSuggestionBoxAso').classList.add('hidden');
+    renderFuncionarioOptionsEm('aFuncionarioId', funcionariosCache);
+    loadAsos();
+  }
+
+  async function deleteAso(id) {
+    if (!confirm('Excluir este ASO definitivamente do banco de dados?')) return;
+    const { error } = await sb.from('asos').delete().eq('id', id);
+    if (error) { showAppStatus('err', 'Erro ao excluir: ' + error.message); return; }
+    showAppStatus('ok', 'Excluído do banco de dados.');
+    loadAsos();
+  }
+
+  // ================= CRUD: EPIs =================
+  async function loadEpis() {
+    const tbody = document.getElementById('epiTableBody');
+    tbody.innerHTML = '<tr><td colspan="6" class="small">Carregando…</td></tr>';
+    const { data, error } = await sb.from('epis').select('*, funcionarios(nome)').order('troca', { ascending: true });
+    if (error) { tbody.innerHTML = `<tr><td colspan="6" class="small" style="color:var(--danger)">Erro: ${error.message}</td></tr>`; return; }
+    if (!data.length) { tbody.innerHTML = '<tr><td colspan="6" class="small">Nenhum EPI cadastrado ainda.</td></tr>'; return; }
+    tbody.innerHTML = data.map(e => `<tr>
+        <td>${e.funcionarios ? e.funcionarios.nome : '—'}</td>
+        <td>${e.epi}</td>
+        <td>${e.ca || '—'}</td>
+        <td>${formatarDataBr(e.entrega)}</td>
+        <td>${formatarDataBr(e.troca)}</td>
+        <td><button class="del-btn" data-id="${e.id}">Excluir</button></td>
+      </tr>`).join('');
+    tbody.querySelectorAll('.del-btn').forEach(btn => btn.addEventListener('click', () => deleteEpi(btn.getAttribute('data-id'))));
+  }
+
+  async function saveEpi() {
+    const funcionarioId = document.getElementById('eFuncionarioId').value;
+    const epiSelecionado = document.getElementById('eEpiSelect').value;
+    const epi = epiSelecionado === '__outro__' ? document.getElementById('eEpiOutro').value.trim() : epiSelecionado;
+    const entrega = document.getElementById('eEntrega').value;
+    if (!funcionarioId) { showAppStatus('err', 'Selecione o funcionário.'); return; }
+    if (!epi) { showAppStatus('err', 'Selecione (ou digite) o EPI.'); return; }
+    if (!entrega) { showAppStatus('err', 'Digite a data de entrega.'); return; }
+
+    showAppStatus('info', 'Salvando…');
+    const { error } = await sb.from('epis').insert({
+      funcionario_id: funcionarioId, epi,
+      ca: document.getElementById('eCa').value.trim() || null,
+      entrega, troca: document.getElementById('eTroca').value || null,
+      status: 'apto',
+    });
+    if (error) { showAppStatus('err', 'Erro ao salvar: ' + error.message); return; }
+    showAppStatus('ok', 'EPI salvo com sucesso.');
+    ['eCa', 'eEntrega', 'eTroca', 'eEpiOutro', 'eFuncionarioBusca'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('eEpiSelect').value = '';
+    document.getElementById('eEpiOutro').style.display = 'none';
+    renderFuncionarioOptionsEm('eFuncionarioId', funcionariosCache);
+    loadEpis();
+  }
+
+  async function deleteEpi(id) {
+    if (!confirm('Excluir esta ficha de EPI definitivamente do banco de dados?')) return;
+    const { error } = await sb.from('epis').delete().eq('id', id);
+    if (error) { showAppStatus('err', 'Erro ao excluir: ' + error.message); return; }
+    showAppStatus('ok', 'Excluído do banco de dados.');
+    loadEpis();
+  }
+
+  // ================= CRUD: Folha de Ponto =================
+  async function loadFolhasPonto() {
+    const tbody = document.getElementById('pontoTableBody');
+    tbody.innerHTML = '<tr><td colspan="6" class="small">Carregando…</td></tr>';
+    const { data, error } = await sb.from('folhas_ponto').select('*, funcionarios(nome)').order('data_envio', { ascending: false });
+    if (error) { tbody.innerHTML = `<tr><td colspan="6" class="small" style="color:var(--danger)">Erro: ${error.message}</td></tr>`; return; }
+    if (!data.length) { tbody.innerHTML = '<tr><td colspan="6" class="small">Nenhuma folha de ponto cadastrada ainda.</td></tr>'; return; }
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    tbody.innerHTML = data.map(p => {
+      const dias = p.validade_data ? Math.round((new Date(p.validade_data + 'T00:00:00') - hoje) / 86400000) : null;
+      const status = dias !== null ? calcularStatus(dias) : (p.status || 'apto');
+      return `<tr>
+        <td>${p.funcionarios ? p.funcionarios.nome : '—'}</td>
+        <td>${p.cliente || '—'}</td>
+        <td>${p.periodo || '—'}</td>
+        <td>${formatarDataBr(p.data_envio)}</td>
+        <td><span class="pill ${status}">${status}</span></td>
+        <td><button class="del-btn" data-id="${p.id}">Excluir</button></td>
+      </tr>`;
+    }).join('');
+    tbody.querySelectorAll('.del-btn').forEach(btn => btn.addEventListener('click', () => deleteFolhaPonto(btn.getAttribute('data-id'))));
+  }
+
+  async function saveFolhaPonto() {
+    const funcionarioId = document.getElementById('pFuncionarioId').value;
+    const periodoMes = document.getElementById('pPeriodo').value; // formato aaaa-mm do <input type=month>
+    const dataEnvio = document.getElementById('pDataEnvio').value;
+    if (!funcionarioId) { showAppStatus('err', 'Selecione o funcionário.'); return; }
+    if (!periodoMes) { showAppStatus('err', 'Selecione o período (mês/ano).'); return; }
+    if (!dataEnvio) { showAppStatus('err', 'Digite a data de envio.'); return; }
+
+    const [ano, mes] = periodoMes.split('-');
+    const nomesMeses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    const periodoTexto = `${nomesMeses[parseInt(mes) - 1]}/${ano}`;
+
+    const dataVal = new Date(dataEnvio + 'T00:00:00');
+    dataVal.setDate(dataVal.getDate() + 30); // próxima folha em ~30 dias, ciclo mensal
+    const validadeData = dataVal.toISOString().slice(0, 10);
+    const diasRestantes = Math.round((dataVal - new Date()) / 86400000);
+
+    const arquivoFile = document.getElementById('pArquivo').files[0];
+    let caminhoArquivo = null;
+    if (arquivoFile) {
+      showAppStatus('info', 'Enviando arquivo…');
+      try { caminhoArquivo = await subirArquivoTreinamento(arquivoFile, funcionarioId); }
+      catch (e) { showAppStatus('err', 'Erro ao enviar o arquivo: ' + e.message); return; }
+    }
+
+    showAppStatus('info', 'Salvando…');
+    const { error } = await sb.from('folhas_ponto').insert({
+      funcionario_id: funcionarioId, cliente: document.getElementById('pCliente').value.trim() || null,
+      obra: document.getElementById('pObra').value.trim() || null, periodo: periodoTexto,
+      data_envio: dataEnvio, validade_data: validadeData, status: calcularStatus(diasRestantes), arquivo: caminhoArquivo,
+    });
+    if (error) { showAppStatus('err', 'Erro ao salvar: ' + error.message); return; }
+    showAppStatus('ok', 'Folha de ponto salva com sucesso.');
+    ['pCliente', 'pObra', 'pDataEnvio', 'pArquivo', 'pFuncionarioBusca'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('pPeriodo').value = '';
+    document.getElementById('pArquivoNome').textContent = '';
+    document.getElementById('pArquivoRemover').style.display = 'none';
+    renderFuncionarioOptionsEm('pFuncionarioId', funcionariosCache);
+    loadFolhasPonto();
+  }
+
+  async function deleteFolhaPonto(id) {
+    if (!confirm('Excluir esta folha de ponto definitivamente do banco de dados?')) return;
+    const { error } = await sb.from('folhas_ponto').delete().eq('id', id);
+    if (error) { showAppStatus('err', 'Erro ao excluir: ' + error.message); return; }
+    showAppStatus('ok', 'Excluído do banco de dados.');
+    loadFolhasPonto();
+  }
+
+  boot();
+</script>
+</body>
+</html>
