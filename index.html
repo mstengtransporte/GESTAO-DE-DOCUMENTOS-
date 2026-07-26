@@ -332,6 +332,14 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
           <div><label>CA (Certificado de Aprovação)</label><input type="text" id="eCa" placeholder="Ex: 31469"></div>
           <div><label>Próxima troca</label><input type="date" id="eTroca"></div>
         </div>
+        <div class="row">
+          <div>
+            <label>Ficha de EPI / comprovante de entrega (PDF ou foto)</label>
+            <input type="file" id="eArquivo" accept=".pdf,.jpg,.jpeg,.png">
+            <div class="small" id="eArquivoNome"></div>
+            <button type="button" class="btn-ghost" id="eArquivoRemover" style="display:none;font-size:11.5px;padding:6px 12px;margin-top:6px">✕ Remover arquivo / anexar outro</button>
+          </div>
+        </div>
         <button class="btn-primary" id="saveEpiBtn">Salvar EPI</button>
       </div>
       <div class="card">
@@ -340,7 +348,7 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
           <button class="btn-ghost" id="refreshEpiBtn">Atualizar lista</button>
         </div>
         <table>
-          <thead><tr><th>Funcionário</th><th>EPI</th><th>CA</th><th>Entrega</th><th>Próxima troca</th><th></th></tr></thead>
+          <thead><tr><th>Funcionário</th><th>EPI</th><th>CA</th><th>Entrega</th><th>Próxima troca</th><th>Ficha</th><th></th></tr></thead>
           <tbody id="epiTableBody"><tr><td colspan="6" class="small">Carregando…</td></tr></tbody>
         </table>
       </div>
@@ -591,6 +599,7 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     ligarCampoDeArquivo('tArquivo', 'tArquivoNome', 'tArquivoRemover', 'ocrSuggestionBox', ALVO_TREINO);
     ligarCampoDeArquivo('aArquivo', 'aArquivoNome', 'aArquivoRemover', 'ocrSuggestionBoxAso', ALVO_ASO);
     ligarCampoDeArquivo('pArquivo', 'pArquivoNome', 'pArquivoRemover', null, null);
+    ligarCampoDeArquivo('eArquivo', 'eArquivoNome', 'eArquivoRemover', null, null);
 
     document.getElementById('tabFuncBtn').addEventListener('click', () => switchTab('func'));
     document.getElementById('tabTreinoBtn').addEventListener('click', () => switchTab('treino'));
@@ -739,7 +748,10 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     // palavra ou "NR-06" em duas linhas separadas, o que quebrava a leitura antes desse ajuste.
     const texto = textoOriginal.replace(/\s+/g, ' ').trim();
 
-    const nr = texto.match(/N\s*R[\s\u2013\u2014-]*0?(\d{1,2})/i);
+    // Tenta reconhecer a NR de várias formas, porque o OCR erra o traço/espaçamento de jeitos diferentes:
+    // "NR-06", "NR 06", "NR06", "NR: 06", "NR.06", ou pela frase "norma regulamentadora nº 06"
+    let nr = texto.match(/N\s*R[\s\u2013\u2014:.-]*0?(\d{1,2})\b/i);
+    if (!nr) nr = texto.match(/norma\s+regulamentadora\w*\s*n?[ºo°.:]*\s*0?(\d{1,2})/i);
     // data por extenso (prioriza a do rodapé/assinatura "Cidade, dd de Mês de aaaa")
     let dataEncontrada = null;
     const rodape = texto.match(/[A-Za-zÀ-ú]+\s*,\s*(\d{1,2})\s*de\s*([A-Za-zçÇãÃéÉ]+)\s*de\s*(\d{4})/i);
@@ -793,7 +805,11 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     if (alvo.cursoSelectId) partes.push(ocrSugestaoAtual.nr ? `Norma: <b>${ocrSugestaoAtual.nr}</b> ✅ preenchido` : 'Norma: não identificada — preencha manualmente');
     partes.push(dataEncontrada ? `Data: <b>${formatarDataBr(dataEncontrada)}</b> ✅ preenchido` : 'Data: não identificada — preencha manualmente');
     partes.push(funcionarioEncontrado ? `Funcionário: <b>${funcionarioEncontrado.nome}</b> ✅ preenchido` : 'Funcionário: não identificado — selecione manualmente na lista');
-    document.getElementById(alvo.textId).innerHTML = partes.join(' · ') + '<br><span style="opacity:.8">Os campos já foram preenchidos sozinhos — confira e corrija se precisar, antes de salvar.</span>';
+    document.getElementById(alvo.textId).innerHTML = partes.join(' · ') +
+      '<br><span style="opacity:.8">Os campos já foram preenchidos sozinhos — confira e corrija se precisar, antes de salvar.</span>' +
+      `<details style="margin-top:8px"><summary style="cursor:pointer;color:var(--blue-400);font-size:11px">Ver texto que a leitura encontrou (pra copiar e enviar se algo não bater)</summary>
+        <div style="background:rgba(0,0,0,.25);border-radius:7px;padding:8px;margin-top:6px;font-size:10.5px;font-family:ui-monospace,monospace;white-space:pre-wrap;user-select:all">${textoOriginal.replace(/</g, '&lt;')}</div>
+      </details>`;
     document.getElementById(alvo.boxId).classList.remove('hidden');
   }
 
@@ -1227,19 +1243,21 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
   // ================= CRUD: EPIs =================
   async function loadEpis() {
     const tbody = document.getElementById('epiTableBody');
-    tbody.innerHTML = '<tr><td colspan="6" class="small">Carregando…</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="small">Carregando…</td></tr>';
     const { data, error } = await sb.from('epis').select('*, funcionarios(nome)').order('troca', { ascending: true });
-    if (error) { tbody.innerHTML = `<tr><td colspan="6" class="small" style="color:var(--danger)">Erro: ${error.message}</td></tr>`; return; }
-    if (!data.length) { tbody.innerHTML = '<tr><td colspan="6" class="small">Nenhum EPI cadastrado ainda.</td></tr>'; return; }
+    if (error) { tbody.innerHTML = `<tr><td colspan="7" class="small" style="color:var(--danger)">Erro: ${error.message}</td></tr>`; return; }
+    if (!data.length) { tbody.innerHTML = '<tr><td colspan="7" class="small">Nenhum EPI cadastrado ainda.</td></tr>'; return; }
     tbody.innerHTML = data.map(e => `<tr>
         <td>${e.funcionarios ? e.funcionarios.nome : '—'}</td>
         <td>${e.epi}</td>
         <td>${e.ca || '—'}</td>
         <td>${formatarDataBr(e.entrega)}</td>
         <td>${formatarDataBr(e.troca)}</td>
+        <td>${e.arquivo ? `<span class="file-link" data-arquivo="${e.arquivo}">Ver ficha</span>` : '<span class="small">—</span>'}</td>
         <td><button class="del-btn" data-id="${e.id}">Excluir</button></td>
       </tr>`).join('');
     tbody.querySelectorAll('.del-btn').forEach(btn => btn.addEventListener('click', () => deleteEpi(btn.getAttribute('data-id'))));
+    tbody.querySelectorAll('.file-link').forEach(link => link.addEventListener('click', () => abrirArquivo(link.getAttribute('data-arquivo'))));
   }
 
   async function saveEpi() {
@@ -1251,18 +1269,28 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
     if (!epi) { showAppStatus('err', 'Selecione (ou digite) o EPI.'); return; }
     if (!entrega) { showAppStatus('err', 'Digite a data de entrega.'); return; }
 
+    const arquivoFile = document.getElementById('eArquivo').files[0];
+    let caminhoArquivo = null;
+    if (arquivoFile) {
+      showAppStatus('info', 'Enviando ficha/comprovante…');
+      try { caminhoArquivo = await subirArquivoTreinamento(arquivoFile, funcionarioId); }
+      catch (e) { showAppStatus('err', 'Erro ao enviar o arquivo: ' + e.message); return; }
+    }
+
     showAppStatus('info', 'Salvando…');
     const { error } = await sb.from('epis').insert({
       funcionario_id: funcionarioId, epi,
       ca: document.getElementById('eCa').value.trim() || null,
       entrega, troca: document.getElementById('eTroca').value || null,
-      status: 'apto',
+      status: 'apto', arquivo: caminhoArquivo,
     });
     if (error) { showAppStatus('err', 'Erro ao salvar: ' + error.message); return; }
-    showAppStatus('ok', 'EPI salvo com sucesso.');
-    ['eCa', 'eEntrega', 'eTroca', 'eEpiOutro', 'eFuncionarioBusca'].forEach(id => document.getElementById(id).value = '');
+    showAppStatus('ok', `EPI salvo com sucesso.${caminhoArquivo ? ' Ficha anexada.' : ''}`);
+    ['eCa', 'eEntrega', 'eTroca', 'eEpiOutro', 'eFuncionarioBusca', 'eArquivo'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('eEpiSelect').value = '';
     document.getElementById('eEpiOutro').style.display = 'none';
+    document.getElementById('eArquivoNome').textContent = '';
+    document.getElementById('eArquivoRemover').style.display = 'none';
     renderFuncionarioOptionsEm('eFuncionarioId', funcionariosCache);
     loadEpis();
   }
