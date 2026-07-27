@@ -1,0 +1,2736 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Master Energy · Sistema de Gestão SST</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+:root{
+  /* ---- Paleta: azul industrial/segurança, refinado a partir da identidade da Master Energy ---- */
+  --navy-950:#03101f; --navy-900:#0a2647; --navy-800:#0f3258; --navy-700:#154070;
+  --blue-500:#0092d6; --blue-400:#3ab4f2; --blue-300:#7dd0fb;
+  --amber-500:#e8a33d; --amber-400:#f0b75f;
+  --white:#ffffff;
+  --success:#1fa97a; --success-bg:rgba(31,169,122,.15);
+  --warning:#e8a33d; --warning-bg:rgba(232,163,61,.15);
+  --danger:#e5484d; --danger-bg:rgba(229,72,77,.15);
+  --surface-1: rgba(255,255,255,.045); --surface-2: rgba(255,255,255,.07); --surface-border: rgba(255,255,255,.1);
+  --ink-50:#f3f6fb; --ink-300:#a9b4c4; --ink-500:#6d7889;
+  --font-display:'Sora',Inter,Arial,sans-serif; --font-body:'Inter',Arial,sans-serif; --font-mono:'JetBrains Mono',ui-monospace,monospace;
+  --radius:14px; --sidebar-w:250px;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;font-family:var(--font-body);color:var(--ink-50);min-height:100vh;
+  background:
+    radial-gradient(900px 600px at 100% -10%, rgba(0,146,214,.16) 0%, transparent 55%),
+    radial-gradient(700px 500px at -10% 100%, rgba(232,163,61,.07) 0%, transparent 50%),
+    var(--navy-950);
+}
+h1{font-family:var(--font-display);font-weight:700;font-size:19px;margin:0 0 4px;letter-spacing:-.01em;color:var(--white);}
+.sub{color:var(--ink-300);font-size:13px;margin-bottom:20px;line-height:1.5;}
+label{display:block;font-size:11px;color:var(--ink-300);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;}
+input,select{width:100%;background:var(--surface-1);border:1px solid var(--surface-border);border-radius:9px;padding:10px 12px;color:var(--ink-50);font-size:13px;margin-bottom:12px;font-family:inherit;transition:border-color .15s,background .15s;}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue-500);background:var(--surface-2);}
+input[type=date],input[type=month],input[type=number]{font-family:var(--font-mono);}
+/* A lista suspensa aberta usa o tema do sistema operacional em muitos navegadores, que ignora o
+   fundo semi-transparente do select — por isso as opções ficam explícitas com fundo sólido e texto
+   escuro em negrito, garantindo que sempre apareçam legíveis, não importa o navegador. */
+select option{background:#ffffff;color:#0b1220;font-weight:600;padding:6px;}
+button{cursor:pointer;font-weight:600;font-size:13px;border-radius:9px;padding:10px 16px;border:1px solid transparent;font-family:var(--font-body);transition:transform .1s,filter .15s,background .15s;}
+button:active{transform:scale(.98);}
+.btn-primary{background:linear-gradient(135deg,var(--blue-500),#0b6fb0);color:#fff;box-shadow:0 4px 14px rgba(0,146,214,.28);}
+.btn-primary:hover{filter:brightness(1.08);}
+.btn-ghost{background:var(--surface-1);border-color:var(--surface-border);color:var(--ink-50);}
+.btn-ghost:hover{background:var(--surface-2);}
+.status{padding:11px 14px;border-radius:9px;font-size:12.5px;margin-bottom:14px;display:none;line-height:1.5;}
+.status.ok{background:var(--success-bg);color:var(--success);display:block;}
+.status.err{background:var(--danger-bg);color:var(--danger);display:block;}
+.status.info{background:var(--warning-bg);color:var(--warning);display:block;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;}
+th,td{text-align:left;padding:11px 10px;border-bottom:1px solid var(--surface-border);}
+th{color:var(--ink-500);text-transform:uppercase;font-size:10px;letter-spacing:.06em;font-weight:700;}
+tbody tr{transition:background .12s;}
+tbody tr:hover{background:var(--surface-1);}
+td{font-variant-numeric:tabular-nums;}
+.pill{padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap;}
+.pill.apto{background:var(--success-bg);color:var(--success);}
+.pill.pendente{background:var(--warning-bg);color:var(--warning);}
+.pill.bloqueado{background:var(--danger-bg);color:var(--danger);animation:pulso-alerta 1.6s ease-in-out infinite;}
+@keyframes pulso-alerta{
+  0%,100%{box-shadow:0 0 0 0 rgba(229,72,77,.55);}
+  50%{box-shadow:0 0 0 5px rgba(229,72,77,0);}
+}
+.card.spine.bad{animation:pulso-borda 1.8s ease-in-out infinite;}
+@keyframes pulso-borda{
+  0%,100%{border-left-color:var(--danger);}
+  50%{border-left-color:#ff8085;}
+}
+@media (prefers-reduced-motion: reduce){
+  .pill.bloqueado, .card.spine.bad{animation:none;}
+}
+.pill.ativo{background:var(--success-bg);color:var(--success);}
+.row{display:flex;gap:12px;flex-wrap:wrap;}
+.row > div{flex:1;min-width:140px;}
+.hidden{display:none !important;}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:12px;flex-wrap:wrap;}
+.small{font-size:11px;color:var(--ink-500);}
+a.link{color:var(--blue-400);cursor:pointer;font-size:12.5px;}
+a.link:hover{text-decoration:underline;}
+.del-btn{background:none;border:none;color:var(--danger);cursor:pointer;font-size:12px;padding:4px 6px;font-weight:600;}
+.del-btn:hover{text-decoration:underline;}
+textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-border);border-radius:9px;padding:10px 12px;color:var(--ink-50);font-size:12px;font-family:var(--font-mono);min-height:100px;margin-bottom:10px;resize:vertical;}
+.file-link{color:var(--blue-400);font-size:11.5px;cursor:pointer;font-weight:600;}
+.file-link:hover{text-decoration:underline;}
+
+/* ---- Cartão base: leve profundidade, cantos consistentes ---- */
+.card{
+  background:linear-gradient(180deg, var(--surface-2) 0%, var(--surface-1) 100%);
+  border:1px solid var(--surface-border);border-radius:var(--radius);padding:24px;margin-bottom:18px;
+  backdrop-filter:blur(16px);box-shadow:0 1px 0 rgba(255,255,255,.03) inset, 0 10px 30px -18px rgba(0,0,0,.5);
+}
+/* "Espinha" lateral colorida — um recurso visual que se repete pelo sistema todo pra indicar
+   status de relance (verde/âmbar/vermelho), sem precisar ler o texto. */
+.card.spine{border-left:3px solid var(--surface-border);padding-left:21px;}
+.card.spine.ok{border-left-color:var(--success);}
+.card.spine.warn{border-left-color:var(--warning);}
+.card.spine.bad{border-left-color:var(--danger);}
+.card.spine.info{border-left-color:var(--blue-500);}
+
+svg.icon{width:16px;height:16px;stroke-width:2;vertical-align:-3px;margin-right:6px;flex:none;}
+svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
+
+.dash-card{cursor:pointer;text-align:center;position:relative;transition:transform .15s,border-color .15s,box-shadow .15s;}
+.dash-card:hover{transform:translateY(-3px);box-shadow:0 14px 34px -16px rgba(0,146,214,.4);border-color:var(--blue-500);}
+.dash-card-abrir{
+  display:flex;align-items:center;justify-content:center;gap:2px;
+  font-size:10.5px;font-weight:700;color:var(--blue-400);margin-top:10px;
+  opacity:0;transform:translateY(-4px);transition:opacity .15s,transform .15s;
+}
+.dash-card:hover .dash-card-abrir{opacity:1;transform:translateY(0);}
+.dash-card-abrir svg{width:12px;height:12px;}
+
+/* ---- Layout geral: barra lateral fixa + conteúdo ---- */
+.app-shell{display:flex;min-height:100vh;}
+.sidebar{
+  width:var(--sidebar-w);flex:none;position:sticky;top:0;height:100vh;overflow-y:auto;
+  background:linear-gradient(180deg, rgba(10,38,71,.9), rgba(4,16,31,.96));
+  border-right:1px solid var(--surface-border);display:flex;flex-direction:column;padding:22px 14px;
+}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 8px 20px;position:relative;}
+.brand-mark{
+  width:38px;height:38px;border-radius:10px;flex:none;position:relative;overflow:hidden;
+  background:linear-gradient(135deg,var(--blue-500),var(--navy-700));
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 14px rgba(0,146,214,.35);
+}
+.brand-mark::after{
+  /* pequeno canto de "sinalização" — referência sutil, não literal, a faixa de segurança */
+  content:'';position:absolute;width:22px;height:22px;right:-11px;bottom:-11px;
+  background:repeating-linear-gradient(45deg, var(--amber-500) 0 3px, transparent 3px 6px);
+  opacity:.55;transform:rotate(0deg);
+}
+.brand-name{font-family:var(--font-display);font-weight:700;font-size:14.5px;color:var(--white);line-height:1.15;}
+.brand-sub{font-size:10px;color:var(--ink-500);text-transform:uppercase;letter-spacing:.06em;margin-top:2px;}
+
+.nav-group-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-500);font-weight:700;margin:16px 10px 6px;}
+.nav-item{
+  display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  padding:9px 10px;border-radius:9px;font-size:13px;font-weight:600;
+  background:transparent;border:1px solid transparent;color:var(--ink-300);margin-bottom:2px;
+}
+.nav-item svg{width:16px;height:16px;stroke-width:2;flex:none;}
+.nav-item:hover{background:var(--surface-1);color:var(--ink-50);}
+.nav-item.btn-primary{background:linear-gradient(135deg,var(--blue-500),#0b6fb0);color:#fff;box-shadow:0 4px 14px rgba(0,146,214,.28);border-color:transparent;}
+.nav-item.btn-ghost{background:transparent;border-color:transparent;}
+
+.sidebar-foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--surface-border);}
+.sidebar-user{font-size:11px;color:var(--ink-500);padding:6px 10px 10px;word-break:break-all;}
+
+.main-content{flex:1;min-width:0;padding:28px 32px 60px;max-width:1180px;}
+
+/* ---- Tela de login: ocupa a página inteira, sem sidebar ---- */
+.auth-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.auth-card{max-width:420px;width:100%;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ===================== TELA DE LOGIN / CADASTRO ===================== -->
+  <div id="authScreen" class="auth-page">
+  <div class="card auth-card">
+    <div class="brand" style="padding-bottom:22px">
+      <div class="brand-mark"><svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v6c0 5.2 3.8 9.4 9 10.5 5.2-1.1 9-5.3 9-10.5V7l-9-5Z"/><path d="m9 12 2 2 4-4"/></svg></div>
+      <div><div class="brand-name">MASTER ENERGY</div><div class="brand-sub">Gestão de SST</div></div>
+    </div>
+    <h1 id="authTitle">Entrar no sistema</h1>
+    <div class="sub">Sistema de Gestão SST — conectado ao Supabase</div>
+    <div id="authStatus" class="status"></div>
+    <label>E-mail</label>
+    <input type="email" id="authEmail" placeholder="voce@masterenergy.com.br">
+    <label>Senha</label>
+    <input type="password" id="authPassword" placeholder="mínimo 6 caracteres">
+    <div id="authNomeWrap" class="hidden">
+      <label>Seu nome</label>
+      <input type="text" id="authNome" placeholder="Nome completo">
+    </div>
+    <div class="row" style="margin-top:6px">
+      <button class="btn-primary" id="authSubmitBtn" style="flex:1">Entrar</button>
+    </div>
+    <div style="margin-top:14px;font-size:12.5px;color:var(--ink-300)">
+      <span id="authToggleText">Ainda não tem conta?</span> <a class="link" id="authToggleLink">Criar conta</a>
+    </div>
+    <div style="margin-top:8px;font-size:12.5px" id="forgotWrap">
+      <a class="link" id="forgotLink">Esqueci minha senha</a>
+    </div>
+  </div>
+  </div>
+
+  <!-- ===================== TELA: DEFINIR NOVA SENHA (após clicar no link do e-mail) ===================== -->
+  <div id="resetScreen" class="auth-page hidden">
+  <div class="card auth-card">
+    <h1>Criar nova senha</h1>
+    <div class="sub">Você chegou aqui pelo link enviado por e-mail. Digite sua nova senha abaixo.</div>
+    <div id="resetStatus" class="status"></div>
+    <label>Nova senha</label>
+    <input type="password" id="resetNewPassword" placeholder="mínimo 6 caracteres">
+    <button class="btn-primary" id="resetConfirmBtn" style="width:100%">Salvar nova senha</button>
+  </div>
+  </div>
+
+
+  <!-- ===================== APP (só aparece logado) ===================== -->
+  <div id="appScreen" class="hidden app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark"><svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v6c0 5.2 3.8 9.4 9 10.5 5.2-1.1 9-5.3 9-10.5V7l-9-5Z"/><path d="m9 12 2 2 4-4"/></svg></div>
+        <div><div class="brand-name">MASTER ENERGY</div><div class="brand-sub">Gestão de SST</div></div>
+      </div>
+
+      <div class="nav-group-label">Visão geral</div>
+      <button class="nav-item btn-ghost" id="tabDashBtn"><svg data-lucide="layout-dashboard"></svg>Dashboard</button>
+      <button class="nav-item btn-ghost" id="tabBuscaBtn"><svg data-lucide="search"></svg>Ficha Completa</button>
+
+      <div class="nav-group-label">Cadastro</div>
+      <button class="nav-item btn-primary" id="tabFuncBtn"><svg data-lucide="users"></svg>Funcionários</button>
+
+      <div class="nav-group-label">Documentos monitorados</div>
+      <button class="nav-item btn-ghost" id="tabTreinoBtn"><svg data-lucide="graduation-cap"></svg>Treinamentos / NRs</button>
+      <button class="nav-item btn-ghost" id="tabAsoBtn"><svg data-lucide="stethoscope"></svg>ASOs</button>
+      <button class="nav-item btn-ghost" id="tabEpiBtn"><svg data-lucide="shield"></svg>EPIs</button>
+      <button class="nav-item btn-ghost" id="tabIntegBtn"><svg data-lucide="building-2"></svg>Integração de Cliente</button>
+      <button class="nav-item btn-ghost" id="tabFeriasBtn"><svg data-lucide="palmtree"></svg>Férias</button>
+      <button class="nav-item btn-ghost" id="tabPontoBtn"><svg data-lucide="clock"></svg>Folha de Ponto</button>
+
+      <div class="sidebar-foot">
+        <div class="sidebar-user" id="loggedAs"></div>
+        <button class="nav-item btn-ghost" id="logoutBtn" style="width:100%"><svg data-lucide="log-out"></svg>Sair</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+    <button class="btn-ghost" id="voltarBtn" style="margin-bottom:14px;display:none"><svg class="icon" data-lucide="arrow-left"></svg>Voltar</button>
+    <div id="appStatus" class="status"></div>
+
+    <!-- ============ ABA: FUNCIONÁRIOS ============ -->
+    <!-- ============ ABA: FICHA COMPLETA (busca tudo de um funcionário) ============ -->
+    <div id="tabBusca" class="hidden">
+      <div class="card">
+        <h1 style="font-size:15px">🔍 Buscar tudo de um funcionário</h1>
+        <div class="small" style="margin-bottom:10px">Digite o nome ou o CPF — o sistema vai varrer todas as seções (ASOs, NRs, EPIs, Integrações, Folha de Ponto, Férias) e trazer tudo o que estiver registrado dessa pessoa, mesmo estando cada coisa numa seção diferente.</div>
+        <div class="row">
+          <div style="flex:2"><input type="text" id="buscaTermo" placeholder="Nome ou CPF…"></div>
+          <div style="flex:none"><button class="btn-primary" id="buscaBtn" style="width:auto">Buscar</button></div>
+        </div>
+      </div>
+      <div id="fichaResultado"></div>
+    </div>
+
+    <div id="tabFuncionarios" class="hidden">
+      <div class="card spine ok">
+        <h1 style="font-size:15px"><svg class="icon" data-lucide="download-cloud"></svg>Backup completo</h1>
+        <div class="small" style="margin-bottom:10px">
+          Baixa uma cópia de tudo que está no banco de dados agora (todos os funcionários, ASOs, NRs, EPIs, integrações,
+          férias e folhas de ponto) num arquivo só, pra você guardar onde quiser — pendrive, HD externo, seu computador.
+          Isso não some do Supabase, é só uma cópia extra pra sua segurança.
+        </div>
+        <button class="btn-primary" id="baixarBackupBtn"><svg class="icon" data-lucide="download"></svg>Baixar backup completo</button>
+        <span class="small" id="backupStatusTexto" style="margin-left:10px"></span>
+      </div>
+      <div class="card" style="border:1px solid rgba(0,146,214,.4)">
+        <h1 style="font-size:15px">📋 Importação Completa — uma planilha com tudo</h1>
+        <div class="small" style="margin-bottom:10px">
+          Cole aqui uma planilha do Excel com <b>uma linha por funcionário</b> e quantas colunas quiser — o sistema lê o
+          <b>nome de cada coluna</b> (a primeira linha) e distribui sozinho cada informação pro lugar certo: funcionário,
+          ASO, cada NR, integração, férias, EPI (ex: "EPI - Capacete de segurança") e folha de ponto.
+          Colunas que você não usar podem ficar em branco ou nem existir.
+        </div>
+        <button class="btn-ghost" id="baixarModeloBtn" style="margin-bottom:10px">⬇️ Baixar modelo (.csv) para preencher no Excel</button>
+        <textarea id="importCompletaArea" style="min-height:140px" placeholder="Cole aqui a planilha inteira (com a linha de cabeçalho no topo)…"></textarea>
+        <button class="btn-primary" id="importCompletaBtn">Importar tudo</button>
+        <div id="importResumo" class="hidden" style="margin-top:12px;background:rgba(0,0,0,.2);border-radius:9px;padding:12px;font-size:12px;white-space:pre-wrap"></div>
+      </div>
+      <div class="card">
+        <h1 style="font-size:15px">Novo funcionário</h1>
+        <div class="row">
+          <div><label>Nome completo *</label><input type="text" id="fNome"></div>
+          <div><label>CPF</label><input type="text" id="fCpf" placeholder="000.000.000-00"></div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Cargo</label>
+            <select id="fCargoSelect">
+              <option value="">Selecionar…</option>
+              <option value="Soldador">Soldador</option>
+              <option value="Caldeireiro">Caldeireiro</option>
+              <option value="Montador Industrial">Montador Industrial</option>
+              <option value="Encarregado">Encarregado</option>
+              <option value="Técnico de Segurança">Técnico de Segurança</option>
+              <option value="Rigger">Rigger</option>
+              <option value="Operador de Munck">Operador de Munck</option>
+              <option value="Eletricista Industrial">Eletricista Industrial</option>
+              <option value="Instrumentista">Instrumentista</option>
+              <option value="Supervisor de Obra">Supervisor de Obra</option>
+              <option value="Andaimista">Andaimista</option>
+              <option value="__outro__">Outro (digitar manualmente)</option>
+            </select>
+            <input type="text" id="fCargo" placeholder="Digite o cargo" style="display:none">
+          </div>
+          <div><label>Telefone</label><input type="text" id="fTelefone"></div>
+        </div>
+        <div class="row">
+          <div><label>Status</label>
+            <select id="fStatus">
+              <option value="apto">Apto</option>
+              <option value="pendente" selected>Pendente</option>
+              <option value="bloqueado">Bloqueado</option>
+            </select>
+          </div>
+          <div><label>Admissão</label><input type="date" id="fAdmissao"></div>
+        </div>
+        <button class="btn-primary" id="saveEmpBtn">Salvar funcionário</button>
+      </div>
+
+      <div class="card">
+        <h1 style="font-size:15px">Cadastro em massa — vários funcionários de uma vez</h1>
+        <div class="small" style="margin-bottom:10px">
+          Cole direto do Excel (colunas: <b>Nome, CPF, Cargo, Telefone</b>) — o sistema reconhece sozinho o separador, não precisa arrumar vírgula nem ponto e vírgula.
+        </div>
+        <textarea id="fBulkArea" placeholder="João Pedro Alves, 111.111.111-11, Soldador, (11) 90000-0001&#10;Marcia Souza Lima, 222.222.222-22, Encarregada, (11) 90000-0002"></textarea>
+        <button class="btn-primary" id="fBulkBtn">Cadastrar todos</button>
+      </div>
+
+      <div class="card">
+        <div class="topbar" style="margin-bottom:12px">
+          <h1 style="font-size:15px">Funcionários cadastrados</h1>
+          <button class="btn-ghost" id="refreshBtn">Atualizar lista</button>
+        </div>
+        <table>
+          <thead><tr><th>Nome</th><th>CPF</th><th>Cargo</th><th>Status</th><th>Telefone</th><th></th></tr></thead>
+          <tbody id="empTableBody"><tr><td colspan="6" class="small">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============ ABA: TREINAMENTOS / NRs ============ -->
+    <div id="tabTreinamentos" class="hidden">
+      <div class="card">
+        <h1 style="font-size:15px">Novo treinamento / NR</h1>
+        <div class="small" style="margin-bottom:12px">
+          A validade é calculada sozinha: NR-35 e NR-10 = 2 anos · NR-33 e NR-18 = 1 ano · outros cursos = 1 ano (padrão).
+          O aviso de vencimento começa 60 dias antes, igual em todo o sistema.
+        </div>
+
+        <label>Buscar funcionário</label>
+        <input type="text" id="tFuncionarioBusca" placeholder="Digite o nome pra filtrar a lista abaixo…">
+        <div class="row">
+          <div style="flex:2">
+            <label>Funcionário *</label>
+            <select id="tFuncionarioId"><option value="">Carregando funcionários…</option></select>
+          </div>
+          <div><label>Data de realização *</label><input type="date" id="tData"></div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Curso / NR *</label>
+            <select id="tCursoSelect">
+              <option value="">Selecionar…</option>
+              <option value="NR-01 Disposições Gerais e Gerenciamento de Riscos Ocupacionais">NR-01 · Gerenciamento de Riscos</option>
+              <option value="NR-05 CIPA">NR-05 · CIPA</option>
+              <option value="NR-06 Equipamento de Proteção Individual (EPI)">NR-06 · EPI</option>
+              <option value="NR-10 Segurança em Instalações e Serviços em Eletricidade">NR-10 · Segurança em Eletricidade</option>
+              <option value="NR-11 Operador de Empilhadeira">NR-11 · Operador de Empilhadeira</option>
+              <option value="NR-12 Segurança em Máquinas e Equipamentos">NR-12 · Máquinas e Equipamentos</option>
+              <option value="NR-13 Caldeiras, Vasos de Pressão e Tubulações">NR-13 · Caldeiras e Vasos de Pressão</option>
+              <option value="NR-17 Ergonomia">NR-17 · Ergonomia</option>
+              <option value="NR-18 Operador de PEMT">NR-18 · Operador de PEMT</option>
+              <option value="NR-18 Montador de Andaimes">NR-18 · Montador de Andaimes</option>
+              <option value="NR-20 Inflamáveis e Combustíveis">NR-20 · Inflamáveis e Combustíveis</option>
+              <option value="NR-23 Brigada de Incêndio">NR-23 · Brigada de Incêndio</option>
+              <option value="NR-33 Espaço Confinado">NR-33 · Espaço Confinado</option>
+              <option value="NR-34 Indústria da Construção e Reparação Naval">NR-34 · Construção e Reparação Naval</option>
+              <option value="NR-35 Trabalho em Altura">NR-35 · Trabalho em Altura</option>
+              <option value="__outro__">Outro (digitar manualmente)</option>
+            </select>
+            <input type="text" id="tCursoOutro" placeholder="Digite o nome do curso" style="display:none">
+          </div>
+          <div><label>Instrutor</label><input type="text" id="tInstrutor"></div>
+          <div><label>Carga horária</label><input type="text" id="tCarga" placeholder="Ex: 8h"></div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Certificado (PDF, foto ou print) — leitura automática tenta preencher os campos</label>
+            <input type="file" id="tArquivo" accept=".pdf,.jpg,.jpeg,.png">
+            <div class="small" id="tArquivoNome"></div>
+            <button type="button" class="btn-ghost" id="tArquivoRemover" style="display:none;font-size:11.5px;padding:6px 12px;margin-top:6px">✕ Remover arquivo / anexar outro</button>
+          </div>
+        </div>
+        <div id="ocrSuggestionBox" class="hidden" style="background:var(--warning-bg);border:1px solid rgba(232,163,61,.4);border-radius:9px;padding:12px 14px;margin-bottom:12px;font-size:12.5px">
+          <b style="color:var(--warning)">🔍 Leitura automática — campos já preenchidos, confira:</b>
+          <div id="ocrSuggestionText" style="margin:6px 0;color:var(--text-secondary)"></div>
+          <button class="btn-ghost" id="ocrApplyBtn" style="font-size:11.5px;padding:6px 12px">OK, entendi</button>
+          <button class="btn-ghost" id="ocrDismissBtn" style="font-size:11.5px;padding:6px 12px">Desfazer preenchimento</button>
+        </div>
+        <button class="btn-primary" id="saveTreinoBtn">Salvar treinamento</button>
+      </div>
+
+      <div class="card">
+        <h1 style="font-size:15px">Cadastro em massa — vários treinamentos de uma vez</h1>
+        <div class="small" style="margin-bottom:10px">
+          Cole direto do Excel (colunas: <b>Nome do funcionário já cadastrado, Curso/NR, Data de realização dd/mm/aaaa</b>) — o sistema reconhece sozinho o separador.
+        </div>
+        <textarea id="tBulkArea" placeholder="Carlos Andrade, NR-35 Trabalho em Altura, 15/01/2026&#10;Marcia Souza Lima, NR-10 Segurança em Eletricidade, 20/02/2026"></textarea>
+        <button class="btn-primary" id="tBulkBtn">Cadastrar todos</button>
+      </div>
+
+      <div class="card">
+        <div class="topbar" style="margin-bottom:12px">
+          <h1 style="font-size:15px">Treinamentos cadastrados</h1>
+          <button class="btn-ghost" id="refreshTreinoBtn">Atualizar lista</button>
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:400;margin-bottom:10px"><input type="checkbox" id="tMostrarHistorico" style="width:auto;margin:0"> Mostrar histórico (cursos substituídos por um mais recente)</label>
+        <table>
+          <thead><tr><th>Funcionário</th><th>Curso</th><th>Realizado em</th><th>Válido até</th><th>Situação</th><th>Certificado</th><th></th></tr></thead>
+          <tbody id="treinoTableBody"><tr><td colspan="7" class="small">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============ ABA: ASOs ============ -->
+    <div id="tabAsos" class="hidden">
+      <div class="card">
+        <h1 style="font-size:15px">Novo ASO</h1>
+        <div class="small" style="margin-bottom:12px">Validade padrão de 1 ano. Aviso de vencimento começa 60 dias antes.</div>
+        <label>Buscar funcionário</label>
+        <input type="text" id="aFuncionarioBusca" placeholder="Digite o nome pra filtrar a lista abaixo…">
+        <div class="row">
+          <div style="flex:2"><label>Funcionário *</label><select id="aFuncionarioId"><option value="">Carregando…</option></select></div>
+          <div><label>Data do exame *</label><input type="date" id="aData"></div>
+        </div>
+        <div class="row">
+          <div><label>Tipo de ASO *</label>
+            <select id="aTipo">
+              <option value="">Selecionar…</option>
+              <option value="ASO Admissional">Admissional</option>
+              <option value="ASO Periódico">Periódico</option>
+              <option value="ASO de Retorno ao Trabalho">Retorno ao Trabalho</option>
+              <option value="ASO de Mudança de Risco/Função">Mudança de Risco/Função</option>
+              <option value="ASO Demissional">Demissional</option>
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <div><label>Médico do Trabalho <span class="small">(opcional)</span></label><input type="text" id="aMedico"></div>
+          <div><label>Clínica <span class="small">(opcional)</span></label><input type="text" id="aClinica"></div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Atestado (PDF, foto ou print) — leitura automática tenta preencher os campos</label>
+            <input type="file" id="aArquivo" accept=".pdf,.jpg,.jpeg,.png">
+            <div class="small" id="aArquivoNome"></div>
+            <button type="button" class="btn-ghost" id="aArquivoRemover" style="display:none;font-size:11.5px;padding:6px 12px;margin-top:6px">✕ Remover arquivo / anexar outro</button>
+          </div>
+        </div>
+        <div id="ocrSuggestionBoxAso" class="hidden" style="background:var(--warning-bg);border:1px solid rgba(232,163,61,.4);border-radius:9px;padding:12px 14px;margin-bottom:12px;font-size:12.5px">
+          <b style="color:var(--warning)">🔍 Leitura automática — campos já preenchidos, confira:</b>
+          <div id="ocrSuggestionTextAso" style="margin:6px 0;color:var(--text-secondary)"></div>
+          <button class="btn-ghost" id="ocrApplyBtnAso" style="font-size:11.5px;padding:6px 12px">OK, entendi</button>
+          <button class="btn-ghost" id="ocrDismissBtnAso" style="font-size:11.5px;padding:6px 12px">Desfazer preenchimento</button>
+        </div>
+        <button class="btn-primary" id="saveAsoBtn">Salvar ASO</button>
+      </div>
+      <div class="card">
+        <div class="topbar" style="margin-bottom:12px">
+          <h1 style="font-size:15px">ASOs cadastrados</h1>
+          <button class="btn-ghost" id="refreshAsoBtn">Atualizar lista</button>
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:400;margin-bottom:10px"><input type="checkbox" id="aMostrarHistorico" style="width:auto;margin:0"> Mostrar histórico (ASOs substituídos por um mais recente do mesmo tipo)</label>
+        <table>
+          <thead><tr><th>Funcionário</th><th>Tipo</th><th>Data do exame</th><th>Válido até</th><th>Médico</th><th>Clínica</th><th>Situação</th><th></th></tr></thead>
+          <tbody id="asoTableBody"><tr><td colspan="6" class="small">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============ ABA: EPIs ============ -->
+    <div id="tabEpis" class="hidden">
+      <div class="card">
+        <h1 style="font-size:15px">Nova Ficha de EPI</h1>
+        <label>Buscar funcionário</label>
+        <input type="text" id="eFuncionarioBusca" placeholder="Digite o nome pra filtrar a lista abaixo…">
+        <div class="row">
+          <div style="flex:2"><label>Funcionário *</label><select id="eFuncionarioId"><option value="">Carregando…</option></select></div>
+          <div><label>Data de entrega *</label><input type="date" id="eEntrega"></div>
+        </div>
+        <div class="row">
+          <div><label>EPI *</label>
+            <select id="eEpiSelect">
+              <option value="">Selecionar…</option>
+              <option value="Capacete de segurança">Capacete de segurança</option>
+              <option value="Óculos de segurança (impacto)">Óculos de segurança (impacto)</option>
+              <option value="Óculos ampla visão">Óculos ampla visão</option>
+              <option value="Protetor facial (Policarbonato/Acrílico)">Protetor facial (Policarbonato/Acrílico)</option>
+              <option value="Viseira / Protetor facial para solda">Viseira / Protetor facial para solda</option>
+              <option value="Máscara de solda (autoescurecimento)">Máscara de solda (autoescurecimento)</option>
+              <option value="Botina de couro (Bico de Aço)">Botina de couro (Bico de Aço)</option>
+              <option value="Botina de couro (Bico de PVC/Composite)">Botina de couro (Bico de PVC/Composite)</option>
+              <option value="Botina/Bota de PVC ou Borracha (Química)">Botina/Bota de PVC ou Borracha (Química)</option>
+              <option value="Uniforme de trabalho (Brim/Algodão)">Uniforme de trabalho (Brim/Algodão)</option>
+              <option value="Cinto de segurança (tipo paraquedista)">Cinto de segurança (tipo paraquedista)</option>
+              <option value="Talabarte e trava-quedas">Talabarte e trava-quedas</option>
+              <option value="Luva de raspa">Luva de raspa</option>
+              <option value="Luva de vaqueta">Luva de vaqueta</option>
+              <option value="Luva nitrílica">Luva nitrílica</option>
+              <option value="Luva de neoprene/butyl (química)">Luva de neoprene/butyl (química)</option>
+              <option value="Luva de alta voltagem/dielétrica">Luva de alta voltagem/dielétrica</option>
+              <option value="Luva para alta temperatura (Kevlar/Silicone)">Luva para alta temperatura (Kevlar/Silicone)</option>
+              <option value="Luva multitato">Luva multitato</option>
+              <option value="Avental de raspa">Avental de raspa</option>
+              <option value="Avental de PVC/Impermeável (Químico)">Avental de PVC/Impermeável (Químico)</option>
+              <option value="Mangote de raspa/Kevlar">Mangote de raspa/Kevlar</option>
+              <option value="Perneira de raspa/proteção">Perneira de raspa/proteção</option>
+              <option value="Protetor auricular (tipo plug/inserção)">Protetor auricular (tipo plug/inserção)</option>
+              <option value="Protetor auricular (tipo concha/abafador)">Protetor auricular (tipo concha/abafador)</option>
+              <option value="Respirador PFF2/N95 (descartável)">Respirador PFF2/N95 (descartável)</option>
+              <option value="Respirador semifacial (filtros trocáveis)">Respirador semifacial (filtros trocáveis)</option>
+              <option value="Capa de chuva / Conjunto de PVC">Capa de chuva / Conjunto de PVC</option>
+              <option value="Protetor solar">Protetor solar</option>
+              <option value="__outro__">Outro (digitar manualmente)</option>
+            </select>
+            <input type="text" id="eEpiOutro" placeholder="Digite o nome do EPI" style="display:none">
+          </div>
+          <div><label>CA (Certificado de Aprovação)</label><input type="text" id="eCa" placeholder="Ex: 31469"></div>
+          <div><label>Próxima troca</label><input type="date" id="eTroca"><div class="small" id="eTrocaAuto"></div></div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Ficha de EPI / comprovante de entrega (PDF ou foto)</label>
+            <input type="file" id="eArquivo" accept=".pdf,.jpg,.jpeg,.png">
+            <div class="small" id="eArquivoNome"></div>
+            <button type="button" class="btn-ghost" id="eArquivoRemover" style="display:none;font-size:11.5px;padding:6px 12px;margin-top:6px">✕ Remover arquivo / anexar outro</button>
+          </div>
+        </div>
+        <button class="btn-primary" id="saveEpiBtn">Salvar EPI</button>
+      </div>
+      <div class="card">
+        <div class="topbar" style="margin-bottom:12px">
+          <h1 style="font-size:15px">EPIs cadastrados</h1>
+          <button class="btn-ghost" id="refreshEpiBtn">Atualizar lista</button>
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:400;margin-bottom:10px"><input type="checkbox" id="eMostrarHistorico" style="width:auto;margin:0"> Mostrar histórico (EPIs substituídos por um mais recente do mesmo item)</label>
+        <table>
+          <thead><tr><th>Funcionário</th><th>EPI</th><th>CA</th><th>Entrega</th><th>Próxima troca</th><th>Situação</th><th>Ficha</th><th></th></tr></thead>
+          <tbody id="epiTableBody"><tr><td colspan="6" class="small">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============ ABA: FOLHA DE PONTO ============ -->
+    <div id="tabPonto" class="hidden">
+      <div class="card">
+        <h1 style="font-size:15px">Nova Folha de Ponto</h1>
+        <label>Buscar funcionário</label>
+        <input type="text" id="pFuncionarioBusca" placeholder="Digite o nome pra filtrar a lista abaixo…">
+        <div class="row">
+          <div style="flex:2"><label>Funcionário *</label><select id="pFuncionarioId"><option value="">Carregando…</option></select></div>
+          <div><label>Competência (Mês/Ano) *</label><input type="month" id="pPeriodo"></div>
+        </div>
+        <div class="row">
+          <div><label>Cliente</label><input type="text" id="pCliente"></div>
+          <div><label>Obra</label><input type="text" id="pObra"></div>
+          <div><label>Data da Entrega *</label><input type="date" id="pDataEnvio"></div>
+        </div>
+        <div class="row">
+          <div><label>Recebido?</label>
+            <select id="pRecebido"><option value="sim">Sim</option><option value="nao">Não</option></select>
+          </div>
+          <div><label>Assinatura do Funcionário?</label>
+            <select id="pAssinatura"><option value="sim">Sim</option><option value="nao">Não</option></select>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Folha de ponto (PDF ou foto) — inclui a assinatura, se houver</label>
+            <input type="file" id="pArquivo" accept=".pdf,.jpg,.jpeg,.png">
+            <div class="small" id="pArquivoNome"></div>
+            <button type="button" class="btn-ghost" id="pArquivoRemover" style="display:none;font-size:11.5px;padding:6px 12px;margin-top:6px">✕ Remover arquivo / anexar outro</button>
+          </div>
+        </div>
+        <button class="btn-primary" id="savePontoBtn">Salvar folha de ponto</button>
+      </div>
+
+      <div class="card">
+        <h1 style="font-size:15px">Painel de Competência</h1>
+        <div class="small" style="margin-bottom:10px">Escolha um mês pra ver, de todos os funcionários, quem já entregou e quem ainda está faltando.</div>
+        <div class="row">
+          <div><label>Competência a conferir</label><input type="month" id="pPainelCompetencia"></div>
+          <div style="flex:none;display:flex;align-items:flex-end"><button class="btn-primary" id="pPainelVerBtn" style="width:auto">Ver competência</button></div>
+        </div>
+        <div id="pPainelStats" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin:10px 0"></div>
+        <table>
+          <thead><tr><th>Funcionário</th><th>Situação</th><th>Entregue em</th><th>Recebido</th><th>Assinatura</th><th>Arquivo</th></tr></thead>
+          <tbody id="pPainelBody"><tr><td colspan="6" class="small">Escolha uma competência e clique em "Ver competência".</td></tr></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="topbar" style="margin-bottom:12px">
+          <h1 style="font-size:15px">Todas as folhas já lançadas</h1>
+          <button class="btn-ghost" id="refreshPontoBtn">Atualizar lista</button>
+        </div>
+        <table>
+          <thead><tr><th>Funcionário</th><th>Cliente</th><th>Competência</th><th>Entregue em</th><th>Recebido</th><th>Assinatura</th><th></th></tr></thead>
+          <tbody id="pontoTableBody"><tr><td colspan="7" class="small">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============ ABA: INTEGRAÇÃO DE CLIENTE ============ -->
+    <div id="tabInteg" class="hidden">
+      <div class="card">
+        <h1 style="font-size:15px">Nova Integração de Cliente</h1>
+        <div class="small" style="margin-bottom:12px">Validade padrão de 1 ano. Aviso de vencimento começa 60 dias antes.</div>
+        <label>Buscar funcionário</label>
+        <input type="text" id="iFuncionarioBusca" placeholder="Digite o nome pra filtrar a lista abaixo…">
+        <div class="row">
+          <div style="flex:2"><label>Funcionário *</label><select id="iFuncionarioId"><option value="">Carregando…</option></select></div>
+          <div><label>Data de realização *</label><input type="date" id="iData"></div>
+        </div>
+        <div class="row">
+          <div><label>Empresa / Cliente *</label>
+            <select id="iEmpresaSelect">
+              <option value="">Selecionar…</option>
+              <option value="ABL">ABL</option>
+              <option value="CARIFLEX">CARIFLEX</option>
+              <option value="COMBIO">COMBIO</option>
+              <option value="CRODA">CRODA</option>
+              <option value="HENKEL ITAPEVI">HENKEL ITAPEVI</option>
+              <option value="HENKEL JUNDIAÍ">HENKEL JUNDIAÍ</option>
+              <option value="IPIRANGA POOL PAULÍNIA">IPIRANGA POOL PAULÍNIA</option>
+              <option value="MESSER">MESSER</option>
+              <option value="NOURYON ITUPEVA">NOURYON ITUPEVA</option>
+              <option value="NOURYON JUNDIAÍ">NOURYON JUNDIAÍ</option>
+              <option value="ORION">ORION</option>
+              <option value="SYENSQO ITATIBA">SYENSQO ITATIBA</option>
+              <option value="SYENSQO TABOÃO DA SERRA">SYENSQO TABOÃO DA SERRA</option>
+              <option value="UNILEVER">UNILEVER</option>
+              <option value="ZOETIS CAMPINAS">ZOETIS CAMPINAS</option>
+              <option value="ZOETIS PAULÍNIA">ZOETIS PAULÍNIA</option>
+              <option value="__outro__">Outra empresa (digitar)</option>
+            </select>
+            <input type="text" id="iEmpresaOutro" placeholder="Nome da empresa" style="display:none">
+          </div>
+          <div><label>Obra</label><input type="text" id="iObra"></div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Certificado de integração (PDF ou foto)</label>
+            <input type="file" id="iArquivo" accept=".pdf,.jpg,.jpeg,.png">
+            <div class="small" id="iArquivoNome"></div>
+            <button type="button" class="btn-ghost" id="iArquivoRemover" style="display:none;font-size:11.5px;padding:6px 12px;margin-top:6px">✕ Remover arquivo / anexar outro</button>
+          </div>
+        </div>
+        <div id="ocrSuggestionBoxInteg" class="hidden" style="background:var(--warning-bg);border:1px solid rgba(232,163,61,.4);border-radius:9px;padding:12px 14px;margin-bottom:12px;font-size:12.5px">
+          <b style="color:var(--warning)">🔍 Leitura automática — campos já preenchidos, confira:</b>
+          <div id="ocrSuggestionTextInteg" style="margin:6px 0;color:var(--text-secondary)"></div>
+          <button class="btn-ghost" id="ocrApplyBtnInteg" style="font-size:11.5px;padding:6px 12px">OK, entendi</button>
+          <button class="btn-ghost" id="ocrDismissBtnInteg" style="font-size:11.5px;padding:6px 12px">Desfazer preenchimento</button>
+        </div>
+        <button class="btn-primary" id="saveIntegBtn">Salvar integração</button>
+      </div>
+      <div class="card">
+        <div class="topbar" style="margin-bottom:12px">
+          <h1 style="font-size:15px">Integrações cadastradas</h1>
+          <button class="btn-ghost" id="refreshIntegBtn">Atualizar lista</button>
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:400;margin-bottom:10px"><input type="checkbox" id="iMostrarHistorico" style="width:auto;margin:0"> Mostrar histórico (integrações substituídas por uma mais recente da mesma empresa)</label>
+        <table>
+          <thead><tr><th>Funcionário</th><th>Empresa</th><th>Obra</th><th>Realizado em</th><th>Válido até</th><th>Situação</th><th></th></tr></thead>
+          <tbody id="integTableBody"><tr><td colspan="7" class="small">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============ ABA: FÉRIAS ============ -->
+    <div id="tabFerias" class="hidden">
+      <div class="card">
+        <h1 style="font-size:15px">Novo período de férias</h1>
+        <div class="small" style="margin-bottom:12px">
+          O período aquisitivo dura 1 ano a partir da data de início. O limite legal para gozar é 2 anos depois do início —
+          passar disso é uma infração que nunca pode acontecer. Aviso começa 60 dias antes do limite.
+        </div>
+        <label>Buscar funcionário</label>
+        <input type="text" id="vFuncionarioBusca" placeholder="Digite o nome pra filtrar a lista abaixo…">
+        <div class="row">
+          <div style="flex:2"><label>Funcionário *</label><select id="vFuncionarioId"><option value="">Carregando…</option></select></div>
+          <div><label>Início do período aquisitivo *</label><input type="date" id="vInicio"></div>
+        </div>
+        <button class="btn-primary" id="saveFeriasBtn">Salvar período</button>
+      </div>
+      <div class="card">
+        <div class="topbar" style="margin-bottom:12px">
+          <h1 style="font-size:15px">Controle de Férias</h1>
+          <button class="btn-ghost" id="refreshFeriasBtn">Atualizar lista</button>
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:400;margin-bottom:10px"><input type="checkbox" id="vMostrarHistorico" style="width:auto;margin:0"> Mostrar histórico (períodos de férias já encerrados/substituídos)</label>
+        <table>
+          <thead><tr><th>Funcionário</th><th>Início do período</th><th>Fim aquisitivo</th><th>Limite p/ 2ª gozar</th><th>Início das Férias</th><th>Dias de Gozo</th><th>Data de Retorno</th><th>Situação</th><th></th></tr></thead>
+          <tbody id="feriasTableBody"><tr><td colspan="9" class="small">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="card hidden" id="gozoCard">
+        <h1 style="font-size:15px">Registrar gozo de férias</h1>
+        <div class="small" id="gozoFuncionarioNome" style="margin-bottom:10px"></div>
+        <div class="row">
+          <div><label>Início das Férias *</label><input type="date" id="gozoInicio"></div>
+          <div><label>Dias de Gozo *</label><input type="number" id="gozoDias" value="30" min="1" max="30"></div>
+          <div><label>Data de Retorno</label><input type="date" id="gozoRetorno" disabled style="opacity:.7"></div>
+        </div>
+        <div class="small" style="margin-bottom:12px">A Data de Retorno é calculada sozinha (Início das Férias + Dias de Gozo). O padrão é 30 dias — só mude se for férias fracionadas.</div>
+        <button class="btn-primary" id="confirmarGozoBtn">Confirmar gozo (inicia novo período automaticamente)</button>
+        <button class="btn-ghost" id="cancelarGozoBtn">Cancelar</button>
+      </div>
+    </div>
+
+    <!-- ============ ABA: DASHBOARD ============ -->
+    <div id="tabDash" class="hidden">
+      <div class="card">
+        <h1 style="font-size:15px">Buscar funcionário</h1>
+        <div class="row">
+          <div style="flex:2"><input type="text" id="dashBuscaTermo" placeholder="Nome ou CPF…"></div>
+          <div style="flex:none"><button class="btn-primary" id="dashBuscaBtn" style="width:auto">Buscar ficha completa</button></div>
+        </div>
+      </div>
+      <div id="dashCards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:16px"></div>
+      <div class="card" id="dashAlertasCard">
+        <h1 style="font-size:15px">⚠️ Vencendo nos próximos 60 dias ou já vencido</h1>
+        <table>
+          <thead><tr><th>Funcionário</th><th>O quê</th><th>Válido até</th><th>Situação</th><th></th></tr></thead>
+          <tbody id="dashAlertasBody"><tr><td colspan="5" class="small">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    </main>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script>
+  // ================= CONFIGURAÇÃO — já preenchido com o seu projeto =================
+  const SUPABASE_URL = 'https://bddjdpyfypsiwnirbyhv.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkZGpkcHlmeXBzaXduaXJieWh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NDk1MjgsImV4cCI6MjEwMDQyNTUyOH0.0HnH7caYH6sLp5n68izQXqbCJ-cLqTyxELl1EqoHHww';
+
+  let sb = null;
+  let isSignupMode = false;
+
+  function boot() {
+    if (typeof supabase === 'undefined') {
+      showAuthStatus('err', 'Não foi possível carregar a biblioteca do Supabase (verifique sua internet e recarregue a página).');
+      return;
+    }
+    sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    wireAuthForm();
+    wireAppForm();
+    wireResetForm();
+
+    // Detecta quando a pessoa chega pelo link de "esqueci minha senha" vindo do e-mail
+    sb.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        document.getElementById('authScreen').classList.add('hidden');
+        document.getElementById('appScreen').classList.add('hidden');
+        document.getElementById('resetScreen').classList.remove('hidden');
+      }
+    });
+
+    checkSession();
+  }
+
+  function showAuthStatus(type, msg) {
+    const el = document.getElementById('authStatus');
+    el.className = 'status ' + type;
+    el.textContent = msg;
+  }
+  function showAppStatus(type, msg) {
+    const el = document.getElementById('appStatus');
+    el.className = 'status ' + type;
+    el.textContent = msg;
+    if (type === 'ok') setTimeout(() => { el.className = 'status'; }, 3000);
+  }
+
+  // ---------- Sessão / Login / Cadastro ----------
+  async function checkSession() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      showApp(session.user);
+    } else {
+      showAuth();
+    }
+  }
+
+  function showAuth() {
+    document.getElementById('authScreen').classList.remove('hidden');
+    document.getElementById('appScreen').classList.add('hidden');
+  }
+
+  function showApp(user) {
+    document.getElementById('authScreen').classList.add('hidden');
+    document.getElementById('appScreen').classList.remove('hidden');
+    document.getElementById('loggedAs').textContent = 'Logado como: ' + user.email;
+    if (window.lucide) lucide.createIcons();
+    historicoTabs = []; tabAtual = null;
+    switchTab('dash');
+  }
+
+  function wireAuthForm() {
+    document.getElementById('authToggleLink').addEventListener('click', () => {
+      isSignupMode = !isSignupMode;
+      document.getElementById('authTitle').textContent = isSignupMode ? 'Criar conta' : 'Entrar no sistema';
+      document.getElementById('authSubmitBtn').textContent = isSignupMode ? 'Criar conta' : 'Entrar';
+      document.getElementById('authNomeWrap').classList.toggle('hidden', !isSignupMode);
+      document.getElementById('authToggleText').textContent = isSignupMode ? 'Já tem conta?' : 'Ainda não tem conta?';
+      document.getElementById('authToggleLink').textContent = isSignupMode ? 'Entrar' : 'Criar conta';
+    });
+
+    document.getElementById('authSubmitBtn').addEventListener('click', async () => {
+      const email = document.getElementById('authEmail').value.trim();
+      const password = document.getElementById('authPassword').value;
+      const nome = document.getElementById('authNome').value.trim();
+      if (!email || !password) { showAuthStatus('err', 'Preencha e-mail e senha.'); return; }
+
+      showAuthStatus('info', isSignupMode ? 'Criando conta…' : 'Entrando…');
+      try {
+        if (isSignupMode) {
+          const { data, error } = await sb.auth.signUp({ email, password, options: { data: { nome }, emailRedirectTo: window.location.href.split('#')[0] } });
+          if (error) throw error;
+          if (data.session) {
+            showApp(data.user);
+          } else {
+            showAuthStatus('ok', 'Conta criada! Se o projeto exigir confirmação por e-mail, confira sua caixa de entrada antes de entrar.');
+          }
+        } else {
+          const { data, error } = await sb.auth.signInWithPassword({ email, password });
+          if (error) throw error;
+          showApp(data.user);
+        }
+      } catch (e) {
+        showAuthStatus('err', 'Erro: ' + e.message);
+      }
+    });
+
+    document.getElementById('forgotLink').addEventListener('click', async () => {
+      const email = document.getElementById('authEmail').value.trim();
+      if (!email) { showAuthStatus('err', 'Digite seu e-mail no campo acima primeiro, depois clique em "Esqueci minha senha".'); return; }
+      showAuthStatus('info', 'Enviando e-mail de redefinição…');
+      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.href.split('#')[0] });
+      if (error) { showAuthStatus('err', 'Erro: ' + error.message); return; }
+      showAuthStatus('ok', `Enviamos um link para ${email}. Abra o e-mail e clique no link para criar uma senha nova (confira também a caixa de spam).`);
+    });
+  }
+
+  function wireResetForm() {
+    document.getElementById('resetConfirmBtn').addEventListener('click', async () => {
+      const novaSenha = document.getElementById('resetNewPassword').value;
+      if (!novaSenha || novaSenha.length < 6) {
+        document.getElementById('resetStatus').className = 'status err';
+        document.getElementById('resetStatus').textContent = 'A senha precisa ter no mínimo 6 caracteres.';
+        return;
+      }
+      document.getElementById('resetStatus').className = 'status info';
+      document.getElementById('resetStatus').textContent = 'Salvando nova senha…';
+      const { error } = await sb.auth.updateUser({ password: novaSenha });
+      if (error) {
+        document.getElementById('resetStatus').className = 'status err';
+        document.getElementById('resetStatus').textContent = 'Erro: ' + error.message;
+        return;
+      }
+      document.getElementById('resetStatus').className = 'status ok';
+      document.getElementById('resetStatus').textContent = 'Senha alterada com sucesso! Redirecionando…';
+      setTimeout(() => {
+        document.getElementById('resetScreen').classList.add('hidden');
+        checkSession();
+      }, 1200);
+    });
+  }
+
+  function wireAppForm() {
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await sb.auth.signOut();
+      showAuth();
+    });
+    document.getElementById('refreshBtn').addEventListener('click', loadFuncionarios);
+    document.getElementById('saveEmpBtn').addEventListener('click', saveFuncionario);
+    document.getElementById('fCargoSelect').addEventListener('change', (e) => {
+      document.getElementById('fCargo').style.display = e.target.value === '__outro__' ? 'block' : 'none';
+    });
+    document.getElementById('refreshTreinoBtn').addEventListener('click', loadTreinamentos);
+    document.getElementById('tMostrarHistorico').addEventListener('change', loadTreinamentos);
+    document.getElementById('saveTreinoBtn').addEventListener('click', saveTreinamento);
+    document.getElementById('fBulkBtn').addEventListener('click', bulkFuncionarios);
+    document.getElementById('tBulkBtn').addEventListener('click', bulkTreinamentos);
+
+    // Busca/filtro do funcionário em cada formulário de lançamento
+    [['tFuncionarioBusca', 'tFuncionarioId'], ['aFuncionarioBusca', 'aFuncionarioId'], ['eFuncionarioBusca', 'eFuncionarioId'], ['pFuncionarioBusca', 'pFuncionarioId'], ['iFuncionarioBusca', 'iFuncionarioId'], ['vFuncionarioBusca', 'vFuncionarioId']].forEach(([buscaId, selectId]) => {
+      document.getElementById(buscaId).addEventListener('input', (e) => {
+        const termo = e.target.value.trim().toLowerCase();
+        const filtrados = termo ? funcionariosCache.filter(f => normalizarTexto(f.nome).includes(normalizarTexto(termo))) : funcionariosCache;
+        renderFuncionarioOptionsEm(selectId, filtrados);
+      });
+    });
+
+    // Curso/NR: alterna entre lista e campo livre quando escolhe "Outro"
+    document.getElementById('tCursoSelect').addEventListener('change', (e) => {
+      document.getElementById('tCursoOutro').style.display = e.target.value === '__outro__' ? 'block' : 'none';
+    });
+    document.getElementById('eEpiSelect').addEventListener('change', (e) => {
+      document.getElementById('eEpiOutro').style.display = e.target.value === '__outro__' ? 'block' : 'none';
+      atualizarTrocaEpiAuto();
+    });
+    document.getElementById('eEntrega').addEventListener('change', atualizarTrocaEpiAuto);
+    document.getElementById('eEpiOutro').addEventListener('input', atualizarTrocaEpiAuto);
+
+    document.getElementById('saveAsoBtn').addEventListener('click', saveAso);
+    document.getElementById('refreshAsoBtn').addEventListener('click', loadAsos);
+    document.getElementById('aMostrarHistorico').addEventListener('change', loadAsos);
+    document.getElementById('saveEpiBtn').addEventListener('click', saveEpi);
+    document.getElementById('refreshEpiBtn').addEventListener('click', loadEpis);
+    document.getElementById('eMostrarHistorico').addEventListener('change', loadEpis);
+    document.getElementById('savePontoBtn').addEventListener('click', saveFolhaPonto);
+    document.getElementById('pPainelVerBtn').addEventListener('click', carregarPainelPonto);
+    document.getElementById('refreshPontoBtn').addEventListener('click', loadFolhasPonto);
+
+    // Anexo: se for imagem, tenta ler automaticamente (nunca aplica sozinho, sempre pede confirmação)
+    const ALVO_TREINO = { boxId: 'ocrSuggestionBox', textId: 'ocrSuggestionText', applyBtnId: 'ocrApplyBtn', dismissBtnId: 'ocrDismissBtn', funcionarioSelectId: 'tFuncionarioId', dataFieldId: 'tData', cursoSelectId: 'tCursoSelect', cursoOutroId: 'tCursoOutro', nomeCampoId: 'tArquivoNome', cargaFieldId: 'tCarga' };
+    const ALVO_ASO = { boxId: 'ocrSuggestionBoxAso', textId: 'ocrSuggestionTextAso', applyBtnId: 'ocrApplyBtnAso', dismissBtnId: 'ocrDismissBtnAso', funcionarioSelectId: 'aFuncionarioId', dataFieldId: 'aData', nomeCampoId: 'aArquivoNome' };
+    const ALVO_INTEG = { boxId: 'ocrSuggestionBoxInteg', textId: 'ocrSuggestionTextInteg', applyBtnId: 'ocrApplyBtnInteg', dismissBtnId: 'ocrDismissBtnInteg', funcionarioSelectId: 'iFuncionarioId', dataFieldId: 'iData', nomeCampoId: 'iArquivoNome' };
+
+    // Função genérica que liga: seleção de arquivo (mostra botão de remover + tenta ler) e o botão de remover em si
+    function ligarCampoDeArquivo(inputId, nomeId, removerBtnId, boxSugestaoId, alvo) {
+      document.getElementById(inputId).addEventListener('change', async (e) => {
+        const f = e.target.files[0];
+        document.getElementById(nomeId).textContent = f ? `Selecionado: ${f.name}` : '';
+        document.getElementById(removerBtnId).style.display = f ? 'inline-block' : 'none';
+        if (boxSugestaoId) document.getElementById(boxSugestaoId).classList.add('hidden');
+        if (!f) return;
+        if (f.type === 'application/pdf' && alvo) { await processarPdf(f, alvo); return; }
+        if (f.type.startsWith('image/') && alvo) { await processarImagem(f, alvo); return; }
+      });
+      document.getElementById(removerBtnId).addEventListener('click', () => {
+        const input = document.getElementById(inputId);
+        input.value = ''; // limpa o arquivo escolhido de verdade
+        document.getElementById(nomeId).textContent = '';
+        document.getElementById(removerBtnId).style.display = 'none';
+        if (boxSugestaoId) document.getElementById(boxSugestaoId).classList.add('hidden');
+        showAppStatus('info', 'Arquivo removido. Você pode anexar outro quando quiser.');
+      });
+    }
+
+    ligarCampoDeArquivo('tArquivo', 'tArquivoNome', 'tArquivoRemover', 'ocrSuggestionBox', ALVO_TREINO);
+    ligarCampoDeArquivo('aArquivo', 'aArquivoNome', 'aArquivoRemover', 'ocrSuggestionBoxAso', ALVO_ASO);
+    ligarCampoDeArquivo('pArquivo', 'pArquivoNome', 'pArquivoRemover', null, null);
+    ligarCampoDeArquivo('eArquivo', 'eArquivoNome', 'eArquivoRemover', null, null);
+    ligarCampoDeArquivo('iArquivo', 'iArquivoNome', 'iArquivoRemover', 'ocrSuggestionBoxInteg', ALVO_INTEG);
+
+    document.getElementById('tabFuncBtn').addEventListener('click', () => switchTab('func'));
+    document.getElementById('tabTreinoBtn').addEventListener('click', () => switchTab('treino'));
+    document.getElementById('tabAsoBtn').addEventListener('click', () => switchTab('aso'));
+    document.getElementById('tabEpiBtn').addEventListener('click', () => switchTab('epi'));
+    document.getElementById('tabPontoBtn').addEventListener('click', () => switchTab('ponto'));
+    document.getElementById('tabBuscaBtn').addEventListener('click', () => switchTab('busca'));
+    document.getElementById('voltarBtn').addEventListener('click', () => {
+      const anterior = historicoTabs.pop();
+      if (anterior) switchTab(anterior, true);
+      document.getElementById('voltarBtn').style.display = historicoTabs.length ? 'inline-flex' : 'none';
+    });
+    document.getElementById('buscaBtn').addEventListener('click', buscarFichaCompleta);
+    document.getElementById('buscaTermo').addEventListener('keydown', (e) => { if (e.key === 'Enter') buscarFichaCompleta(); });
+    document.getElementById('tabIntegBtn').addEventListener('click', () => switchTab('integ'));
+    document.getElementById('tabFeriasBtn').addEventListener('click', () => switchTab('ferias'));
+    document.getElementById('tabDashBtn').addEventListener('click', () => switchTab('dash'));
+    document.getElementById('dashBuscaBtn').addEventListener('click', () => {
+      switchTab('busca');
+      document.getElementById('buscaTermo').value = document.getElementById('dashBuscaTermo').value;
+      buscarFichaCompleta();
+    });
+    document.getElementById('dashBuscaTermo').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('dashBuscaBtn').click(); });
+
+    document.getElementById('saveIntegBtn').addEventListener('click', saveInteg);
+    document.getElementById('refreshIntegBtn').addEventListener('click', loadIntegracoes);
+    document.getElementById('iMostrarHistorico').addEventListener('change', loadIntegracoes);
+    document.getElementById('iEmpresaSelect').addEventListener('change', (e) => {
+      document.getElementById('iEmpresaOutro').style.display = e.target.value === '__outro__' ? 'block' : 'none';
+    });
+
+    document.getElementById('saveFeriasBtn').addEventListener('click', saveFerias);
+    document.getElementById('refreshFeriasBtn').addEventListener('click', loadFerias);
+    document.getElementById('vMostrarHistorico').addEventListener('change', loadFerias);
+    document.getElementById('confirmarGozoBtn').addEventListener('click', confirmarGozo);
+    document.getElementById('gozoInicio').addEventListener('input', calcularDataRetorno);
+    document.getElementById('gozoDias').addEventListener('input', calcularDataRetorno);
+    document.getElementById('cancelarGozoBtn').addEventListener('click', () => document.getElementById('gozoCard').classList.add('hidden'));
+  }
+
+  function marcarNomeArquivo(f, sufixoHtml, campoId) {
+    document.getElementById(campoId || 'tArquivoNome').innerHTML = `Selecionado: ${f.name}${sufixoHtml || ''}`;
+  }
+
+  // ---------- Leitura automática de IMAGEM (foto, print) ----------
+  // Tenta ler a imagem em 4 posições (0°, 90°, 180°, 270°) e usa a que o motor de leitura
+  // teve mais confiança — resolve o caso de foto tirada com o celular de lado/rotacionado.
+  async function girarImagem(bitmap, graus) {
+    const canvas = document.createElement('canvas');
+    const vertical = graus === 90 || graus === 270;
+    canvas.width = vertical ? bitmap.height : bitmap.width;
+    canvas.height = vertical ? bitmap.width : bitmap.height;
+    const ctx = canvas.getContext('2d');
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate(graus * Math.PI / 180);
+    ctx.drawImage(bitmap, -bitmap.width / 2, -bitmap.height / 2);
+    return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+  }
+
+  async function ocrComRotacaoAutomatica(fonteImagem, atualizarProgresso) {
+    const bitmap = await createImageBitmap(fonteImagem);
+    const rotacoes = [0, 90, 270, 180];
+    let melhor = { texto: '', pontuacao: -1, graus: 0 };
+    for (let i = 0; i < rotacoes.length; i++) {
+      const graus = rotacoes[i];
+      if (atualizarProgresso) atualizarProgresso(i + 1, rotacoes.length, graus);
+      const blob = graus === 0 ? fonteImagem : await girarImagem(bitmap, graus);
+      const { data: { text, confidence } } = await Tesseract.recognize(blob, 'por');
+      if (confidence > melhor.pontuacao) melhor = { texto: text, pontuacao: confidence, graus };
+      // se já achou uma leitura bem confiante, não precisa testar as outras rotações (mais rápido)
+      if (confidence >= 88) break;
+    }
+    return melhor;
+  }
+
+  async function processarImagem(f, alvo) {
+    alvo = alvo || { nomeCampoId: 'tArquivoNome' };
+    marcarNomeArquivo(f, ' <b style="color:var(--warning)">— lendo automaticamente, aguarde…</b>', alvo.nomeCampoId);
+    showAppStatus('info', 'Lendo a imagem automaticamente (OCR)… isso pode levar de 15 segundos a 1-2 minutos, porque testa a imagem em diferentes posições (caso a foto esteja de lado).');
+
+    if (typeof Tesseract === 'undefined') {
+      marcarNomeArquivo(f, ' <b style="color:var(--danger)">— leitura automática indisponível agora</b>', alvo.nomeCampoId);
+      showAppStatus('err', 'A biblioteca de leitura automática não carregou (verifique sua internet e recarregue a página). Preencha os campos manualmente por enquanto.');
+      return;
+    }
+    try {
+      const resultado = await ocrComRotacaoAutomatica(f, (etapa, total, graus) => {
+        showAppStatus('info', `Testando leitura (${etapa}/${total}, posição ${graus}°)…`);
+      });
+      marcarNomeArquivo(f, resultado.graus !== 0 ? ` <span class="small">(lida girando ${resultado.graus}°)</span>` : '', alvo.nomeCampoId);
+      if (!resultado.texto || !resultado.texto.trim()) {
+        showAppStatus('err', 'A leitura terminou mas não encontrou nenhum texto legível nessa imagem, em nenhuma posição testada. Preencha os campos manualmente.');
+        return;
+      }
+      mostrarSugestaoOcr(resultado.texto, alvo);
+      showAppStatus('ok', `Leitura concluída${resultado.graus !== 0 ? ` (a imagem estava girada ${resultado.graus}°, corrigido automaticamente)` : ''} — confira a sugestão logo abaixo do campo de anexo.`);
+    } catch (err) {
+      marcarNomeArquivo(f, ' <b style="color:var(--danger)">— erro na leitura</b>', alvo.nomeCampoId);
+      showAppStatus('err', 'Não foi possível ler a imagem automaticamente: ' + err.message + '. Preencha os campos manualmente.');
+    }
+  }
+
+  // ---------- Leitura automática de PDF (texto digital OU escaneado/foto) ----------
+  async function processarPdf(f, alvo) {
+    alvo = alvo || { nomeCampoId: 'tArquivoNome' };
+    marcarNomeArquivo(f, ' <b style="color:var(--warning)">— abrindo o PDF, aguarde…</b>', alvo.nomeCampoId);
+    showAppStatus('info', 'Lendo o PDF automaticamente…');
+
+    if (typeof pdfjsLib === 'undefined') {
+      marcarNomeArquivo(f, ' <b style="color:var(--danger)">— leitura automática indisponível agora</b>', alvo.nomeCampoId);
+      showAppStatus('err', 'A biblioteca de leitura de PDF não carregou (verifique sua internet e recarregue a página). Preencha os campos manualmente por enquanto.');
+      return;
+    }
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+
+    try {
+      const arrayBuffer = await f.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+      // 1ª tentativa: o PDF já tem texto digital embutido (rápido e mais preciso — não é OCR, é leitura direta)
+      const page1 = await pdf.getPage(1);
+      const conteudo = await page1.getTextContent();
+      const textoDigital = conteudo.items.map(item => item.str).join(' ').trim();
+
+      if (textoDigital.length > 25) {
+        marcarNomeArquivo(f, '', alvo.nomeCampoId);
+        mostrarSugestaoOcr(textoDigital, alvo);
+        showAppStatus('ok', 'PDF lido com sucesso (texto digital) — confira a sugestão logo abaixo do campo de anexo.');
+        return;
+      }
+
+      // 2ª tentativa: PDF sem texto digital (provavelmente um certificado escaneado/foto colada em PDF) —
+      // converte a página em imagem e aplica a mesma leitura usada em fotos.
+      marcarNomeArquivo(f, ' <b style="color:var(--warning)">— PDF parece ser escaneado, convertendo em imagem e lendo…</b>', alvo.nomeCampoId);
+      showAppStatus('info', 'Esse PDF não tem texto digital (parece ser uma foto/scan) — convertendo em imagem para ler. Pode levar mais tempo.');
+
+      if (typeof Tesseract === 'undefined') {
+        marcarNomeArquivo(f, ' <b style="color:var(--danger)">— leitura automática indisponível agora</b>', alvo.nomeCampoId);
+        showAppStatus('err', 'A biblioteca de leitura de imagem não carregou. Preencha os campos manualmente.');
+        return;
+      }
+
+      const viewport = page1.getViewport({ scale: 2 });
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      await page1.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+
+      const resultado = await ocrComRotacaoAutomatica(blob, (etapa, total, graus) => {
+        showAppStatus('info', `Testando leitura do PDF escaneado (${etapa}/${total}, posição ${graus}°)…`);
+      });
+      marcarNomeArquivo(f, '', alvo.nomeCampoId);
+      if (!resultado.texto || !resultado.texto.trim()) {
+        showAppStatus('err', 'A leitura terminou mas não encontrou nenhum texto legível nesse PDF. Preencha os campos manualmente.');
+        return;
+      }
+      mostrarSugestaoOcr(resultado.texto, alvo);
+      showAppStatus('ok', `PDF escaneado lido com sucesso${resultado.graus !== 0 ? ` (corrigido ${resultado.graus}° de rotação)` : ''} — confira a sugestão logo abaixo do campo de anexo.`);
+    } catch (err) {
+      marcarNomeArquivo(f, ' <b style="color:var(--danger)">— erro na leitura</b>', alvo.nomeCampoId);
+      showAppStatus('err', 'Não foi possível ler o PDF automaticamente: ' + err.message + '. Preencha os campos manualmente.');
+    }
+  }
+
+  // ---------- OCR: sugestão de curso, data e funcionário (nunca aplica sozinho) ----------
+  const MESES_PT = { janeiro:'01', fevereiro:'02', marco:'03', março:'03', abril:'04', maio:'05', junho:'06', julho:'07', agosto:'08', setembro:'09', outubro:'10', novembro:'11', dezembro:'12' };
+  function mesParaNumero(mesTxt) {
+    const chave = (mesTxt || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return MESES_PT[chave] || null;
+  }
+  let ocrSugestaoAtual = null;
+  function mostrarSugestaoOcr(textoOriginal, alvo) {
+    // alvo: { boxId, textId, applyBtnId, dismissBtnId, funcionarioSelectId, dataFieldId, cursoSelectId (opcional), cursoOutroId (opcional) }
+    alvo = alvo || { boxId: 'ocrSuggestionBox', textId: 'ocrSuggestionText', applyBtnId: 'ocrApplyBtn', dismissBtnId: 'ocrDismissBtn', funcionarioSelectId: 'tFuncionarioId', dataFieldId: 'tData', cursoSelectId: 'tCursoSelect', cursoOutroId: 'tCursoOutro' };
+
+    // Normaliza espaços/quebras de linha antes de tudo — o OCR costuma quebrar uma mesma
+    // palavra ou "NR-06" em duas linhas separadas, o que quebrava a leitura antes desse ajuste.
+    const texto = textoOriginal.replace(/\s+/g, ' ').trim();
+
+    // Tenta reconhecer a NR de várias formas, porque o OCR erra o traço/espaçamento de jeitos diferentes:
+    // "NR-06", "NR 06", "NR06", "NR: 06", "NR.06", ou pela frase "norma regulamentadora nº 06"
+    let nr = texto.match(/N\s*R[\s\u2013\u2014:.-]*0?(\d{1,2})\b/i);
+    if (!nr) nr = texto.match(/norma\s+regulamentadora\w*\s*n?[ºo°.:]*\s*0?(\d{1,2})/i);
+
+    // CPF — bem tolerante com o separador, porque o OCR às vezes troca ponto por espaço
+    // (ex: "762.448 226-68" em vez de "762.448.226-68")
+    let cpfEncontrado = null;
+    const cpfMatch = texto.match(/(\d{3})[.\s]?(\d{3})[.\s]?(\d{3})[-.\s]?(\d{2})\b/);
+    if (cpfMatch) cpfEncontrado = `${cpfMatch[1]}.${cpfMatch[2]}.${cpfMatch[3]}-${cpfMatch[4]}`;
+
+    // Carga horária — "Carga horária: 03 horas", "carga horaria 8h", etc.
+    let cargaEncontrada = null;
+    const cargaMatch = texto.match(/carga\s+hor[aá]ria\s*:?\s*(\d{1,3})\s*h(?:oras?)?/i);
+    if (cargaMatch) cargaEncontrada = `${cargaMatch[1]}h`;
+
+    // data por extenso (prioriza a do rodapé/assinatura "Cidade, dd de Mês de aaaa")
+    let dataEncontrada = null;
+    const rodape = texto.match(/[A-Za-zÀ-ú]+\s*,\s*(\d{1,2})\s*de\s*([A-Za-zçÇãÃéÉ]+)\s*de\s*(\d{4})/i);
+    if (rodape) { const mm = mesParaNumero(rodape[2]); if (mm) dataEncontrada = `${rodape[3]}-${mm}-${rodape[1].padStart(2,'0')}`; }
+    if (!dataEncontrada) {
+      const extenso = texto.match(/(\d{1,2})\s*de\s*([A-Za-zçÇãÃéÉ]+)\s*de\s*(\d{4})/i);
+      if (extenso) { const mm = mesParaNumero(extenso[2]); if (mm) dataEncontrada = `${extenso[3]}-${mm}-${extenso[1].padStart(2,'0')}`; }
+    }
+    if (!dataEncontrada) {
+      const numerica = texto.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+      if (numerica) dataEncontrada = `${numerica[3]}-${numerica[2]}-${numerica[1]}`;
+    }
+
+    // Busca o funcionário — PRIORIDADE 1: por CPF (é único e muito mais confiável que o nome,
+    // já que o OCR erra letra com muito mais facilidade do que dígito de CPF).
+    // PRIORIDADE 2, se não achar por CPF: por PALAVRAS do nome, não pelo nome inteiro de uma vez —
+    // assim, mesmo se o OCR errar uma letra ou juntar/separar palavras diferente do esperado,
+    // ainda reconhece a pessoa se a maioria das palavras do nome aparecer no texto lido.
+    // Procura em TODOS os funcionários (não só os que estão filtrados no momento pela busca),
+    // pra nunca deixar de reconhecer alguém só porque o campo de busca estava com outro texto digitado.
+    let funcionarioEncontrado = null;
+    if (cpfEncontrado) {
+      const cpfLimpo = cpfEncontrado.replace(/\D/g, '');
+      funcionarioEncontrado = funcionariosCache.find(f => f.cpf && f.cpf.replace(/\D/g, '') === cpfLimpo) || null;
+    }
+    if (!funcionarioEncontrado) {
+      const textoNormalizado = texto.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      let melhorPontuacao = 0;
+      funcionariosCache.forEach(f => {
+        const palavrasNome = f.nome.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/\s+/).filter(p => p.length > 2);
+        if (!palavrasNome.length) return;
+        const acertos = palavrasNome.filter(p => textoNormalizado.includes(p)).length;
+        const pontuacao = acertos / palavrasNome.length;
+        if (pontuacao >= 0.5 && pontuacao > melhorPontuacao) { melhorPontuacao = pontuacao; funcionarioEncontrado = f; }
+      });
+    }
+
+    ocrSugestaoAtual = { nr: nr ? `NR-${nr[1].padStart(2,'0')}` : null, data: dataEncontrada, cpf: cpfEncontrado, carga: cargaEncontrada, funcionarioId: funcionarioEncontrado ? funcionarioEncontrado.id : null, funcionarioNome: funcionarioEncontrado ? funcionarioEncontrado.nome : null, alvo };
+
+    // Preenche os campos de verdade IMEDIATAMENTE (sem precisar clicar em nada) — mas nada é salvo
+    // no banco ainda, só nos campos do formulário, que continuam 100% editáveis antes de "Salvar".
+    // Limpa o filtro de busca do funcionário primeiro, pra garantir que ele apareça na lista mesmo
+    // que o campo de busca tivesse outro nome digitado.
+    const buscaId = alvo.funcionarioSelectId === 'tFuncionarioId' ? 'tFuncionarioBusca'
+      : alvo.funcionarioSelectId === 'aFuncionarioId' ? 'aFuncionarioBusca'
+      : alvo.funcionarioSelectId === 'eFuncionarioId' ? 'eFuncionarioBusca'
+      : alvo.funcionarioSelectId === 'pFuncionarioId' ? 'pFuncionarioBusca'
+      : alvo.funcionarioSelectId === 'iFuncionarioId' ? 'iFuncionarioBusca' : null;
+    if (buscaId) { document.getElementById(buscaId).value = ''; renderFuncionarioOptionsEm(alvo.funcionarioSelectId, funcionariosCache); }
+
+    if (dataEncontrada) document.getElementById(alvo.dataFieldId).value = dataEncontrada;
+    if (cargaEncontrada && alvo.cargaFieldId) document.getElementById(alvo.cargaFieldId).value = cargaEncontrada;
+    if (ocrSugestaoAtual.nr && alvo.cursoSelectId) {
+      const sel = document.getElementById(alvo.cursoSelectId);
+      const match = Array.from(sel.options).find(o => o.value.toUpperCase().startsWith(ocrSugestaoAtual.nr));
+      if (match) { sel.value = match.value; document.getElementById(alvo.cursoOutroId).style.display = 'none'; }
+      else { sel.value = '__outro__'; document.getElementById(alvo.cursoOutroId).style.display = 'block'; document.getElementById(alvo.cursoOutroId).value = ocrSugestaoAtual.nr; }
+    }
+    if (funcionarioEncontrado) document.getElementById(alvo.funcionarioSelectId).value = funcionarioEncontrado.id;
+
+    const partes = [];
+    if (alvo.cursoSelectId) partes.push(ocrSugestaoAtual.nr ? `Norma: <b>${ocrSugestaoAtual.nr}</b> ✅ preenchido` : 'Norma: não identificada — preencha manualmente');
+    partes.push(dataEncontrada ? `Data: <b>${formatarDataBr(dataEncontrada)}</b> ✅ preenchido` : 'Data: não identificada — preencha manualmente');
+    if (alvo.cargaFieldId) partes.push(cargaEncontrada ? `Carga horária: <b>${cargaEncontrada}</b> ✅ preenchido` : 'Carga horária: não identificada');
+    partes.push(cpfEncontrado ? `CPF lido: <b>${cpfEncontrado}</b>` : null);
+    partes.push(funcionarioEncontrado ? `Funcionário: <b>${funcionarioEncontrado.nome}</b> ✅ preenchido${cpfEncontrado && funcionarioEncontrado.cpf ? ' (achado pelo CPF)' : ''}` : 'Funcionário: não identificado — selecione manualmente na lista');
+    document.getElementById(alvo.textId).innerHTML = partes.filter(Boolean).join(' · ') +
+      '<br><span style="opacity:.8">Os campos já foram preenchidos sozinhos — confira e corrija se precisar, antes de salvar.</span>' +
+      `<details style="margin-top:8px"><summary style="cursor:pointer;color:var(--blue-400);font-size:11px">Ver texto que a leitura encontrou (pra copiar e enviar se algo não bater)</summary>
+        <div style="background:rgba(0,0,0,.25);border-radius:7px;padding:8px;margin-top:6px;font-size:10.5px;font-family:ui-monospace,monospace;white-space:pre-wrap;user-select:all">${textoOriginal.replace(/</g, '&lt;')}</div>
+      </details>`;
+    document.getElementById(alvo.boxId).classList.remove('hidden');
+  }
+
+  function aplicarSugestaoOcr() {
+    // O preenchimento já acontece na hora (em mostrarSugestaoOcr) — esse botão agora só fecha o aviso.
+    if (!ocrSugestaoAtual) return;
+    document.getElementById(ocrSugestaoAtual.alvo.boxId).classList.add('hidden');
+  }
+
+  function desfazerSugestaoOcr() {
+    if (!ocrSugestaoAtual) return;
+    const alvo = ocrSugestaoAtual.alvo;
+    document.getElementById(alvo.dataFieldId).value = '';
+    if (alvo.cursoSelectId) { document.getElementById(alvo.cursoSelectId).value = ''; document.getElementById(alvo.cursoOutroId).style.display = 'none'; document.getElementById(alvo.cursoOutroId).value = ''; }
+    document.getElementById(alvo.funcionarioSelectId).value = '';
+    document.getElementById(alvo.boxId).classList.add('hidden');
+    showAppStatus('info', 'Preenchimento automático desfeito — os campos foram limpos.');
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    [['ocrApplyBtn', 'ocrDismissBtn', 'ocrSuggestionBox'], ['ocrApplyBtnAso', 'ocrDismissBtnAso', 'ocrSuggestionBoxAso'], ['ocrApplyBtnInteg', 'ocrDismissBtnInteg', 'ocrSuggestionBoxInteg']].forEach(([applyId, dismissId, boxId]) => {
+      document.getElementById(applyId)?.addEventListener('click', aplicarSugestaoOcr);
+      document.getElementById(dismissId)?.addEventListener('click', desfazerSugestaoOcr);
+    });
+  });
+
+  const TABS = ['dash', 'busca', 'func', 'treino', 'aso', 'epi', 'ponto', 'integ', 'ferias'];
+  const TAB_DIV = { dash: 'tabDash', busca: 'tabBusca', func: 'tabFuncionarios', treino: 'tabTreinamentos', aso: 'tabAsos', epi: 'tabEpis', ponto: 'tabPonto', integ: 'tabInteg', ferias: 'tabFerias' };
+  const TAB_BTN = { dash: 'tabDashBtn', busca: 'tabBuscaBtn', func: 'tabFuncBtn', treino: 'tabTreinoBtn', aso: 'tabAsoBtn', epi: 'tabEpiBtn', ponto: 'tabPontoBtn', integ: 'tabIntegBtn', ferias: 'tabFeriasBtn' };
+  let tabAtual = null;
+  let historicoTabs = [];
+  function switchTab(tab, viaVoltar) {
+    // Guarda de onde a pessoa veio, pra o botão "Voltar" saber pra onde ir —
+    // exceto quando a própria navegação já é um "voltar" (senão criaria um loop).
+    if (!viaVoltar && tabAtual && tabAtual !== tab) historicoTabs.push(tabAtual);
+    tabAtual = tab;
+    document.getElementById('voltarBtn').style.display = historicoTabs.length ? 'inline-flex' : 'none';
+
+    TABS.forEach(t => {
+      document.getElementById(TAB_DIV[t]).classList.toggle('hidden', t !== tab);
+      document.getElementById(TAB_BTN[t]).className = 'nav-item ' + (t === tab ? 'btn-primary' : 'btn-ghost');
+    });
+    if (tab === 'func') loadFuncionarios();
+    if (tab === 'treino') { loadFuncionariosEm('tFuncionarioId'); loadTreinamentos(); }
+    if (tab === 'aso') { loadFuncionariosEm('aFuncionarioId'); loadAsos(); }
+    if (tab === 'epi') { loadFuncionariosEm('eFuncionarioId'); loadEpis(); }
+    if (tab === 'ponto') {
+      loadFuncionariosEm('pFuncionarioId'); loadFolhasPonto();
+      const hoje = new Date();
+      const mesAtualIso = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
+      if (!document.getElementById('pPainelCompetencia').value) document.getElementById('pPainelCompetencia').value = mesAtualIso;
+      if (!document.getElementById('pPeriodo').value) document.getElementById('pPeriodo').value = mesAtualIso;
+      carregarPainelPonto();
+    }
+    if (tab === 'integ') { loadFuncionariosEm('iFuncionarioId'); loadIntegracoes(); }
+    if (tab === 'ferias') { loadFuncionariosEm('vFuncionarioId'); loadFerias(); }
+    if (tab === 'busca' && !funcionariosCache.length) loadFuncionariosEm('tFuncionarioId'); // só pra ter o cache pronto
+    if (tab === 'dash') carregarDashboard();
+  }
+
+  // ---------- CRUD Funcionários ----------
+  async function loadFuncionarios() {
+    const tbody = document.getElementById('empTableBody');
+    tbody.innerHTML = '<tr><td colspan="6" class="small">Carregando…</td></tr>';
+    const { data, error } = await sb.from('funcionarios').select('*').order('nome', { ascending: true });
+    if (error) {
+      tbody.innerHTML = `<tr><td colspan="6" class="small" style="color:var(--danger)">Erro ao carregar: ${error.message}</td></tr>`;
+      showAppStatus('err', 'Erro ao carregar funcionários: ' + error.message);
+      return;
+    }
+    if (!data.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="small">Nenhum funcionário cadastrado ainda.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.map(f => `
+      <tr>
+        <td>${f.nome}</td>
+        <td>${f.cpf || '—'}</td>
+        <td>${f.cargo || '—'}</td>
+        <td><span class="pill ${f.status}">${f.status}</span></td>
+        <td>${f.telefone || '—'}</td>
+        <td><button class="del-btn" data-id="${f.id}">Excluir</button></td>
+      </tr>`).join('');
+
+    tbody.querySelectorAll('.del-btn').forEach(btn => {
+      btn.addEventListener('click', () => deleteFuncionario(btn.getAttribute('data-id')));
+    });
+  }
+
+  async function saveFuncionario() {
+    const nome = document.getElementById('fNome').value.trim();
+    const cpf = document.getElementById('fCpf').value.trim() || null;
+    if (!nome) { showAppStatus('err', 'Digite o nome do funcionário.'); return; }
+
+    // ---- Verifica se esse funcionário já existe (por CPF ou nome exato) antes de cadastrar ----
+    showAppStatus('info', 'Verificando se esse funcionário já está cadastrado…');
+    const { data: existentes, error: errBusca } = await sb.from('funcionarios').select('id, nome, cpf');
+    if (errBusca) { showAppStatus('err', 'Erro ao verificar duplicidade: ' + errBusca.message); return; }
+    const duplicadoPorCpf = cpf ? existentes.find(f => f.cpf && f.cpf.replace(/\D/g, '') === cpf.replace(/\D/g, '')) : null;
+    const duplicadoPorNome = existentes.find(f => normalizarTexto(f.nome) === normalizarTexto(nome));
+    const duplicado = duplicadoPorCpf || duplicadoPorNome;
+    if (duplicado) {
+      showAppStatus('err',
+        `"${duplicado.nome}" já está cadastrado (${duplicadoPorCpf ? 'mesmo CPF' : 'mesmo nome'}). ` +
+        `Não recadastre a pessoa pra adicionar um curso — vá na aba "Treinamentos / NRs" e selecione ${duplicado.nome} na lista de lá, o curso novo se junta ao mesmo cadastro dele.`);
+      return;
+    }
+
+    const payload = {
+      nome, cpf,
+      cargo: (() => { const sel = document.getElementById('fCargoSelect').value; return sel === '__outro__' ? document.getElementById('fCargo').value.trim() || null : sel || null; })(),
+      telefone: document.getElementById('fTelefone').value.trim() || null,
+      status: document.getElementById('fStatus').value,
+      admissao: document.getElementById('fAdmissao').value || null,
+    };
+    showAppStatus('info', 'Salvando…');
+    const { error } = await sb.from('funcionarios').insert(payload);
+    if (error) {
+      if (error.code === '23505') { showAppStatus('err', 'Esse CPF já está cadastrado para outro funcionário.'); return; }
+      showAppStatus('err', 'Erro ao salvar: ' + error.message); return;
+    }
+    showAppStatus('ok', 'Funcionário salvo com sucesso no banco de dados.');
+    ['fNome', 'fCpf', 'fCargo', 'fTelefone', 'fAdmissao'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('fCargoSelect').value = '';
+    document.getElementById('fCargo').style.display = 'none';
+    loadFuncionarios();
+  }
+
+  async function deleteFuncionario(id) {
+    if (!confirm('Excluir este funcionário definitivamente do banco de dados?')) return;
+    const { error } = await sb.from('funcionarios').delete().eq('id', id);
+    if (error) { showAppStatus('err', 'Erro ao excluir: ' + error.message); return; }
+    showAppStatus('ok', 'Excluído do banco de dados.');
+    loadFuncionarios();
+  }
+
+  // ---------- Regra de validade por NR (mesma regra usada no resto do sistema) ----------
+  function anosDeValidade(curso) {
+    const c = (curso || '').toLowerCase();
+    if (/nr[\s-]?0?35/.test(c)) return 2;
+    if (/nr[\s-]?0?33/.test(c)) return 1;
+    if (/nr[\s-]?0?18/.test(c)) return 1;
+    if (/nr[\s-]?0?10/.test(c)) return 2;
+    return 1;
+  }
+  function calcularStatus(diasRestantes) {
+    if (diasRestantes < 0) return 'bloqueado';
+    if (diasRestantes <= 60) return 'pendente';
+    return 'apto';
+  }
+
+  // ---------- Validade padrão por tipo de EPI (dias) — sempre o valor mais curto/conservador
+  // de cada faixa recomendada, por segurança (trocar mais cedo é mais seguro que trocar tarde) ----------
+  const EPI_VALIDADE = {
+    'Capacete de segurança': { anos: 3 },
+    'Óculos de segurança (impacto)': { dias: 180 },
+    'Óculos ampla visão': { dias: 180 },
+    'Protetor facial (Policarbonato/Acrílico)': { dias: 180 },
+    'Viseira / Protetor facial para solda': { dias: 180 },
+    'Máscara de solda (autoescurecimento)': { anos: 2 },
+    'Botina de couro (Bico de Aço)': { dias: 180 },
+    'Botina de couro (Bico de PVC/Composite)': { dias: 180 },
+    'Botina/Bota de PVC ou Borracha (Química)': { dias: 180 },
+    'Uniforme de trabalho (Brim/Algodão)': { dias: 180 },
+    'Cinto de segurança (tipo paraquedista)': { anos: 3 },
+    'Talabarte e trava-quedas': { anos: 3 },
+    'Luva de raspa': { dias: 7 },
+    'Luva de vaqueta': { dias: 30 },
+    'Luva nitrílica': { dias: 30 },
+    'Luva de neoprene/butyl (química)': { dias: 30 },
+    'Luva de alta voltagem/dielétrica': { dias: 180 },
+    'Luva para alta temperatura (Kevlar/Silicone)': { dias: 90 },
+    'Luva multitato': { dias: 15 },
+    'Avental de raspa': { dias: 90 },
+    'Avental de PVC/Impermeável (Químico)': { dias: 90 },
+    'Mangote de raspa/Kevlar': { dias: 90 },
+    'Perneira de raspa/proteção': { dias: 180 },
+    'Protetor auricular (tipo plug/inserção)': { dias: 30 },
+    'Protetor auricular (tipo concha/abafador)': { dias: 180 },
+    'Respirador PFF2/N95 (descartável)': { dias: 1 },
+    'Respirador semifacial (filtros trocáveis)': { anos: 1 },
+    'Capa de chuva / Conjunto de PVC': { dias: 90 },
+    'Protetor solar': { dias: 1 }, // não tem prazo legal fixo — segue a validade do produto; aqui força conferência frequente
+  };
+  // Compatibilidade: alguns trechos do código consultam se um EPI tem regra cadastrada
+  const EPI_VALIDADE_DIAS = Object.fromEntries(Object.keys(EPI_VALIDADE).map(k => [k, true]));
+  function calcularTrocaEpi(epi, entrega) {
+    const regra = EPI_VALIDADE[epi];
+    if (!regra || !entrega) return null;
+    const troca = new Date(entrega + 'T00:00:00');
+    if (regra.anos) troca.setFullYear(troca.getFullYear() + regra.anos); // anos usa setFullYear pra nunca errar por ano bissexto
+    else troca.setDate(troca.getDate() + regra.dias);
+    return troca.toISOString().slice(0, 10);
+  }
+  function atualizarTrocaEpiAuto() {
+    const epiSel = document.getElementById('eEpiSelect').value;
+    const epi = epiSel === '__outro__' ? document.getElementById('eEpiOutro').value.trim() : epiSel;
+    const entrega = document.getElementById('eEntrega').value;
+    const trocaCalculada = calcularTrocaEpi(epi, entrega);
+    const notaEl = document.getElementById('eTrocaAuto');
+    if (trocaCalculada) {
+      document.getElementById('eTroca').value = trocaCalculada;
+      notaEl.textContent = `Calculado automaticamente (validade padrão desse item). Pode ajustar se precisar.`;
+    } else if (EPI_VALIDADE_DIAS[epi] === undefined && epi) {
+      notaEl.textContent = 'Esse item não tem validade padrão cadastrada — preencha a data manualmente.';
+    } else {
+      notaEl.textContent = '';
+    }
+  }
+  // Converte data do banco (aaaa-mm-dd) para o padrão brasileiro (dd/mm/aaaa)
+  // Normaliza texto pra comparar sem se importar com acento, maiúscula/minúscula, ou espaço extra —
+  // usado em toda busca e verificação de duplicado do sistema, pra nunca deixar passar por causa
+  // de um acento diferente, um espaço a mais, ou letra maiúscula/minúscula.
+  function normalizarTexto(t) {
+    return (t || '').toString().trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
+  }
+
+  // Sempre que um registro NOVO é salvo, arquiva sozinho qualquer registro ANTERIOR do mesmo
+  // tipo (mesmo curso, mesmo tipo de ASO, mesmo EPI, mesma empresa de integração) daquele mesmo
+  // funcionário — assim nunca fica "duplicado" na tela principal, só o mais recente aparece,
+  // e o antigo continua guardado e pode ser encontrado no histórico a qualquer momento.
+  // Se campoChave for null, arquiva TUDO que estiver ativo daquele funcionário na tabela
+  // (usado em Férias, onde só existe 1 período ativo por vez, sem uma "chave" pra comparar).
+  async function arquivarRegistrosAnteriores(tabela, funcionarioId, campoChave, valorChave) {
+    let query = sb.from(tabela).select('id').eq('funcionario_id', funcionarioId).eq('arquivado', false);
+    if (campoChave) query = query.eq(campoChave, valorChave);
+    const { data: anteriores, error } = await query;
+    if (error || !anteriores || !anteriores.length) return 0;
+    for (const registro of anteriores) {
+      await sb.from(tabela).update({ arquivado: true }).eq('id', registro.id);
+    }
+    return anteriores.length;
+  }
+
+  function formatarDataBr(dataIso) {
+    if (!dataIso) return '—';
+    const [yyyy, mm, dd] = dataIso.split('-');
+    if (!yyyy || !mm || !dd) return dataIso;
+    return `${dd}/${mm}/${yyyy}`;
+  }
+
+  // ---------- Funcionários (compartilhado por todas as abas de lançamento) ----------
+  let funcionariosCache = [];
+  async function loadFuncionariosEm(selectId) {
+    const sel = document.getElementById(selectId);
+    if (!funcionariosCache.length) {
+      const { data, error } = await sb.from('funcionarios').select('id, nome').order('nome');
+      if (error) { sel.innerHTML = '<option value="">Erro ao carregar funcionários</option>'; return; }
+      funcionariosCache = data;
+    }
+    renderFuncionarioOptionsEm(selectId, funcionariosCache);
+  }
+  function renderFuncionarioOptionsEm(selectId, lista) {
+    const sel = document.getElementById(selectId);
+    const selecionadoAntes = sel.value;
+    sel.innerHTML = '<option value="">Selecionar funcionário…</option>' +
+      lista.map(f => `<option value="${f.id}">${f.nome}</option>`).join('');
+    if (lista.some(f => f.id === selecionadoAntes)) sel.value = selecionadoAntes;
+  }
+  function nomeDoFuncionario(id) {
+    const f = funcionariosCache.find(x => x.id === id);
+    return f ? f.nome : '—';
+  }
+
+  async function loadTreinamentos() {
+    const tbody = document.getElementById('treinoTableBody');
+    tbody.innerHTML = '<tr><td colspan="7" class="small">Carregando…</td></tr>';
+    const mostrarHistorico = document.getElementById('tMostrarHistorico').checked;
+    // "funcionarios(nome)" busca o nome do funcionário automaticamente pela relação entre as tabelas
+    let query = sb.from('treinamentos').select('*, funcionarios(nome)').order('validade_data', { ascending: true });
+    if (!mostrarHistorico) query = query.eq('arquivado', false);
+    const { data, error } = await query;
+    if (error) {
+      tbody.innerHTML = `<tr><td colspan="7" class="small" style="color:var(--danger)">Erro ao carregar: ${error.message}</td></tr>`;
+      showAppStatus('err', 'Erro ao carregar treinamentos: ' + error.message);
+      return;
+    }
+    if (!data.length) {
+      tbody.innerHTML = `<tr><td colspan="7" class="small">${mostrarHistorico ? 'Nenhum treinamento (nem no histórico) ainda.' : 'Nenhum treinamento atual cadastrado ainda.'}</td></tr>`;
+      return;
+    }
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    tbody.innerHTML = data.map(t => {
+      const diasRestantes = t.validade_data ? Math.round((new Date(t.validade_data + 'T00:00:00') - hoje) / 86400000) : null;
+      const status = diasRestantes !== null ? calcularStatus(diasRestantes) : (t.status || 'apto');
+      return `
+      <tr${t.arquivado ? ' style="opacity:.55"' : ''}>
+        <td>${t.funcionarios ? t.funcionarios.nome : '—'}${t.arquivado ? ' <span class="small">(histórico)</span>' : ''}</td>
+        <td>${t.curso}</td>
+        <td>${formatarDataBr(t.data_realizacao)}</td>
+        <td>${formatarDataBr(t.validade_data)}</td>
+        <td><span class="pill ${status}">${status}${diasRestantes !== null ? ' (' + diasRestantes + 'd)' : ''}</span></td>
+        <td>${t.arquivo ? `<span class="file-link" data-arquivo="${t.arquivo}">Ver</span> · <span class="file-link" data-baixar="${t.arquivo}">Baixar</span>` : '<span class="small">—</span>'}</td>
+        <td><button class="del-btn" data-id="${t.id}">Excluir</button></td>
+      </tr>`;
+    }).join('');
+
+    tbody.querySelectorAll('.del-btn').forEach(btn => {
+      btn.addEventListener('click', () => deleteTreinamento(btn.getAttribute('data-id')));
+    });
+    tbody.querySelectorAll('[data-arquivo]').forEach(link => link.addEventListener('click', () => abrirArquivo(link.getAttribute('data-arquivo'))));
+    tbody.querySelectorAll('[data-baixar]').forEach(link => link.addEventListener('click', () => baixarArquivo(link.getAttribute('data-baixar'))));
+  }
+
+  // ---------- Upload / visualização de arquivo real (Supabase Storage) ----------
+  async function subirArquivoTreinamento(file, funcionarioId) {
+    const caminho = `treinamentos/${funcionarioId}/${Date.now()}_${file.name}`;
+    const { error } = await sb.storage.from('documentos').upload(caminho, file, { upsert: true });
+    if (error) throw error;
+    return caminho;
+  }
+
+  async function abrirArquivo(caminho) {
+    const { data, error } = await sb.storage.from('documentos').createSignedUrl(caminho, 60 * 10); // link válido por 10 min
+    if (error) { showAppStatus('err', 'Erro ao abrir arquivo: ' + error.message); return; }
+    window.open(data.signedUrl, '_blank');
+  }
+
+  // Baixa o arquivo de verdade pro computador (não só abre na aba) — funciona pra
+  // qualquer tipo de arquivo (PDF, foto), pra poder mandar pro cliente que pediu.
+  async function baixarArquivo(caminho) {
+    showAppStatus('info', 'Preparando o download…');
+    try {
+      const { data, error } = await sb.storage.from('documentos').createSignedUrl(caminho, 60 * 10);
+      if (error) throw error;
+      const resp = await fetch(data.signedUrl);
+      const blob = await resp.blob();
+      const nomeArquivo = caminho.split('/').pop().replace(/^\d+_/, ''); // tira o timestamp do nome
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = nomeArquivo; a.click();
+      URL.revokeObjectURL(url);
+      showAppStatus('ok', `Baixado: ${nomeArquivo}`);
+    } catch (e) {
+      showAppStatus('err', 'Erro ao baixar o arquivo: ' + e.message);
+    }
+  }
+
+  async function saveTreinamento() {
+    const funcionarioId = document.getElementById('tFuncionarioId').value;
+    const cursoSelecionado = document.getElementById('tCursoSelect').value;
+    const curso = cursoSelecionado === '__outro__' ? document.getElementById('tCursoOutro').value.trim() : cursoSelecionado;
+    const dataRealizacao = document.getElementById('tData').value;
+    const arquivoFile = document.getElementById('tArquivo').files[0];
+    if (!funcionarioId) { showAppStatus('err', 'Selecione o funcionário.'); return; }
+    if (!curso) { showAppStatus('err', 'Selecione (ou digite) o curso/NR.'); return; }
+    if (!dataRealizacao) { showAppStatus('err', 'Digite a data de realização.'); return; }
+
+    const anos = anosDeValidade(curso);
+    const dataVal = new Date(dataRealizacao + 'T00:00:00');
+    dataVal.setFullYear(dataVal.getFullYear() + anos);
+    const validadeData = dataVal.toISOString().slice(0, 10);
+    const diasRestantes = Math.round((dataVal - new Date()) / 86400000);
+
+    let caminhoArquivo = null;
+    if (arquivoFile) {
+      showAppStatus('info', 'Enviando certificado…');
+      try {
+        caminhoArquivo = await subirArquivoTreinamento(arquivoFile, funcionarioId);
+      } catch (e) {
+        showAppStatus('err', 'Erro ao enviar o arquivo: ' + e.message);
+        return;
+      }
+    }
+
+    const payload = {
+      funcionario_id: funcionarioId,
+      curso,
+      instrutor: document.getElementById('tInstrutor').value.trim() || null,
+      carga: document.getElementById('tCarga').value.trim() || null,
+      data_realizacao: dataRealizacao,
+      validade_data: validadeData,
+      status: calcularStatus(diasRestantes),
+      arquivo: caminhoArquivo,
+      arquivado: false,
+    };
+    showAppStatus('info', 'Salvando…');
+    const arquivados = await arquivarRegistrosAnteriores('treinamentos', funcionarioId, 'curso', curso);
+    const { error } = await sb.from('treinamentos').insert(payload);
+    if (error) { showAppStatus('err', 'Erro ao salvar: ' + error.message); return; }
+    showAppStatus('ok', `Treinamento salvo — validade calculada automaticamente: ${anos} ano(s), vence em ${validadeData}.${caminhoArquivo ? ' Certificado anexado.' : ''}${arquivados ? ' O registro anterior desse curso foi movido pro histórico.' : ''}`);
+    ['tCursoOutro', 'tInstrutor', 'tCarga', 'tData', 'tArquivo', 'tFuncionarioBusca'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('tCursoSelect').value = '';
+    document.getElementById('tCursoOutro').style.display = 'none';
+    document.getElementById('tArquivoNome').textContent = '';
+    document.getElementById('tArquivoRemover').style.display = 'none';
+    document.getElementById('ocrSuggestionBox').classList.add('hidden');
+    renderFuncionarioOptionsEm('tFuncionarioId', funcionariosCache);
+    document.getElementById('tFuncionarioId').value = '';
+    loadTreinamentos();
+  }
+
+  async function deleteTreinamento(id) {
+    if (!confirm('Excluir este treinamento definitivamente do banco de dados?')) return;
+    const { error } = await sb.from('treinamentos').delete().eq('id', id);
+    if (error) { showAppStatus('err', 'Erro ao excluir: ' + error.message); return; }
+    showAppStatus('ok', 'Excluído do banco de dados.');
+    loadTreinamentos();
+  }
+
+  // ---------- Cadastro em massa (colar do Excel) ----------
+  // Detecta o separador testando várias opções (Tab do Excel, ponto e vírgula, vírgula, 2+ espaços)
+  // e escolhe automaticamente a que resulta em colunas mais consistentes — assim não depende de
+  // digitar vírgula/ponto e vírgula na mão, funciona colando direto do Excel do jeito que vier.
+  function parseLinhas(texto) {
+    const linhas = texto.split('\n').map(l => l.replace(/\r/g, '')).filter(l => l.trim());
+    if (!linhas.length) return [];
+
+    const candidatos = [
+      { nome: 'tab', re: /\t/ },
+      { nome: 'ponto e vírgula', re: /;/ },
+      { nome: 'vírgula', re: /,/ },
+      { nome: '2+ espaços', re: /\s{2,}/ },
+    ];
+
+    let melhor = { colunas: 1, re: null };
+    candidatos.forEach(c => {
+      const contagens = linhas.map(l => l.split(c.re).length);
+      const maxColunas = Math.max(...contagens);
+      // só considera válido se pelo menos metade das linhas realmente tiver mais de 1 coluna com esse separador
+      const linhasComMultiplasColunas = contagens.filter(n => n > 1).length;
+      if (maxColunas > melhor.colunas && linhasComMultiplasColunas >= Math.ceil(linhas.length / 2)) {
+        melhor = { colunas: maxColunas, re: c.re };
+      }
+    });
+
+    if (!melhor.re) {
+      // Nenhum separador funcionou de forma consistente — trata cada linha como só 1 valor
+      // (por exemplo, uma lista de nomes, um por linha, sem mais colunas). Não trava, não dá erro.
+      return linhas.map(l => [l.trim()]);
+    }
+    return linhas.map(l => l.split(melhor.re).map(c => c.trim()).filter((c, i, arr) => !(c === '' && i === arr.length - 1)));
+  }
+
+  // ================= IMPORTAÇÃO COMPLETA — uma planilha, distribui pra cada tabela =================
+  function converterDataBrParaIso(dataBr) {
+    if (!dataBr) return null;
+    const limpo = dataBr.trim();
+    // aceita dd/mm/aaaa, dd-mm-aaaa, ou já em aaaa-mm-dd
+    let m = limpo.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+    m = limpo.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (m) return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+    return null;
+  }
+
+  function detectarTipoColuna(header) {
+    const h = (header || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    if (/^nome/.test(h)) return { tipo: 'nome' };
+    if (/^cpf/.test(h)) return { tipo: 'cpf' };
+    if (/^cargo|^func[ao]o/.test(h)) return { tipo: 'cargo' };
+    if (/^telefone|^tel\b/.test(h)) return { tipo: 'telefone' };
+    if (/^admiss/.test(h)) return { tipo: 'admissao' };
+    if (/aso.*tipo/.test(h)) return { tipo: 'aso_tipo' };
+    if (/^aso/.test(h)) return { tipo: 'aso_data' };
+    const nrMatch = h.match(/^nr[\s-]?0?(\d{1,2})/);
+    if (nrMatch) return { tipo: 'nr', numero: nrMatch[1].padStart(2, '0') };
+    if (/integra.*empresa|empresa.*integra/.test(h)) return { tipo: 'integracao_empresa' };
+    if (/integra/.test(h)) return { tipo: 'integracao_data' };
+    if (/ferias/.test(h)) return { tipo: 'ferias_inicio' };
+    // "EPI" sozinho ou "EPI - Capacete de segurança" (reconhece o tipo específico se vier escrito)
+    const epiMatch = h.match(/^(?:ficha\s+de\s+)?epi\s*[-:]?\s*(.*)$/);
+    if (epiMatch) return { tipo: 'epi', subtipo: epiMatch[1].trim() || null };
+    if (/folha.*ponto|^ponto\b/.test(h)) return { tipo: 'ponto_data' };
+    return { tipo: 'ignorar' };
+  }
+
+  document.getElementById('baixarBackupBtn')?.addEventListener('click', baixarBackupCompleto);
+
+  async function baixarBackupCompleto() {
+    const statusEl = document.getElementById('backupStatusTexto');
+    statusEl.textContent = 'Buscando tudo no banco de dados…';
+    showAppStatus('info', 'Preparando o backup completo — isso pode levar alguns segundos…');
+    try {
+      const [funcs, treinos, asos, epis, integs, ferias, pontos] = await Promise.all([
+        sb.from('funcionarios').select('*'),
+        sb.from('treinamentos').select('*'),
+        sb.from('asos').select('*'),
+        sb.from('epis').select('*'),
+        sb.from('integracoes').select('*'),
+        sb.from('ferias').select('*'),
+        sb.from('folhas_ponto').select('*'),
+      ]);
+
+      const backup = {
+        gerado_em: new Date().toISOString(),
+        sistema: 'Master Energy — Gestão de SST',
+        funcionarios: funcs.data || [],
+        treinamentos_nrs: treinos.data || [],
+        asos: asos.data || [],
+        epis: epis.data || [],
+        integracoes: integs.data || [],
+        ferias: ferias.data || [],
+        folhas_ponto: pontos.data || [],
+      };
+
+      const totalRegistros = Object.values(backup).filter(Array.isArray).reduce((soma, arr) => soma + arr.length, 0);
+      const dataHoje = new Date().toISOString().slice(0, 10);
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `backup_master_energy_${dataHoje}.json`; a.click();
+      URL.revokeObjectURL(url);
+
+      statusEl.textContent = `Backup baixado — ${backup.funcionarios.length} funcionário(s), ${totalRegistros} registro(s) no total.`;
+      showAppStatus('ok', 'Backup completo baixado com sucesso — salva esse arquivo onde quiser (pendrive, HD externo, computador).');
+    } catch (e) {
+      statusEl.textContent = '';
+      showAppStatus('err', 'Erro ao gerar o backup: ' + e.message);
+    }
+  }
+
+  document.getElementById('baixarModeloBtn')?.addEventListener('click', () => {
+    const linhas = [
+      'Nome,CPF,Cargo,Telefone,Admissão,ASO Tipo,ASO Data,NR-06,NR-10,NR-33,NR-35,Integração Empresa,Integração Data,Férias Início,EPI - Capacete de segurança,EPI - Luva de raspa,Folha de Ponto',
+      'João Pedro Alves,111.111.111-11,Soldador,(11) 90000-0001,01/03/2024,ASO Admissional,01/03/2024,15/03/2024,,,20/03/2024,ABL,25/03/2024,01/03/2024,01/03/2024,01/03/2024,05/07/2026',
+    ];
+    const blob = new Blob([linhas.join('\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'modelo_importacao_master_energy.csv'; a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById('importCompletaBtn')?.addEventListener('click', importarCompleta);
+
+  async function importarCompleta() {
+    const texto = document.getElementById('importCompletaArea').value;
+    const linhas = parseLinhas(texto);
+    if (linhas.length < 2) { showAppStatus('err', 'Cole a linha de cabeçalho e pelo menos uma linha de dados.'); return; }
+
+    const cabecalho = linhas[0];
+    const colunas = cabecalho.map(detectarTipoColuna);
+    const dados = linhas.slice(1);
+
+    if (!colunas.some(c => c.tipo === 'nome')) {
+      showAppStatus('err', 'Não encontrei uma coluna de "Nome" no cabeçalho — confira se a primeira linha colada é mesmo o cabeçalho.');
+      return;
+    }
+
+    showAppStatus('info', `Importando ${dados.length} linha(s)…`);
+    const { data: existentes, error: errBusca } = await sb.from('funcionarios').select('id, nome, cpf');
+    if (errBusca) { showAppStatus('err', 'Erro ao verificar funcionários existentes: ' + errBusca.message); return; }
+
+    const resumo = { funcionariosCriados: 0, funcionariosExistentes: 0, asos: 0, porNr: {}, integracoes: 0, ferias: 0, epis: 0, pontos: 0, erros: [] };
+
+    for (const linha of dados) {
+      const obter = (tipo, numero) => {
+        const idx = colunas.findIndex(c => c.tipo === tipo && (numero === undefined || c.numero === numero));
+        return idx >= 0 ? (linha[idx] || '').trim() : '';
+      };
+      const nome = obter('nome');
+      if (!nome) continue;
+
+      const cpf = obter('cpf') || null;
+      const cpfLimpo = cpf ? cpf.replace(/\D/g, '') : null;
+      let funcionarioId;
+      const existente = existentes.find(f => (cpfLimpo && f.cpf && f.cpf.replace(/\D/g, '') === cpfLimpo) || normalizarTexto(f.nome) === normalizarTexto(nome));
+
+      if (existente) {
+        funcionarioId = existente.id;
+        resumo.funcionariosExistentes++;
+      } else {
+        const admissaoIso = converterDataBrParaIso(obter('admissao'));
+        const { data: novo, error } = await sb.from('funcionarios')
+          .insert({ nome, cpf, cargo: obter('cargo') || null, telefone: obter('telefone') || null, admissao: admissaoIso, status: 'pendente' })
+          .select().single();
+        if (error) { resumo.erros.push(`Funcionário "${nome}": ${error.message}`); continue; }
+        funcionarioId = novo.id;
+        existentes.push({ id: funcionarioId, nome, cpf });
+        resumo.funcionariosCriados++;
+      }
+
+      // ASO
+      const asoDataIso = converterDataBrParaIso(obter('aso_data'));
+      if (asoDataIso) {
+        const dataVal = new Date(asoDataIso + 'T00:00:00'); dataVal.setFullYear(dataVal.getFullYear() + 1);
+        const validadeData = dataVal.toISOString().slice(0, 10);
+        const dias = Math.round((dataVal - new Date()) / 86400000);
+        const tipoAso = obter('aso_tipo') || 'ASO Periódico';
+        await arquivarRegistrosAnteriores('asos', funcionarioId, 'tipo', tipoAso);
+        const { error } = await sb.from('asos').insert({ funcionario_id: funcionarioId, tipo: tipoAso, data_realizacao: asoDataIso, validade_data: validadeData, status: calcularStatus(dias), arquivado: false });
+        if (error) resumo.erros.push(`ASO de "${nome}": ${error.message}`); else resumo.asos++;
+      }
+
+      // Qualquer coluna de NR (podem ser várias na mesma linha)
+      for (let idx = 0; idx < colunas.length; idx++) {
+        if (colunas[idx].tipo !== 'nr') continue;
+        const valorBr = (linha[idx] || '').trim();
+        if (!valorBr) continue;
+        const dataIso = converterDataBrParaIso(valorBr);
+        if (!dataIso) { resumo.erros.push(`NR-${colunas[idx].numero} de "${nome}": data "${valorBr}" não reconhecida (use dd/mm/aaaa).`); continue; }
+        const cursoNome = `NR-${colunas[idx].numero}`;
+        const anos = anosDeValidade(cursoNome);
+        const dataVal = new Date(dataIso + 'T00:00:00'); dataVal.setFullYear(dataVal.getFullYear() + anos);
+        const validadeData = dataVal.toISOString().slice(0, 10);
+        const dias = Math.round((dataVal - new Date()) / 86400000);
+        await arquivarRegistrosAnteriores('treinamentos', funcionarioId, 'curso', cursoNome);
+        const { error } = await sb.from('treinamentos').insert({ funcionario_id: funcionarioId, curso: cursoNome, data_realizacao: dataIso, validade_data: validadeData, status: calcularStatus(dias), arquivado: false });
+        if (error) resumo.erros.push(`${cursoNome} de "${nome}": ${error.message}`);
+        else resumo.porNr[cursoNome] = (resumo.porNr[cursoNome] || 0) + 1;
+      }
+
+      // Integração
+      const integDataIso = converterDataBrParaIso(obter('integracao_data'));
+      if (integDataIso) {
+        const dataVal = new Date(integDataIso + 'T00:00:00'); dataVal.setFullYear(dataVal.getFullYear() + 1);
+        const validadeData = dataVal.toISOString().slice(0, 10);
+        const dias = Math.round((dataVal - new Date()) / 86400000);
+        const empresaInteg = obter('integracao_empresa') || 'Não informado';
+        await arquivarRegistrosAnteriores('integracoes', funcionarioId, 'empresa_integracao', empresaInteg);
+        const { error } = await sb.from('integracoes').insert({ funcionario_id: funcionarioId, empresa_integracao: empresaInteg, data_realizacao: integDataIso, validade_data: validadeData, status: calcularStatus(dias), arquivado: false });
+        if (error) resumo.erros.push(`Integração de "${nome}": ${error.message}`); else resumo.integracoes++;
+      }
+
+      // Férias — período aquisitivo de 1 ano, limite de 2 anos pra gozar
+      const feriasIso = converterDataBrParaIso(obter('ferias_inicio'));
+      if (feriasIso) {
+        const fimAquisitivo = new Date(feriasIso + 'T00:00:00'); fimAquisitivo.setFullYear(fimAquisitivo.getFullYear() + 1);
+        const limiteGozo = new Date(feriasIso + 'T00:00:00'); limiteGozo.setFullYear(limiteGozo.getFullYear() + 2);
+        const dias = Math.round((limiteGozo - new Date()) / 86400000);
+        await arquivarRegistrosAnteriores('ferias', funcionarioId, null, null);
+        const { error } = await sb.from('ferias').insert({
+          funcionario_id: funcionarioId, inicio_periodo: feriasIso,
+          fim_aquisitivo: fimAquisitivo.toISOString().slice(0, 10), limite_gozo: limiteGozo.toISOString().slice(0, 10),
+          status: calcularStatus(dias), arquivado: false,
+        });
+        if (error) resumo.erros.push(`Férias de "${nome}": ${error.message}`); else resumo.ferias++;
+      }
+
+      // EPI — qualquer coluna reconhecida como EPI (pode ter várias: "EPI - Capacete", "EPI - Luva de raspa", etc.)
+      for (let idx = 0; idx < colunas.length; idx++) {
+        if (colunas[idx].tipo !== 'epi') continue;
+        const valorBr = (linha[idx] || '').trim();
+        if (!valorBr) continue;
+        const entregaIso = converterDataBrParaIso(valorBr);
+        if (!entregaIso) { resumo.erros.push(`EPI de "${nome}": data "${valorBr}" não reconhecida (use dd/mm/aaaa).`); continue; }
+        // Tenta casar o nome da coluna com um dos 29 tipos conhecidos (pra calcular a validade sozinho).
+        // Se não achar um tipo exato, guarda o nome da coluna como está e deixa a validade em branco
+        // (não arrisca calcular errado sem saber qual item é de verdade).
+        const subtipo = colunas[idx].subtipo;
+        const subtipoNormalizado = normalizarTexto(subtipo);
+        const tipoConhecido = subtipo ? Object.keys(EPI_VALIDADE).find(k => { const kNorm = normalizarTexto(k); return kNorm.includes(subtipoNormalizado) || subtipoNormalizado.includes(kNorm); }) : null;
+        const nomeEpi = tipoConhecido || subtipo || 'Ficha de EPI (importada)';
+        const trocaCalculada = tipoConhecido ? calcularTrocaEpi(tipoConhecido, entregaIso) : null;
+        let statusEpi = 'apto';
+        if (trocaCalculada) { const dias = Math.round((new Date(trocaCalculada + 'T00:00:00') - new Date()) / 86400000); statusEpi = calcularStatus(dias); }
+        await arquivarRegistrosAnteriores('epis', funcionarioId, 'epi', nomeEpi);
+        const { error } = await sb.from('epis').insert({ funcionario_id: funcionarioId, epi: nomeEpi, entrega: entregaIso, troca: trocaCalculada, status: statusEpi, arquivado: false });
+        if (error) resumo.erros.push(`EPI de "${nome}": ${error.message}`); else resumo.epis++;
+      }
+
+      // Folha de Ponto — a data da coluna é tratada como a entrega da folha da competência ATUAL
+      const pontoDataIso = converterDataBrParaIso(obter('ponto_data'));
+      if (pontoDataIso) {
+        const hoje = new Date();
+        const competenciaAtual = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
+        const { error } = await sb.from('folhas_ponto').insert({
+          funcionario_id: funcionarioId, periodo: competenciaAtual, data_envio: pontoDataIso,
+          recebido: true, assinatura_funcionario: true, status: 'entregue',
+        });
+        if (error) resumo.erros.push(`Folha de Ponto de "${nome}": ${error.message}`); else resumo.pontos++;
+      }
+    }
+
+    const linhasResumo = [
+      `✅ Importação concluída.`,
+      `Funcionários novos: ${resumo.funcionariosCriados} | Já existiam (dados extras mesclados): ${resumo.funcionariosExistentes}`,
+      `ASOs cadastrados: ${resumo.asos}`,
+      ...Object.entries(resumo.porNr).map(([nr, n]) => `${nr}: ${n} cadastrado(s)`),
+      `Integrações cadastradas: ${resumo.integracoes}`,
+      `Férias cadastradas: ${resumo.ferias}`,
+      `EPIs cadastrados: ${resumo.epis}`,
+      `Folhas de Ponto cadastradas: ${resumo.pontos}`,
+    ];
+    if (resumo.erros.length) linhasResumo.push('', '⚠️ Avisos/erros:', ...resumo.erros);
+
+    document.getElementById('importResumo').textContent = linhasResumo.join('\n');
+    document.getElementById('importResumo').classList.remove('hidden');
+    showAppStatus('ok', 'Importação completa concluída — veja o resumo abaixo.');
+    document.getElementById('importCompletaArea').value = '';
+    loadFuncionarios();
+  }
+
+  async function bulkFuncionarios() {
+    const texto = document.getElementById('fBulkArea').value;
+    const linhas = parseLinhas(texto);
+    const validas = linhas.filter(c => c[0]);
+    if (!validas.length) { showAppStatus('err', 'Cole ao menos uma linha com o nome do funcionário.'); return; }
+
+    showAppStatus('info', 'Verificando duplicados…');
+    const { data: existentes, error: errBusca } = await sb.from('funcionarios').select('nome, cpf');
+    if (errBusca) { showAppStatus('err', 'Erro ao verificar duplicidade: ' + errBusca.message); return; }
+
+    const jaVistosNesteLote = new Set();
+    const novos = [], duplicados = [];
+    validas.forEach(c => {
+      const nome = c[0], cpf = c[1] || null;
+      const nomeChave = nome.trim().toLowerCase();
+      const cpfChave = cpf ? cpf.replace(/\D/g, '') : null;
+      const existeNoBanco = existentes.some(f => (cpfChave && f.cpf && f.cpf.replace(/\D/g, '') === cpfChave) || normalizarTexto(f.nome) === normalizarTexto(nomeChave));
+      const duplicadoNoProprioLote = jaVistosNesteLote.has(nomeChave) || (cpfChave && jaVistosNesteLote.has(cpfChave));
+      if (existeNoBanco || duplicadoNoProprioLote) {
+        duplicados.push(nome);
+      } else {
+        jaVistosNesteLote.add(nomeChave);
+        if (cpfChave) jaVistosNesteLote.add(cpfChave);
+        novos.push({ nome, cpf, cargo: c[2] || null, telefone: c[3] || null, status: 'pendente' });
+      }
+    });
+
+    if (!novos.length) {
+      showAppStatus('err', `Nenhum cadastrado — todos já existiam: ${duplicados.join(', ')}. Pra adicionar curso a eles, use a aba Treinamentos.`);
+      return;
+    }
+    showAppStatus('info', `Cadastrando ${novos.length} funcionário(s) novo(s)…`);
+    const { error } = await sb.from('funcionarios').insert(novos);
+    if (error) { showAppStatus('err', 'Erro no cadastro em massa: ' + error.message); return; }
+    showAppStatus('ok',
+      `${novos.length} funcionário(s) novo(s) cadastrado(s).` +
+      (duplicados.length ? ` ${duplicados.length} já existia(m) e foram ignorados (não duplicados): ${duplicados.join(', ')}.` : ''));
+    document.getElementById('fBulkArea').value = '';
+    loadFuncionarios();
+  }
+
+  // ================= FICHA COMPLETA — busca em todas as seções de uma vez =================
+  async function buscarFichaCompleta() {
+    const termo = document.getElementById('buscaTermo').value.trim();
+    const resultDiv = document.getElementById('fichaResultado');
+    if (!termo) { showAppStatus('err', 'Digite o nome ou o CPF pra buscar.'); return; }
+
+    resultDiv.innerHTML = '<div class="card small">Buscando…</div>';
+    const { data: todos, error: errBusca } = await sb.from('funcionarios').select('*');
+    if (errBusca) { resultDiv.innerHTML = `<div class="card small" style="color:var(--danger)">Erro: ${errBusca.message}</div>`; return; }
+
+    const termoNormalizado = normalizarTexto(termo);
+    const termoCpfLimpo = termo.replace(/\D/g, '');
+    const encontrado = todos.find(f =>
+      normalizarTexto(f.nome).includes(termoNormalizado) ||
+      (termoCpfLimpo.length >= 4 && f.cpf && f.cpf.replace(/\D/g, '').includes(termoCpfLimpo))
+    );
+
+    if (!encontrado) {
+      resultDiv.innerHTML = `<div class="card small">Nenhum funcionário encontrado com "${termo}".</div>`;
+      return;
+    }
+
+    const fid = encontrado.id;
+    const [asos, treinos, epis, integs, pontos, ferias] = await Promise.all([
+      sb.from('asos').select('*').eq('funcionario_id', fid).eq('arquivado', false),
+      sb.from('treinamentos').select('*').eq('funcionario_id', fid).eq('arquivado', false),
+      sb.from('epis').select('*').eq('funcionario_id', fid).eq('arquivado', false),
+      sb.from('integracoes').select('*').eq('funcionario_id', fid).eq('arquivado', false),
+      sb.from('folhas_ponto').select('*').eq('funcionario_id', fid),
+      sb.from('ferias').select('*').eq('funcionario_id', fid).eq('arquivado', false),
+    ]);
+
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    const statusDe = (validadeIso) => {
+      if (!validadeIso) return null;
+      const dias = Math.round((new Date(validadeIso + 'T00:00:00') - hoje) / 86400000);
+      return { status: calcularStatus(dias), dias };
+    };
+    const pill = (validadeIso) => {
+      const s = statusDe(validadeIso);
+      if (!s) return '<span class="small">—</span>';
+      return `<span class="pill ${s.status}">${s.status} (${s.dias}d)</span>`;
+    };
+    const secao = (titulo, linhas) => `
+      <div class="card">
+        <h1 style="font-size:14px">${titulo} <span class="small">(${linhas.length})</span></h1>
+        ${linhas.length ? `<table><tbody>${linhas.join('')}</tbody></table>` : '<div class="small">Nenhum registro nessa seção.</div>'}
+      </div>`;
+
+    const docCol = (arquivo) => arquivo ? `<span class="file-link" data-baixar="${arquivo}">📥 Baixar</span>` : '<span class="small">sem arquivo</span>';
+    const linhasAso = (asos.data || []).map(a => `<tr><td>${a.tipo || '—'}</td><td>${formatarDataBr(a.data_realizacao)}</td><td>${formatarDataBr(a.validade_data)}</td><td>${pill(a.validade_data)}</td><td>${docCol(a.arquivo)}</td></tr>`);
+    const linhasTreino = (treinos.data || []).map(t => `<tr><td>${t.curso}</td><td>${formatarDataBr(t.data_realizacao)}</td><td>${formatarDataBr(t.validade_data)}</td><td>${pill(t.validade_data)}</td><td>${docCol(t.arquivo)}</td></tr>`);
+    const linhasEpi = (epis.data || []).map(e => `<tr><td>${e.epi}</td><td>${e.ca || '—'}</td><td>${formatarDataBr(e.entrega)}</td><td>${formatarDataBr(e.troca)}</td><td>${pill(e.troca)}</td><td>${docCol(e.arquivo)}</td></tr>`);
+    const linhasInteg = (integs.data || []).map(i => `<tr><td>${i.empresa_integracao}</td><td>${i.obra || '—'}</td><td>${formatarDataBr(i.validade_data)}</td><td>${pill(i.validade_data)}</td><td>${docCol(i.arquivo)}</td></tr>`);
+    const linhasPonto = (pontos.data || []).map(p => `<tr><td>${p.cliente || '—'}</td><td>${mesAnoParaTexto(p.periodo)}</td><td>${formatarDataBr(p.data_envio)}</td><td>Recebido: ${p.recebido ? 'Sim' : 'Não'} · Assinado: ${p.assinatura_funcionario ? 'Sim' : 'Não'}</td><td>${docCol(p.arquivo)}</td></tr>`);
+    const linhasFerias = (ferias.data || []).map(v => `<tr><td>Período: ${formatarDataBr(v.inicio_periodo)} a ${formatarDataBr(v.fim_aquisitivo)}</td><td>Limite p/ gozar: ${formatarDataBr(v.limite_gozo)}</td><td>${v.inicio_ferias ? `Últimas férias: ${formatarDataBr(v.inicio_ferias)} (${v.dias_gozo}d) — retorno ${formatarDataBr(v.data_retorno)}` : 'Ainda não gozou nesse período'}</td><td>${pill(v.limite_gozo)}</td></tr>`);
+
+    resultDiv.innerHTML = `
+      <div class="card" style="border:1px solid rgba(0,146,214,.5)">
+        <div class="topbar">
+          <div>
+            <h1 style="font-size:17px">${encontrado.nome}</h1>
+            <div class="small">CPF: ${encontrado.cpf || '—'} · Cargo: ${encontrado.cargo || '—'} · Status geral: <span class="pill ${encontrado.status}">${encontrado.status}</span></div>
+          </div>
+          <button class="btn-ghost" id="baixarDossieBtn"><svg class="icon" data-lucide="file-text"></svg>Baixar Dossiê</button>
+        </div>
+      </div>
+      ${secao('🩺 ASOs', linhasAso)}
+      ${secao('🎓 Treinamentos / NRs', linhasTreino)}
+      ${secao('🦺 EPIs', linhasEpi)}
+      ${secao('🏢 Integrações de Cliente', linhasInteg)}
+      ${secao('🕒 Folhas de Ponto', linhasPonto)}
+      ${secao('🏖️ Férias', linhasFerias)}
+    `;
+    resultDiv.querySelectorAll('[data-baixar]').forEach(link => link.addEventListener('click', () => baixarArquivo(link.getAttribute('data-baixar'))));
+    if (window.lucide) lucide.createIcons();
+
+    // Guarda os dados já buscados pra montar o Dossiê sem precisar consultar tudo de novo
+    ultimoResultadoFicha = {
+      funcionario: encontrado,
+      asos: asos.data || [], treinos: treinos.data || [], epis: epis.data || [],
+      integs: integs.data || [], pontos: pontos.data || [], ferias: ferias.data || [],
+    };
+    document.getElementById('baixarDossieBtn')?.addEventListener('click', gerarEBaixarDossie);
+  }
+
+  // ================= DOSSIÊ — documento pronto pra imprimir/entregar numa fiscalização =================
+  let ultimoResultadoFicha = null;
+  function gerarEBaixarDossie() {
+    if (!ultimoResultadoFicha) return;
+    const d = ultimoResultadoFicha;
+    const f = d.funcionario;
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    const diasDe = (v) => v ? Math.round((new Date(v + 'T00:00:00') - hoje) / 86400000) : null;
+    const situacaoTexto = (v) => {
+      const dias = diasDe(v);
+      if (dias === null) return '—';
+      if (dias < 0) return `VENCIDO há ${Math.abs(dias)} dia(s)`;
+      if (dias <= 60) return `Vence em ${dias} dia(s)`;
+      return 'Em dia';
+    };
+    const linhaTabela = (colunas) => `<tr>${colunas.map(c => `<td>${c}</td>`).join('')}</tr>`;
+    const tabela = (titulo, cabecalhos, linhas) => `
+      <h3>${titulo}</h3>
+      ${linhas.length ? `<table><thead><tr>${cabecalhos.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${linhas.join('')}</tbody></table>` : '<p class="vazio">Nenhum registro nessa seção.</p>'}`;
+
+    const linhasAso = d.asos.map(a => linhaTabela([a.tipo || '—', formatarDataBr(a.data_realizacao), formatarDataBr(a.validade_data), situacaoTexto(a.validade_data), a.medico_trabalho || '—', a.clinica || '—']));
+    const linhasTreino = d.treinos.map(t => linhaTabela([t.curso, formatarDataBr(t.data_realizacao), formatarDataBr(t.validade_data), situacaoTexto(t.validade_data)]));
+    const linhasEpi = d.epis.map(e => linhaTabela([e.epi, e.ca || '—', formatarDataBr(e.entrega), formatarDataBr(e.troca), situacaoTexto(e.troca)]));
+    const linhasInteg = d.integs.map(i => linhaTabela([i.empresa_integracao, i.obra || '—', formatarDataBr(i.validade_data), situacaoTexto(i.validade_data)]));
+    const linhasPonto = d.pontos.map(p => linhaTabela([p.cliente || '—', mesAnoParaTexto(p.periodo), formatarDataBr(p.data_envio), p.recebido ? 'Sim' : 'Não', p.assinatura_funcionario ? 'Sim' : 'Não']));
+    const linhasFerias = d.ferias.map(v => linhaTabela([formatarDataBr(v.inicio_periodo), formatarDataBr(v.fim_aquisitivo), formatarDataBr(v.limite_gozo), situacaoTexto(v.limite_gozo)]));
+
+    const geradoEm = new Date().toLocaleString('pt-BR');
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Dossiê — ${f.nome}</title>
+<style>
+  body{font-family:Arial,Helvetica,sans-serif;color:#111;max-width:900px;margin:0 auto;padding:32px 24px;font-size:13px;}
+  h1{font-size:20px;margin-bottom:2px;}
+  h2{font-size:13px;color:#555;font-weight:normal;margin-top:0;}
+  h3{font-size:13.5px;background:#0a2647;color:#fff;padding:6px 10px;border-radius:4px;margin-top:26px;margin-bottom:8px;}
+  table{width:100%;border-collapse:collapse;margin-bottom:6px;}
+  th,td{border:1px solid #ccc;padding:6px 8px;text-align:left;font-size:12px;}
+  th{background:#f2f4f7;}
+  .vazio{color:#888;font-size:12px;font-style:italic;}
+  .cabecalho{border-bottom:3px solid #0092d6;padding-bottom:14px;margin-bottom:18px;}
+  .infogrid{display:flex;gap:24px;margin-top:8px;font-size:13px;}
+  .rodape{margin-top:36px;padding-top:12px;border-top:1px solid #ccc;font-size:10.5px;color:#888;}
+  @media print{ body{padding:0;} h3{-webkit-print-color-adjust:exact;print-color-adjust:exact;} }
+</style></head><body>
+  <div class="cabecalho">
+    <h1>MASTER ENERGY — Dossiê de Documentação SST</h1>
+    <h2>Sistema de Gestão de Saúde e Segurança do Trabalho</h2>
+    <div class="infogrid">
+      <div><b>Funcionário:</b> ${f.nome}</div>
+      <div><b>CPF:</b> ${f.cpf || '—'}</div>
+      <div><b>Cargo:</b> ${f.cargo || '—'}</div>
+      <div><b>Admissão:</b> ${formatarDataBr(f.admissao)}</div>
+    </div>
+  </div>
+
+  ${tabela('ASOs — Atestados de Saúde Ocupacional', ['Tipo', 'Realizado em', 'Válido até', 'Situação', 'Médico', 'Clínica'], linhasAso)}
+  ${tabela('Treinamentos / Normas Regulamentadoras (NRs)', ['Curso', 'Realizado em', 'Válido até', 'Situação'], linhasTreino)}
+  ${tabela('EPIs — Equipamentos de Proteção Individual', ['EPI', 'CA', 'Entrega', 'Próxima troca', 'Situação'], linhasEpi)}
+  ${tabela('Integrações de Cliente', ['Empresa', 'Obra', 'Válido até', 'Situação'], linhasInteg)}
+  ${tabela('Folhas de Ponto', ['Cliente', 'Competência', 'Enviada em', 'Recebido', 'Assinada'], linhasPonto)}
+  ${tabela('Férias', ['Início do período', 'Fim aquisitivo', 'Limite para gozar', 'Situação'], linhasFerias)}
+
+  <div class="rodape">Documento gerado automaticamente pelo Sistema de Gestão SST da Master Energy em ${geradoEm}. Este dossiê reflete os documentos vigentes (não inclui histórico de versões substituídas) no momento da geração.</div>
+</body></html>`;
+
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const nomeArquivo = normalizarTexto(f.nome).replace(/\s+/g, '_');
+    a.href = url; a.download = `dossie_${nomeArquivo}_${new Date().toISOString().slice(0, 10)}.html`; a.click();
+    URL.revokeObjectURL(url);
+    showAppStatus('ok', 'Dossiê baixado — abra o arquivo e use "Imprimir → Salvar como PDF" se quiser em PDF.');
+  }
+
+  async function bulkTreinamentos() {
+    const texto = document.getElementById('tBulkArea').value;
+    const linhas = parseLinhas(texto);
+    const validas = linhas.filter(c => c[0] && c[1] && c[2]);
+    if (!validas.length) { showAppStatus('err', 'Cole ao menos uma linha completa: Nome, Curso, Data.'); return; }
+
+    showAppStatus('info', `Cadastrando ${validas.length} treinamento(s)…`);
+    const { data: funcionarios, error: errF } = await sb.from('funcionarios').select('id, nome');
+    if (errF) { showAppStatus('err', 'Erro ao buscar funcionários: ' + errF.message); return; }
+
+    const payload = []; const naoEncontrados = [];
+    for (const c of validas) {
+      const [nome, curso, dataBr] = c;
+      const emp = funcionarios.find(f => normalizarTexto(f.nome) === normalizarTexto(nome));
+      if (!emp) { naoEncontrados.push(nome); continue; }
+      const [dd, mm, yyyy] = dataBr.split('/');
+      if (!dd || !mm || !yyyy) continue;
+      const dataRealizacao = `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
+      const anos = anosDeValidade(curso);
+      const dataVal = new Date(dataRealizacao + 'T00:00:00');
+      dataVal.setFullYear(dataVal.getFullYear() + anos);
+      const validadeData = dataVal.toISOString().slice(0, 10);
+      const diasRestantes = Math.round((dataVal - new Date()) / 86400000);
+      await arquivarRegistrosAnteriores('treinamentos', emp.id, 'curso', curso);
+      payload.push({ funcionario_id: emp.id, curso, data_realizacao: dataRealizacao, validade_data: validadeData, status: calcularStatus(diasRestantes), arquivado: false });
+    }
+
+    if (!payload.length) { showAppStatus('err', 'Nenhuma linha válida — confira se os nomes batem exatamente com os funcionários já cadastrados.'); return; }
+    const { error } = await sb.from('treinamentos').insert(payload);
+    if (error) { showAppStatus('err', 'Erro no cadastro em massa: ' + error.message); return; }
+    showAppStatus('ok', `${payload.length} treinamento(s) cadastrado(s).${naoEncontrados.length ? ' Não encontrados (confira o nome exato): ' + naoEncontrados.join(', ') : ''}`);
+    document.getElementById('tBulkArea').value = '';
+    loadTreinamentos();
+  }
+
+  // ================= CRUD: Integração de Cliente =================
+  async function loadIntegracoes() {
+    const tbody = document.getElementById('integTableBody');
+    tbody.innerHTML = '<tr><td colspan="7" class="small">Carregando…</td></tr>';
+    const mostrarHistorico = document.getElementById('iMostrarHistorico').checked;
+    let query = sb.from('integracoes').select('*, funcionarios(nome)').order('validade_data', { ascending: true });
+    if (!mostrarHistorico) query = query.eq('arquivado', false);
+    const { data, error } = await query;
+    if (error) { tbody.innerHTML = `<tr><td colspan="7" class="small" style="color:var(--danger)">Erro: ${error.message}</td></tr>`; return; }
+    if (!data.length) { tbody.innerHTML = `<tr><td colspan="7" class="small">${mostrarHistorico ? 'Nenhuma integração (nem no histórico) ainda.' : 'Nenhuma integração atual cadastrada ainda.'}</td></tr>`; return; }
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    tbody.innerHTML = data.map(i => {
+      const dias = i.validade_data ? Math.round((new Date(i.validade_data + 'T00:00:00') - hoje) / 86400000) : null;
+      const status = dias !== null ? calcularStatus(dias) : (i.status || 'apto');
+      return `<tr${i.arquivado ? ' style="opacity:.55"' : ''}>
+        <td>${i.funcionarios ? i.funcionarios.nome : '—'}${i.arquivado ? ' <span class="small">(histórico)</span>' : ''}</td>
+        <td>${i.empresa_integracao}</td>
+        <td>${i.obra || '—'}</td>
+        <td>${formatarDataBr(i.data_realizacao)}</td>
+        <td>${formatarDataBr(i.validade_data)}</td>
+        <td><span class="pill ${status}">${status}${dias !== null ? ' (' + dias + 'd)' : ''}</span></td>
+        <td><button class="del-btn" data-id="${i.id}">Excluir</button></td>
+      </tr>`;
+    }).join('');
+    tbody.querySelectorAll('.del-btn').forEach(btn => btn.addEventListener('click', () => deleteInteg(btn.getAttribute('data-id'))));
+  }
+
+  async function saveInteg() {
+    const funcionarioId = document.getElementById('iFuncionarioId').value;
+    const empresaSelecionada = document.getElementById('iEmpresaSelect').value;
+    const empresa = empresaSelecionada === '__outro__' ? document.getElementById('iEmpresaOutro').value.trim() : empresaSelecionada;
+    const dataRealizacao = document.getElementById('iData').value;
+    if (!funcionarioId) { showAppStatus('err', 'Selecione o funcionário.'); return; }
+    if (!empresa) { showAppStatus('err', 'Selecione (ou digite) a empresa/cliente.'); return; }
+    if (!dataRealizacao) { showAppStatus('err', 'Digite a data de realização.'); return; }
+
+    const dataVal = new Date(dataRealizacao + 'T00:00:00');
+    dataVal.setFullYear(dataVal.getFullYear() + 1); // validade padrão de 1 ano
+    const validadeData = dataVal.toISOString().slice(0, 10);
+    const diasRestantes = Math.round((dataVal - new Date()) / 86400000);
+
+    const arquivoFile = document.getElementById('iArquivo').files[0];
+    let caminhoArquivo = null;
+    if (arquivoFile) {
+      showAppStatus('info', 'Enviando certificado…');
+      try { caminhoArquivo = await subirArquivoTreinamento(arquivoFile, funcionarioId); }
+      catch (e) { showAppStatus('err', 'Erro ao enviar o arquivo: ' + e.message); return; }
+    }
+
+    showAppStatus('info', 'Salvando…');
+    const arquivados = await arquivarRegistrosAnteriores('integracoes', funcionarioId, 'empresa_integracao', empresa);
+    const { error } = await sb.from('integracoes').insert({
+      funcionario_id: funcionarioId, empresa_integracao: empresa, obra: document.getElementById('iObra').value.trim() || null,
+      data_realizacao: dataRealizacao, validade_data: validadeData, status: calcularStatus(diasRestantes), arquivo: caminhoArquivo,
+      arquivado: false,
+    });
+    if (error) { showAppStatus('err', 'Erro ao salvar: ' + error.message); return; }
+    showAppStatus('ok', `Integração salva — validade até ${formatarDataBr(validadeData)}.${arquivados ? ' A integração anterior dessa mesma empresa foi movida pro histórico.' : ''}`);
+    ['iData', 'iObra', 'iArquivo', 'iEmpresaOutro', 'iFuncionarioBusca'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('iEmpresaSelect').value = '';
+    document.getElementById('iEmpresaOutro').style.display = 'none';
+    document.getElementById('iArquivoNome').textContent = '';
+    document.getElementById('iArquivoRemover').style.display = 'none';
+    document.getElementById('ocrSuggestionBoxInteg').classList.add('hidden');
+    renderFuncionarioOptionsEm('iFuncionarioId', funcionariosCache);
+    loadIntegracoes();
+  }
+
+  async function deleteInteg(id) {
+    if (!confirm('Excluir esta integração definitivamente do banco de dados?')) return;
+    const { error } = await sb.from('integracoes').delete().eq('id', id);
+    if (error) { showAppStatus('err', 'Erro ao excluir: ' + error.message); return; }
+    showAppStatus('ok', 'Excluído do banco de dados.');
+    loadIntegracoes();
+  }
+
+  // ================= CRUD: Férias =================
+  let gozoFeriasIdAtual = null;
+  async function loadFerias() {
+    const tbody = document.getElementById('feriasTableBody');
+    tbody.innerHTML = '<tr><td colspan="9" class="small">Carregando…</td></tr>';
+    const mostrarHistorico = document.getElementById('vMostrarHistorico').checked;
+    let query = sb.from('ferias').select('*, funcionarios(nome)').order('limite_gozo', { ascending: true });
+    if (!mostrarHistorico) query = query.eq('arquivado', false);
+    const { data, error } = await query;
+    if (error) { tbody.innerHTML = `<tr><td colspan="9" class="small" style="color:var(--danger)">Erro: ${error.message}</td></tr>`; return; }
+    if (!data.length) { tbody.innerHTML = `<tr><td colspan="9" class="small">${mostrarHistorico ? 'Nenhum período (nem no histórico) ainda.' : 'Nenhum período atual cadastrado ainda.'}</td></tr>`; return; }
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    tbody.innerHTML = data.map(v => {
+      const dias = v.limite_gozo ? Math.round((new Date(v.limite_gozo + 'T00:00:00') - hoje) / 86400000) : null;
+      const status = dias !== null ? calcularStatus(dias) : (v.status || 'apto');
+      return `<tr${v.arquivado ? ' style="opacity:.55"' : ''}>
+        <td>${v.funcionarios ? v.funcionarios.nome : '—'}${v.arquivado ? ' <span class="small">(histórico)</span>' : ''}</td>
+        <td>${formatarDataBr(v.inicio_periodo)}</td>
+        <td>${formatarDataBr(v.fim_aquisitivo)}</td>
+        <td>${formatarDataBr(v.limite_gozo)}</td>
+        <td>${formatarDataBr(v.inicio_ferias)}</td>
+        <td>${v.dias_gozo || '—'}</td>
+        <td>${formatarDataBr(v.data_retorno)}</td>
+        <td><span class="pill ${status}">${status}${dias !== null ? ' (' + dias + 'd)' : ''}</span></td>
+        <td>
+          ${v.arquivado ? '' : `<button class="file-link" data-id="${v.id}" data-nome="${v.funcionarios ? v.funcionarios.nome : ''}">Registrar gozo</button>`}
+          <button class="del-btn" data-id="${v.id}">Excluir</button>
+        </td>
+      </tr>`;
+    }).join('');
+    tbody.querySelectorAll('.del-btn').forEach(btn => btn.addEventListener('click', () => deleteFerias(btn.getAttribute('data-id'))));
+    tbody.querySelectorAll('.file-link').forEach(btn => btn.addEventListener('click', () => abrirGozo(btn.getAttribute('data-id'), btn.getAttribute('data-nome'))));
+  }
+
+  async function saveFerias() {
+    const funcionarioId = document.getElementById('vFuncionarioId').value;
+    const inicio = document.getElementById('vInicio').value;
+    if (!funcionarioId) { showAppStatus('err', 'Selecione o funcionário.'); return; }
+    if (!inicio) { showAppStatus('err', 'Digite o início do período aquisitivo.'); return; }
+
+    const fimAquisitivo = new Date(inicio + 'T00:00:00'); fimAquisitivo.setFullYear(fimAquisitivo.getFullYear() + 1);
+    const limiteGozo = new Date(inicio + 'T00:00:00'); limiteGozo.setFullYear(limiteGozo.getFullYear() + 2);
+    const dias = Math.round((limiteGozo - new Date()) / 86400000);
+
+    showAppStatus('info', 'Salvando…');
+    // Férias não tem "tipo" pra comparar — só pode existir 1 período ATIVO por funcionário,
+    // então arquiva qualquer período anterior dele, sem precisar de uma chave extra.
+    const arquivados = await arquivarRegistrosAnteriores('ferias', funcionarioId, null, null);
+    const { error } = await sb.from('ferias').insert({
+      funcionario_id: funcionarioId, inicio_periodo: inicio,
+      fim_aquisitivo: fimAquisitivo.toISOString().slice(0, 10), limite_gozo: limiteGozo.toISOString().slice(0, 10),
+      status: calcularStatus(dias), arquivado: false,
+    });
+    if (error) { showAppStatus('err', 'Erro ao salvar: ' + error.message); return; }
+    showAppStatus('ok', `Período de férias salvo — limite para gozar: ${formatarDataBr(limiteGozo.toISOString().slice(0, 10))}.${arquivados ? ' O período anterior desse funcionário foi movido pro histórico.' : ''}`);
+    ['vInicio', 'vFuncionarioBusca'].forEach(id => document.getElementById(id).value = '');
+    renderFuncionarioOptionsEm('vFuncionarioId', funcionariosCache);
+    loadFerias();
+  }
+
+  async function deleteFerias(id) {
+    if (!confirm('Excluir este período de férias definitivamente do banco de dados?')) return;
+    const { error } = await sb.from('ferias').delete().eq('id', id);
+    if (error) { showAppStatus('err', 'Erro ao excluir: ' + error.message); return; }
+    showAppStatus('ok', 'Excluído do banco de dados.');
+    loadFerias();
+  }
+
+  function calcularDataRetorno() {
+    const inicio = document.getElementById('gozoInicio').value;
+    const diasGozo = parseInt(document.getElementById('gozoDias').value) || 0;
+    if (!inicio || !diasGozo) { document.getElementById('gozoRetorno').value = ''; return null; }
+    const retorno = new Date(inicio + 'T00:00:00'); retorno.setDate(retorno.getDate() + diasGozo);
+    const retornoIso = retorno.toISOString().slice(0, 10);
+    document.getElementById('gozoRetorno').value = retornoIso;
+    return retornoIso;
+  }
+
+  function abrirGozo(feriasId, nomeFuncionario) {
+    gozoFeriasIdAtual = feriasId;
+    document.getElementById('gozoFuncionarioNome').textContent = `Funcionário: ${nomeFuncionario}`;
+    document.getElementById('gozoInicio').value = '';
+    document.getElementById('gozoDias').value = '30';
+    document.getElementById('gozoRetorno').value = '';
+    document.getElementById('gozoCard').classList.remove('hidden');
+    document.getElementById('gozoCard').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  async function confirmarGozo() {
+    const inicio = document.getElementById('gozoInicio').value;
+    const diasGozo = parseInt(document.getElementById('gozoDias').value) || 0;
+    if (!inicio) { showAppStatus('err', 'Preencha o início das férias.'); return; }
+    if (!diasGozo || diasGozo < 1) { showAppStatus('err', 'Dias de gozo precisa ser pelo menos 1.'); return; }
+
+    const dataRetornoIso = calcularDataRetorno();
+
+    // O novo período aquisitivo começa no dia de retorno ao trabalho — reinicia o ciclo.
+    const novoFimAquisitivo = new Date(dataRetornoIso + 'T00:00:00'); novoFimAquisitivo.setFullYear(novoFimAquisitivo.getFullYear() + 1);
+    const novoLimiteGozo = new Date(dataRetornoIso + 'T00:00:00'); novoLimiteGozo.setFullYear(novoLimiteGozo.getFullYear() + 2);
+    const dias = Math.round((novoLimiteGozo - new Date()) / 86400000);
+
+    showAppStatus('info', 'Registrando gozo e iniciando novo período…');
+    const { error } = await sb.from('ferias').update({
+      inicio_periodo: dataRetornoIso,
+      fim_aquisitivo: novoFimAquisitivo.toISOString().slice(0, 10),
+      limite_gozo: novoLimiteGozo.toISOString().slice(0, 10),
+      inicio_ferias: inicio, dias_gozo: diasGozo, data_retorno: dataRetornoIso,
+      status: calcularStatus(dias),
+    }).eq('id', gozoFeriasIdAtual);
+    if (error) { showAppStatus('err', 'Erro ao registrar gozo: ' + error.message); return; }
+    showAppStatus('ok', `Gozo registrado — retorno em ${formatarDataBr(dataRetornoIso)}, novo período aquisitivo já começou automaticamente.`);
+    document.getElementById('gozoCard').classList.add('hidden');
+    loadFerias();
+  }
+
+  // ================= DASHBOARD =================
+  async function carregarDashboard() {
+    document.getElementById('dashCards').innerHTML = '<div class="card small">Carregando…</div>';
+    document.getElementById('dashAlertasBody').innerHTML = '<tr><td colspan="5" class="small">Carregando…</td></tr>';
+
+    const [funcs, asos, treinos, epis, integs, pontos, ferias] = await Promise.all([
+      sb.from('funcionarios').select('*'),
+      sb.from('asos').select('*, funcionarios(nome)').eq('arquivado', false),
+      sb.from('treinamentos').select('*, funcionarios(nome)').eq('arquivado', false),
+      sb.from('epis').select('*, funcionarios(nome)').eq('arquivado', false),
+      sb.from('integracoes').select('*, funcionarios(nome)').eq('arquivado', false),
+      sb.from('folhas_ponto').select('*, funcionarios(nome)'),
+      sb.from('ferias').select('*, funcionarios(nome)').eq('arquivado', false),
+    ]);
+
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    const diasDe = (validadeIso) => validadeIso ? Math.round((new Date(validadeIso + 'T00:00:00') - hoje) / 86400000) : null;
+
+    const modulos = [
+      { nome: 'Funcionários', dados: funcs.data || [], icone: 'users', tab: 'func', semVencimento: true },
+      { nome: 'ASOs', dados: asos.data || [], icone: 'stethoscope', tab: 'aso', campoValidade: 'validade_data' },
+      { nome: 'Treinamentos / NRs', dados: treinos.data || [], icone: 'graduation-cap', tab: 'treino', campoValidade: 'validade_data' },
+      { nome: 'EPIs', dados: epis.data || [], icone: 'shield', tab: 'epi', campoValidade: 'troca' },
+      { nome: 'Integrações', dados: integs.data || [], icone: 'building-2', tab: 'integ', campoValidade: 'validade_data' },
+      { nome: 'Folha de Ponto', dados: pontos.data || [], icone: 'clock', tab: 'ponto', semVencimento: true },
+      { nome: 'Férias', dados: ferias.data || [], icone: 'palmtree', tab: 'ferias', campoValidade: 'limite_gozo' },
+    ];
+
+    // Cartões clicáveis, cada um leva direto pra aba correspondente
+    document.getElementById('dashCards').innerHTML = modulos.map(m => {
+      let vencidos = 0, pendentes = 0;
+      if (!m.semVencimento) {
+        m.dados.forEach(d => {
+          const dias = diasDe(d[m.campoValidade]);
+          if (dias !== null) { if (dias < 0) vencidos++; else if (dias <= 60) pendentes++; }
+        });
+      }
+      const spine = vencidos ? 'bad' : pendentes ? 'warn' : 'ok';
+      return `
+        <div class="card spine dash-card ${m.semVencimento ? 'info' : spine}" data-tab="${m.tab}">
+          <svg class="icon-lg" data-lucide="${m.icone}" style="color:var(--blue-400);margin-bottom:6px"></svg>
+          <div style="font-family:var(--font-display);font-size:26px;font-weight:800">${m.dados.length}</div>
+          <div class="small" style="margin-top:2px">${m.nome}</div>
+          ${!m.semVencimento ? `<div style="margin-top:8px;font-size:10.5px">
+            ${vencidos ? `<span style="color:var(--danger)">${vencidos} vencido(s)</span>` : ''}
+            ${vencidos && pendentes ? ' · ' : ''}
+            ${pendentes ? `<span style="color:var(--warning)">${pendentes} vencendo</span>` : ''}
+            ${!vencidos && !pendentes ? '<span style="color:var(--success)">tudo em dia</span>' : ''}
+          </div>` : ''}
+          <div class="dash-card-abrir">Abrir <svg class="icon" data-lucide="arrow-right" style="margin:0 0 0 2px"></svg></div>
+        </div>`;
+    }).join('');
+    if (window.lucide) lucide.createIcons();
+    document.querySelectorAll('#dashCards [data-tab]').forEach(card => {
+      card.addEventListener('click', () => switchTab(card.getAttribute('data-tab')));
+    });
+
+    // Lista de alertas: tudo que está vencido ou vencendo em 60 dias, juntando todos os módulos com data
+    const alertas = [];
+    modulos.filter(m => !m.semVencimento).forEach(m => {
+      m.dados.forEach(d => {
+        const dias = diasDe(d[m.campoValidade]);
+        if (dias !== null && dias <= 60) {
+          alertas.push({
+            funcionario: d.funcionarios ? d.funcionarios.nome : '—',
+            oque: `${m.nome}${d.curso ? ' — ' + d.curso : ''}${d.tipo ? ' — ' + d.tipo : ''}${d.empresa_integracao ? ' — ' + d.empresa_integracao : ''}${d.epi ? ' — ' + d.epi : ''}`,
+            validade: d[m.campoValidade], dias, tab: m.tab,
+          });
+        }
+      });
+    });
+    alertas.sort((a, b) => a.dias - b.dias);
+
+    const temVencido = alertas.some(a => a.dias < 0);
+    document.getElementById('dashAlertasCard').className = 'card' + (temVencido ? ' spine bad' : '');
+
+    if (!alertas.length) {
+      document.getElementById('dashAlertasBody').innerHTML = '<tr><td colspan="5" class="small">Nada vencido ou vencendo nos próximos 60 dias. Tudo em dia.</td></tr>';
+    } else {
+      document.getElementById('dashAlertasBody').innerHTML = alertas.map(a => `
+        <tr>
+          <td>${a.funcionario}</td>
+          <td>${a.oque}</td>
+          <td>${formatarDataBr(a.validade)}</td>
+          <td><span class="pill ${calcularStatus(a.dias)}">${calcularStatus(a.dias)} (${a.dias}d)</span></td>
+          <td><button class="file-link" data-tab="${a.tab}">Ver</button></td>
+        </tr>`).join('');
+      document.querySelectorAll('#dashAlertasBody [data-tab]').forEach(btn => {
+        btn.addEventListener('click', () => switchTab(btn.getAttribute('data-tab')));
+      });
+    }
+  }
+
+  // ================= CRUD: ASOs =================
+  async function loadAsos() {
+    const tbody = document.getElementById('asoTableBody');
+    tbody.innerHTML = '<tr><td colspan="8" class="small">Carregando…</td></tr>';
+    const mostrarHistorico = document.getElementById('aMostrarHistorico').checked;
+    let query = sb.from('asos').select('*, funcionarios(nome)').order('validade_data', { ascending: true });
+    if (!mostrarHistorico) query = query.eq('arquivado', false);
+    const { data, error } = await query;
+    if (error) { tbody.innerHTML = `<tr><td colspan="8" class="small" style="color:var(--danger)">Erro: ${error.message}</td></tr>`; return; }
+    if (!data.length) { tbody.innerHTML = `<tr><td colspan="8" class="small">${mostrarHistorico ? 'Nenhum ASO (nem no histórico) ainda.' : 'Nenhum ASO atual cadastrado ainda.'}</td></tr>`; return; }
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    tbody.innerHTML = data.map(a => {
+      const dias = a.validade_data ? Math.round((new Date(a.validade_data + 'T00:00:00') - hoje) / 86400000) : null;
+      const status = dias !== null ? calcularStatus(dias) : (a.status || 'apto');
+      return `<tr${a.arquivado ? ' style="opacity:.55"' : ''}>
+        <td>${a.funcionarios ? a.funcionarios.nome : '—'}${a.arquivado ? ' <span class="small">(histórico)</span>' : ''}</td>
+        <td>${a.tipo || '—'}</td>
+        <td>${formatarDataBr(a.data_realizacao)}</td>
+        <td>${formatarDataBr(a.validade_data)}</td>
+        <td>${a.medico_trabalho || '—'}</td>
+        <td>${a.clinica || '—'}</td>
+        <td><span class="pill ${status}">${status}${dias !== null ? ' (' + dias + 'd)' : ''}</span></td>
+        <td><button class="del-btn" data-id="${a.id}">Excluir</button></td>
+      </tr>`;
+    }).join('');
+    tbody.querySelectorAll('.del-btn').forEach(btn => btn.addEventListener('click', () => deleteAso(btn.getAttribute('data-id'))));
+  }
+
+  async function saveAso() {
+    const funcionarioId = document.getElementById('aFuncionarioId').value;
+    const tipo = document.getElementById('aTipo').value;
+    const dataRealizacao = document.getElementById('aData').value;
+    if (!funcionarioId) { showAppStatus('err', 'Selecione o funcionário.'); return; }
+    if (!tipo) { showAppStatus('err', 'Selecione o tipo de ASO.'); return; }
+    if (!dataRealizacao) { showAppStatus('err', 'Digite a data do exame.'); return; }
+
+    const dataVal = new Date(dataRealizacao + 'T00:00:00');
+    dataVal.setFullYear(dataVal.getFullYear() + 1); // ASO — validade padrão de 1 ano
+    const validadeData = dataVal.toISOString().slice(0, 10);
+    const diasRestantes = Math.round((dataVal - new Date()) / 86400000);
+
+    const arquivoFile = document.getElementById('aArquivo').files[0];
+    let caminhoArquivo = null;
+    if (arquivoFile) {
+      showAppStatus('info', 'Enviando atestado…');
+      try { caminhoArquivo = await subirArquivoTreinamento(arquivoFile, funcionarioId); }
+      catch (e) { showAppStatus('err', 'Erro ao enviar o arquivo: ' + e.message); return; }
+    }
+
+    showAppStatus('info', 'Salvando…');
+    const arquivados = await arquivarRegistrosAnteriores('asos', funcionarioId, 'tipo', tipo);
+    const { error } = await sb.from('asos').insert({
+      funcionario_id: funcionarioId, tipo, data_realizacao: dataRealizacao,
+      validade_data: validadeData, status: calcularStatus(diasRestantes), arquivo: caminhoArquivo,
+      medico_trabalho: document.getElementById('aMedico').value.trim() || null,
+      clinica: document.getElementById('aClinica').value.trim() || null,
+      arquivado: false,
+    });
+    if (error) { showAppStatus('err', 'Erro ao salvar: ' + error.message); return; }
+    showAppStatus('ok', `ASO salvo — validade até ${formatarDataBr(validadeData)}.${arquivados ? ' O ASO anterior desse mesmo tipo foi movido pro histórico.' : ''}`);
+    ['aData', 'aArquivo', 'aFuncionarioBusca', 'aMedico', 'aClinica'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('aTipo').value = '';
+    document.getElementById('aArquivoNome').textContent = '';
+    document.getElementById('aArquivoRemover').style.display = 'none';
+    document.getElementById('ocrSuggestionBoxAso').classList.add('hidden');
+    renderFuncionarioOptionsEm('aFuncionarioId', funcionariosCache);
+    loadAsos();
+  }
+
+  async function deleteAso(id) {
+    if (!confirm('Excluir este ASO definitivamente do banco de dados?')) return;
+    const { error } = await sb.from('asos').delete().eq('id', id);
+    if (error) { showAppStatus('err', 'Erro ao excluir: ' + error.message); return; }
+    showAppStatus('ok', 'Excluído do banco de dados.');
+    loadAsos();
+  }
+
+  // ================= CRUD: EPIs =================
+  async function loadEpis() {
+    const tbody = document.getElementById('epiTableBody');
+    tbody.innerHTML = '<tr><td colspan="8" class="small">Carregando…</td></tr>';
+    const mostrarHistorico = document.getElementById('eMostrarHistorico').checked;
+    let query = sb.from('epis').select('*, funcionarios(nome)').order('troca', { ascending: true });
+    if (!mostrarHistorico) query = query.eq('arquivado', false);
+    const { data, error } = await query;
+    if (error) { tbody.innerHTML = `<tr><td colspan="8" class="small" style="color:var(--danger)">Erro: ${error.message}</td></tr>`; return; }
+    if (!data.length) { tbody.innerHTML = `<tr><td colspan="8" class="small">${mostrarHistorico ? 'Nenhum EPI (nem no histórico) ainda.' : 'Nenhum EPI atual cadastrado ainda.'}</td></tr>`; return; }
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    tbody.innerHTML = data.map(e => {
+      const dias = e.troca ? Math.round((new Date(e.troca + 'T00:00:00') - hoje) / 86400000) : null;
+      const status = dias !== null ? calcularStatus(dias) : null;
+      return `<tr${e.arquivado ? ' style="opacity:.55"' : ''}>
+        <td>${e.funcionarios ? e.funcionarios.nome : '—'}${e.arquivado ? ' <span class="small">(histórico)</span>' : ''}</td>
+        <td>${e.epi}</td>
+        <td>${e.ca || '—'}</td>
+        <td>${formatarDataBr(e.entrega)}</td>
+        <td>${formatarDataBr(e.troca)}</td>
+        <td>${status ? `<span class="pill ${status}">${status}${dias !== null ? ' (' + dias + 'd)' : ''}</span>` : '<span class="small">—</span>'}</td>
+        <td>${e.arquivo ? `<span class="file-link" data-arquivo="${e.arquivo}">Ver</span> · <span class="file-link" data-baixar="${e.arquivo}">Baixar</span>` : '<span class="small">—</span>'}</td>
+        <td><button class="del-btn" data-id="${e.id}">Excluir</button></td>
+      </tr>`;
+    }).join('');
+    tbody.querySelectorAll('.del-btn').forEach(btn => btn.addEventListener('click', () => deleteEpi(btn.getAttribute('data-id'))));
+    tbody.querySelectorAll('[data-arquivo]').forEach(link => link.addEventListener('click', () => abrirArquivo(link.getAttribute('data-arquivo'))));
+    tbody.querySelectorAll('[data-baixar]').forEach(link => link.addEventListener('click', () => baixarArquivo(link.getAttribute('data-baixar'))));
+  }
+
+  async function saveEpi() {
+    const funcionarioId = document.getElementById('eFuncionarioId').value;
+    const epiSelecionado = document.getElementById('eEpiSelect').value;
+    const epi = epiSelecionado === '__outro__' ? document.getElementById('eEpiOutro').value.trim() : epiSelecionado;
+    const entrega = document.getElementById('eEntrega').value;
+    const troca = document.getElementById('eTroca').value || null;
+    if (!funcionarioId) { showAppStatus('err', 'Selecione o funcionário.'); return; }
+    if (!epi) { showAppStatus('err', 'Selecione (ou digite) o EPI.'); return; }
+    if (!entrega) { showAppStatus('err', 'Digite a data de entrega.'); return; }
+
+    let status = 'apto';
+    if (troca) {
+      const dias = Math.round((new Date(troca + 'T00:00:00') - new Date()) / 86400000);
+      status = calcularStatus(dias);
+    }
+
+    const arquivoFile = document.getElementById('eArquivo').files[0];
+    let caminhoArquivo = null;
+    if (arquivoFile) {
+      showAppStatus('info', 'Enviando ficha/comprovante…');
+      try { caminhoArquivo = await subirArquivoTreinamento(arquivoFile, funcionarioId); }
+      catch (e) { showAppStatus('err', 'Erro ao enviar o arquivo: ' + e.message); return; }
+    }
+
+    showAppStatus('info', 'Salvando…');
+    const arquivados = await arquivarRegistrosAnteriores('epis', funcionarioId, 'epi', epi);
+    const { error } = await sb.from('epis').insert({
+      funcionario_id: funcionarioId, epi,
+      ca: document.getElementById('eCa').value.trim() || null,
+      entrega, troca, status, arquivo: caminhoArquivo, arquivado: false,
+    });
+    if (error) { showAppStatus('err', 'Erro ao salvar: ' + error.message); return; }
+    showAppStatus('ok', `EPI salvo com sucesso.${troca ? ` Próxima troca: ${formatarDataBr(troca)}.` : ''}${caminhoArquivo ? ' Ficha anexada.' : ''}${arquivados ? ' O EPI anterior desse mesmo item foi movido pro histórico.' : ''}`);
+    ['eCa', 'eEntrega', 'eTroca', 'eEpiOutro', 'eFuncionarioBusca', 'eArquivo'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('eEpiSelect').value = '';
+    document.getElementById('eEpiOutro').style.display = 'none';
+    document.getElementById('eArquivoNome').textContent = '';
+    document.getElementById('eArquivoRemover').style.display = 'none';
+    document.getElementById('eTrocaAuto').textContent = '';
+    renderFuncionarioOptionsEm('eFuncionarioId', funcionariosCache);
+    loadEpis();
+  }
+
+  async function deleteEpi(id) {
+    if (!confirm('Excluir esta ficha de EPI definitivamente do banco de dados?')) return;
+    const { error } = await sb.from('epis').delete().eq('id', id);
+    if (error) { showAppStatus('err', 'Erro ao excluir: ' + error.message); return; }
+    showAppStatus('ok', 'Excluído do banco de dados.');
+    loadEpis();
+  }
+
+  // ================= CRUD: Folha de Ponto =================
+  function mesAnoParaTexto(mesAno) {
+    if (!mesAno) return '—';
+    // Se não estiver no formato aaaa-mm (ex: já for texto antigo tipo "Julho/2026",
+    // de antes dessa atualização), mostra como já está — evita "undefined/Julho/2026".
+    if (!/^\d{4}-\d{2}$/.test(mesAno)) return mesAno;
+    const [ano, mes] = mesAno.split('-');
+    const nomesMeses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    return `${nomesMeses[parseInt(mes) - 1]}/${ano}`;
+  }
+  // Converte "aaaa-mm" pro texto legado "Mês/aaaa", pra reconhecer registros salvos
+  // antes dessa atualização (que guardavam o período assim, em vez de aaaa-mm).
+  function mesAnoParaTextoLegado(mesAnoIso) {
+    const nomesMeses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    const [ano, mes] = mesAnoIso.split('-');
+    return `${nomesMeses[parseInt(mes) - 1]}/${ano}`;
+  }
+
+  async function loadFolhasPonto() {
+    const tbody = document.getElementById('pontoTableBody');
+    tbody.innerHTML = '<tr><td colspan="7" class="small">Carregando…</td></tr>';
+    const { data, error } = await sb.from('folhas_ponto').select('*, funcionarios(nome)').order('periodo', { ascending: false });
+    if (error) { tbody.innerHTML = `<tr><td colspan="7" class="small" style="color:var(--danger)">Erro: ${error.message}</td></tr>`; return; }
+    if (!data.length) { tbody.innerHTML = '<tr><td colspan="7" class="small">Nenhuma folha de ponto cadastrada ainda.</td></tr>'; return; }
+    tbody.innerHTML = data.map(p => `<tr>
+        <td>${p.funcionarios ? p.funcionarios.nome : '—'}</td>
+        <td>${p.cliente || '—'}</td>
+        <td>${mesAnoParaTexto(p.periodo)}</td>
+        <td>${formatarDataBr(p.data_envio)}</td>
+        <td>${p.recebido ? 'Sim' : 'Não'}</td>
+        <td>${p.assinatura_funcionario ? 'Sim' : 'Não'}</td>
+        <td><button class="del-btn" data-id="${p.id}">Excluir</button></td>
+      </tr>`).join('');
+    tbody.querySelectorAll('.del-btn').forEach(btn => btn.addEventListener('click', () => deleteFolhaPonto(btn.getAttribute('data-id'))));
+  }
+
+  async function saveFolhaPonto() {
+    const funcionarioId = document.getElementById('pFuncionarioId').value;
+    const periodoMes = document.getElementById('pPeriodo').value; // formato aaaa-mm do <input type=month>
+    const dataEnvio = document.getElementById('pDataEnvio').value;
+    if (!funcionarioId) { showAppStatus('err', 'Selecione o funcionário.'); return; }
+    if (!periodoMes) { showAppStatus('err', 'Selecione a competência (mês/ano).'); return; }
+    if (!dataEnvio) { showAppStatus('err', 'Digite a data da entrega.'); return; }
+
+    const arquivoFile = document.getElementById('pArquivo').files[0];
+    let caminhoArquivo = null;
+    if (arquivoFile) {
+      showAppStatus('info', 'Enviando arquivo…');
+      try { caminhoArquivo = await subirArquivoTreinamento(arquivoFile, funcionarioId); }
+      catch (e) { showAppStatus('err', 'Erro ao enviar o arquivo: ' + e.message); return; }
+    }
+
+    showAppStatus('info', 'Salvando…');
+    const { error } = await sb.from('folhas_ponto').insert({
+      funcionario_id: funcionarioId, cliente: document.getElementById('pCliente').value.trim() || null,
+      obra: document.getElementById('pObra').value.trim() || null, periodo: periodoMes,
+      data_envio: dataEnvio,
+      recebido: document.getElementById('pRecebido').value === 'sim',
+      assinatura_funcionario: document.getElementById('pAssinatura').value === 'sim',
+      arquivo: caminhoArquivo, status: 'entregue',
+    });
+    if (error) { showAppStatus('err', 'Erro ao salvar: ' + error.message); return; }
+    showAppStatus('ok', `Folha de ponto de ${mesAnoParaTexto(periodoMes)} salva com sucesso — já aparece como Entregue.`);
+    ['pCliente', 'pObra', 'pDataEnvio', 'pArquivo', 'pFuncionarioBusca'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('pPeriodo').value = '';
+    document.getElementById('pRecebido').value = 'sim';
+    document.getElementById('pAssinatura').value = 'sim';
+    document.getElementById('pArquivoNome').textContent = '';
+    document.getElementById('pArquivoRemover').style.display = 'none';
+    renderFuncionarioOptionsEm('pFuncionarioId', funcionariosCache);
+    loadFolhasPonto();
+    if (document.getElementById('pPainelCompetencia').value) carregarPainelPonto();
+  }
+
+  async function deleteFolhaPonto(id) {
+    if (!confirm('Excluir esta folha de ponto definitivamente do banco de dados?')) return;
+    const { error } = await sb.from('folhas_ponto').delete().eq('id', id);
+    if (error) { showAppStatus('err', 'Erro ao excluir: ' + error.message); return; }
+    showAppStatus('ok', 'Excluído do banco de dados.');
+    loadFolhasPonto();
+    if (document.getElementById('pPainelCompetencia').value) carregarPainelPonto();
+  }
+
+  // ================= Painel de Competência — cruza todos os funcionários contra quem já entregou =================
+  async function carregarPainelPonto() {
+    const competencia = document.getElementById('pPainelCompetencia').value; // formato aaaa-mm
+    if (!competencia) { showAppStatus('err', 'Escolha uma competência.'); return; }
+
+    document.getElementById('pPainelBody').innerHTML = '<tr><td colspan="6" class="small">Carregando…</td></tr>';
+
+    const [funcs, folhas] = await Promise.all([
+      sb.from('funcionarios').select('*'),
+      sb.from('folhas_ponto').select('*'), // busca tudo e filtra abaixo, pra reconhecer registros antigos também
+    ]);
+    const todosFuncionarios = funcs.data || [];
+    // Reconhece a competência tanto no formato novo (aaaa-mm) quanto no formato antigo em texto
+    // (ex: "Julho/2026"), caso existam registros salvos antes dessa atualização.
+    const competenciaLegado = mesAnoParaTextoLegado(competencia);
+    const folhasDaCompetencia = (folhas.data || []).filter(p => p.periodo === competencia || p.periodo === competenciaLegado);
+
+    const hoje = new Date();
+    const anoAtual = hoje.getFullYear(), mesAtual = hoje.getMonth() + 1;
+    const [anoComp, mesComp] = competencia.split('-').map(Number);
+    // "atual ou futura" -> ainda dentro do prazo normal (amarelo); só "já passou" vira vermelho
+    const aindaNoPrazo = anoComp > anoAtual || (anoComp === anoAtual && mesComp >= mesAtual);
+
+    let entregues = 0, pendentes = 0, naoEntregues = 0;
+    const linhas = todosFuncionarios.map(f => {
+      const folha = folhasDaCompetencia.find(p => p.funcionario_id === f.id);
+      let situacao, corPill;
+      if (folha) { situacao = '🟢 Entregue'; corPill = 'apto'; entregues++; }
+      else if (aindaNoPrazo) { situacao = '🟡 Pendente'; corPill = 'pendente'; pendentes++; }
+      else { situacao = '🔴 Não Entregue'; corPill = 'bloqueado'; naoEntregues++; }
+      return `<tr>
+        <td>${f.nome}</td>
+        <td><span class="pill ${corPill}">${situacao}</span></td>
+        <td>${folha ? formatarDataBr(folha.data_envio) : '—'}</td>
+        <td>${folha ? (folha.recebido ? 'Sim' : 'Não') : '—'}</td>
+        <td>${folha ? (folha.assinatura_funcionario ? 'Sim' : 'Não') : '—'}</td>
+        <td>${folha && folha.arquivo ? `<span class="file-link" data-baixar="${folha.arquivo}">Baixar</span>` : '—'}</td>
+      </tr>`;
+    });
+
+    document.getElementById('pPainelBody').innerHTML = linhas.join('') || '<tr><td colspan="6" class="small">Nenhum funcionário cadastrado ainda.</td></tr>';
+    document.querySelectorAll('#pPainelBody [data-baixar]').forEach(link => link.addEventListener('click', () => baixarArquivo(link.getAttribute('data-baixar'))));
+
+    const total = todosFuncionarios.length;
+    const percentual = total ? Math.round((entregues / total) * 100) : 0;
+    document.getElementById('pPainelStats').innerHTML = `
+      <div class="card" style="text-align:center;padding:12px"><div style="font-size:20px;font-weight:800">${total}</div><div class="small">Total de funcionários</div></div>
+      <div class="card" style="text-align:center;padding:12px"><div style="font-size:20px;font-weight:800;color:var(--success)">${entregues}</div><div class="small">Entregues</div></div>
+      <div class="card" style="text-align:center;padding:12px"><div style="font-size:20px;font-weight:800;color:var(--warning)">${pendentes}</div><div class="small">Pendentes</div></div>
+      <div class="card" style="text-align:center;padding:12px"><div style="font-size:20px;font-weight:800;color:var(--danger)">${naoEntregues}</div><div class="small">Sem folha (não entregue)</div></div>
+      <div class="card" style="text-align:center;padding:12px"><div style="font-size:20px;font-weight:800">${percentual}%</div><div class="small">% de entrega</div></div>
+    `;
+
+    if (naoEntregues > 0 || pendentes > 0) {
+      const faltantes = todosFuncionarios.filter(f => !folhasDaCompetencia.some(p => p.funcionario_id === f.id));
+      showAppStatus('info', `${faltantes.length} funcionário(s) sem folha de ponto da competência ${mesAnoParaTexto(competencia)}.`);
+    } else {
+      showAppStatus('ok', `Todos entregaram a folha de ${mesAnoParaTexto(competencia)}.`);
+    }
+  }
+
+  boot();
+</script>
+</body>
+</html>
