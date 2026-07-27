@@ -87,6 +87,8 @@ a.link:hover{text-decoration:underline;}
 textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-border);border-radius:9px;padding:10px 12px;color:var(--ink-50);font-size:12px;font-family:var(--font-mono);min-height:100px;margin-bottom:10px;resize:vertical;}
 .file-link{color:var(--blue-400);font-size:11.5px;cursor:pointer;font-weight:600;}
 .file-link:hover{text-decoration:underline;}
+.link-funcionario{color:var(--blue-300);cursor:pointer;font-weight:600;}
+.link-funcionario:hover{text-decoration:underline;color:var(--white);}
 .toggle-senha{
   position:absolute;right:4px;top:0;height:38px;width:34px;display:flex;align-items:center;justify-content:center;
   background:transparent;border:none;color:var(--ink-500);padding:0;margin:0;
@@ -1324,7 +1326,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
     }
     tbody.innerHTML = data.map(f => `
       <tr>
-        <td>${f.nome}</td>
+        <td>${linkNome(f.nome)}</td>
         <td>${f.cpf || '—'}</td>
         <td>${f.cargo || '—'}</td>
         <td><span class="pill ${f.status}">${f.status}</span></td>
@@ -1465,6 +1467,25 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
     return (t || '').toString().trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
   }
 
+  // Nome do funcionário clicável — usado em toda tabela do sistema (Treinamentos, ASOs, EPIs,
+  // Integração, Férias, Folha de Ponto, Dashboard). Clicar em qualquer nome, em qualquer seção,
+  // abre a Ficha Completa daquela pessoa com tudo que ela tem cadastrado.
+  function linkNome(nome) {
+    if (!nome) return '—';
+    return `<span class="link-funcionario" data-nome="${nome.replace(/"/g, '&quot;')}">${nome}</span>`;
+  }
+  function irParaFichaCompleta(nome) {
+    switchTab('busca');
+    document.getElementById('buscaTermo').value = nome;
+    buscarFichaCompleta();
+  }
+  // Um único clique "escutando" a página inteira — funciona em qualquer tabela nova que
+  // apareça depois, sem precisar religar o clique toda vez que uma lista é recarregada.
+  document.addEventListener('click', (e) => {
+    const alvo = e.target.closest('.link-funcionario');
+    if (alvo) irParaFichaCompleta(alvo.getAttribute('data-nome'));
+  });
+
   // Sempre que um registro NOVO é salvo, arquiva sozinho qualquer registro ANTERIOR do mesmo
   // tipo (mesmo curso, mesmo tipo de ASO, mesmo EPI, mesma empresa de integração) daquele mesmo
   // funcionário — assim nunca fica "duplicado" na tela principal, só o mais recente aparece,
@@ -1535,7 +1556,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
       const status = diasRestantes !== null ? calcularStatus(diasRestantes) : (t.status || 'apto');
       return `
       <tr${t.arquivado ? ' style="opacity:.55"' : ''}>
-        <td>${t.funcionarios ? t.funcionarios.nome : '—'}${t.arquivado ? ' <span class="small">(histórico)</span>' : ''}</td>
+        <td>${linkNome(t.funcionarios ? t.funcionarios.nome : null)}${t.arquivado ? ' <span class="small">(histórico)</span>' : ''}</td>
         <td>${t.curso}</td>
         <td>${formatarDataBr(t.data_realizacao)}</td>
         <td>${formatarDataBr(t.validade_data)}</td>
@@ -2182,7 +2203,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
       const dias = i.validade_data ? Math.round((new Date(i.validade_data + 'T00:00:00') - hoje) / 86400000) : null;
       const status = dias !== null ? calcularStatus(dias) : (i.status || 'apto');
       return `<tr${i.arquivado ? ' style="opacity:.55"' : ''}>
-        <td>${i.funcionarios ? i.funcionarios.nome : '—'}${i.arquivado ? ' <span class="small">(histórico)</span>' : ''}</td>
+        <td>${linkNome(i.funcionarios ? i.funcionarios.nome : null)}${i.arquivado ? ' <span class="small">(histórico)</span>' : ''}</td>
         <td>${i.empresa_integracao}</td>
         <td>${i.obra || '—'}</td>
         <td>${formatarDataBr(i.data_realizacao)}</td>
@@ -2259,7 +2280,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
       const dias = v.limite_gozo ? Math.round((new Date(v.limite_gozo + 'T00:00:00') - hoje) / 86400000) : null;
       const status = dias !== null ? calcularStatus(dias) : (v.status || 'apto');
       return `<tr${v.arquivado ? ' style="opacity:.55"' : ''}>
-        <td>${v.funcionarios ? v.funcionarios.nome : '—'}${v.arquivado ? ' <span class="small">(histórico)</span>' : ''}</td>
+        <td>${linkNome(v.funcionarios ? v.funcionarios.nome : null)}${v.arquivado ? ' <span class="small">(histórico)</span>' : ''}</td>
         <td>${formatarDataBr(v.inicio_periodo)}</td>
         <td>${formatarDataBr(v.fim_aquisitivo)}</td>
         <td>${formatarDataBr(v.limite_gozo)}</td>
@@ -2439,7 +2460,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
     } else {
       document.getElementById('dashAlertasBody').innerHTML = alertas.map(a => `
         <tr>
-          <td>${a.funcionario}</td>
+          <td>${linkNome(a.funcionario === '—' ? null : a.funcionario)}</td>
           <td>${a.oque}</td>
           <td>${formatarDataBr(a.validade)}</td>
           <td><span class="pill ${calcularStatus(a.dias)}">${calcularStatus(a.dias)} (${a.dias}d)</span></td>
@@ -2466,7 +2487,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
       const dias = a.validade_data ? Math.round((new Date(a.validade_data + 'T00:00:00') - hoje) / 86400000) : null;
       const status = dias !== null ? calcularStatus(dias) : (a.status || 'apto');
       return `<tr${a.arquivado ? ' style="opacity:.55"' : ''}>
-        <td>${a.funcionarios ? a.funcionarios.nome : '—'}${a.arquivado ? ' <span class="small">(histórico)</span>' : ''}</td>
+        <td>${linkNome(a.funcionarios ? a.funcionarios.nome : null)}${a.arquivado ? ' <span class="small">(histórico)</span>' : ''}</td>
         <td>${a.tipo || '—'}</td>
         <td>${formatarDataBr(a.data_realizacao)}</td>
         <td>${formatarDataBr(a.validade_data)}</td>
@@ -2543,7 +2564,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
       const dias = e.troca ? Math.round((new Date(e.troca + 'T00:00:00') - hoje) / 86400000) : null;
       const status = dias !== null ? calcularStatus(dias) : null;
       return `<tr${e.arquivado ? ' style="opacity:.55"' : ''}>
-        <td>${e.funcionarios ? e.funcionarios.nome : '—'}${e.arquivado ? ' <span class="small">(histórico)</span>' : ''}</td>
+        <td>${linkNome(e.funcionarios ? e.funcionarios.nome : null)}${e.arquivado ? ' <span class="small">(histórico)</span>' : ''}</td>
         <td>${e.epi}</td>
         <td>${e.ca || '—'}</td>
         <td>${formatarDataBr(e.entrega)}</td>
@@ -2634,7 +2655,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
     if (error) { tbody.innerHTML = `<tr><td colspan="7" class="small" style="color:var(--danger)">Erro: ${error.message}</td></tr>`; return; }
     if (!data.length) { tbody.innerHTML = '<tr><td colspan="7" class="small">Nenhuma folha de ponto cadastrada ainda.</td></tr>'; return; }
     tbody.innerHTML = data.map(p => `<tr>
-        <td>${p.funcionarios ? p.funcionarios.nome : '—'}</td>
+        <td>${linkNome(p.funcionarios ? p.funcionarios.nome : null)}</td>
         <td>${p.cliente || '—'}</td>
         <td>${mesAnoParaTexto(p.periodo)}</td>
         <td>${formatarDataBr(p.data_envio)}</td>
@@ -2723,7 +2744,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
       else if (aindaNoPrazo) { situacao = '🟡 Pendente'; corPill = 'pendente'; pendentes++; }
       else { situacao = '🔴 Não Entregue'; corPill = 'bloqueado'; naoEntregues++; }
       return `<tr>
-        <td>${f.nome}</td>
+        <td>${linkNome(f.nome)}</td>
         <td><span class="pill ${corPill}">${situacao}</span></td>
         <td>${folha ? formatarDataBr(folha.data_envio) : '—'}</td>
         <td>${folha ? (folha.recebido ? 'Sim' : 'Não') : '—'}</td>
