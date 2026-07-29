@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <style>
 :root{
   /* ---- Paleta: azul industrial/segurança, refinado a partir da identidade da Master Energy ---- */
@@ -158,13 +159,65 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
 .nav-item.btn-ghost{background:transparent;border-color:transparent;}
 
 .sidebar-foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--surface-border);}
-.sidebar-user{font-size:11px;color:var(--ink-500);padding:6px 10px 10px;word-break:break-all;}
+.sidebar-user{font-size:11px;color:var(--ink-500);padding:6px 10px 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
 .main-content{flex:1;min-width:0;padding:28px 32px 60px;max-width:1180px;}
 
 /* ---- Tela de login: ocupa a página inteira, sem sidebar ---- */
 .auth-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
 .auth-card{max-width:420px;width:100%;}
+
+/* ============================================================
+   CELULAR / TELA ESTREITA — a barra lateral vira uma faixa de botões
+   em formato de pílula, com rolagem horizontal suave (padrão usado em
+   apps executivos modernos) — cada botão mantém o texto numa linha só,
+   nunca quebra letra por letra, e ainda cabem quantos couberem na tela,
+   deslizando pro lado pros demais.
+   ============================================================ */
+@media (max-width: 880px){
+  .app-shell{flex-direction:column;min-height:0;}
+  .sidebar{
+    width:100%;height:auto;position:relative;top:auto;overflow:visible;
+    border-right:none;border-bottom:1px solid var(--surface-border);
+    padding:12px 0 8px;flex-direction:column;
+  }
+  .brand{padding:0 16px 10px;}
+  .nav-group-label{display:none;} /* não cabem numa faixa rolável; ícone + texto já dão contexto sozinhos */
+
+  .sidebar-nav{
+    display:flex;flex-direction:row;flex-wrap:nowrap;gap:8px;
+    overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;
+    padding:2px 16px 8px;scroll-snap-type:x proximity;
+  }
+  .sidebar-nav::-webkit-scrollbar{display:none;}
+  .nav-item{
+    flex:none;width:auto;white-space:nowrap;flex-direction:row;
+    padding:10px 16px;font-size:12.5px;gap:7px;border-radius:999px;
+    scroll-snap-align:start;
+  }
+  .nav-item svg{width:16px;height:16px;}
+
+  .sidebar-foot{width:100%;padding:10px 16px 0;display:flex;align-items:center;gap:8px;border-top:1px solid var(--surface-border);margin-top:4px;}
+  .sidebar-user{flex:1;min-width:0;padding:0;font-size:10px;}
+  .sidebar-foot .nav-item{flex:none;width:auto;padding:8px 14px;border-radius:9px;}
+
+  .main-content{padding:16px 14px 40px;max-width:100%;}
+  .card{padding:16px;border-radius:12px;}
+  .row{gap:10px;}
+  .row > div{min-width:100%;} /* campos de formulário empilham em coluna única, mais fácil de tocar */
+
+  /* Tabelas: em vez de espremer as colunas até ficar ilegível, deixa rolar de lado —
+     sem mexer no display de thead/tbody/tr (isso é o que desalinhava cabeçalho e corpo) */
+  table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+
+  #dashCards{grid-template-columns:repeat(2, 1fr) !important;gap:10px !important;}
+  .topbar{flex-direction:column;align-items:stretch;gap:8px;}
+  .topbar button{width:100%;}
+  h1{font-size:16.5px;}
+}
+@media (max-width: 480px){
+  #dashCards{gap:8px !important;}
+}
 </style>
 </head>
 <body>
@@ -227,6 +280,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
         <div><div class="brand-name">MASTER ENERGY</div><div class="brand-sub">Gestão de SST</div></div>
       </div>
 
+      <div class="sidebar-nav">
       <div class="nav-group-label">Visão geral</div>
       <button class="nav-item btn-ghost" id="tabDashBtn"><svg data-lucide="layout-dashboard"></svg>Dashboard</button>
       <button class="nav-item btn-ghost" id="tabBuscaBtn"><svg data-lucide="search"></svg>Ficha Completa</button>
@@ -241,6 +295,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
       <button class="nav-item btn-ghost" id="tabIntegBtn"><svg data-lucide="building-2"></svg>Integração de Cliente</button>
       <button class="nav-item btn-ghost" id="tabFeriasBtn"><svg data-lucide="palmtree"></svg>Férias</button>
       <button class="nav-item btn-ghost" id="tabPontoBtn"><svg data-lucide="clock"></svg>Folha de Ponto</button>
+      </div>
 
       <div class="sidebar-foot">
         <div class="sidebar-user" id="loggedAs"></div>
@@ -741,6 +796,42 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
           <div style="flex:none"><button class="btn-primary" id="dashBuscaBtn" style="width:auto">Buscar ficha completa</button></div>
         </div>
       </div>
+
+      <div id="dashDestaques" class="row" style="margin-bottom:0"></div>
+
+      <div class="row" style="align-items:stretch">
+        <div class="card" style="flex:1;min-width:260px;text-align:center">
+          <h1 style="font-size:15px;text-align:left">Taxa de Conformidade Geral</h1>
+          <div class="small" style="text-align:left;margin-bottom:6px">Considera todos os documentos e cursos monitorados no sistema</div>
+          <div style="position:relative;max-width:230px;margin:10px auto 4px">
+            <canvas id="chartConformidade"></canvas>
+            <div id="chartConformidadeCentro" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none">
+              <div style="font-family:var(--font-display);font-size:34px;font-weight:800" id="conformidadePct">—</div>
+              <div class="small">em dia</div>
+            </div>
+          </div>
+          <div id="conformidadeLegenda" style="display:flex;justify-content:center;gap:14px;margin-top:8px;flex-wrap:wrap"></div>
+        </div>
+        <div class="card" style="flex:1.4;min-width:280px">
+          <h1 style="font-size:15px">Documentos por Categoria</h1>
+          <div class="small" style="margin-bottom:6px">Quantidade atual de registros vigentes em cada seção</div>
+          <canvas id="chartCategorias" style="max-height:260px"></canvas>
+        </div>
+      </div>
+
+      <div class="row" style="align-items:stretch">
+        <div class="card" style="flex:1.3;min-width:280px">
+          <h1 style="font-size:15px">Situação por Categoria</h1>
+          <div class="small" style="margin-bottom:6px">Em dia, vencendo e vencido — módulo por módulo</div>
+          <canvas id="chartSituacaoCategoria" style="max-height:270px"></canvas>
+        </div>
+        <div class="card" style="flex:1.3;min-width:280px">
+          <h1 style="font-size:15px">Vencimentos por Mês</h1>
+          <div class="small" style="margin-bottom:6px">Quantos documentos vencem em cada um dos próximos meses — pra se planejar com antecedência</div>
+          <canvas id="chartVencimentosMes" style="max-height:270px"></canvas>
+        </div>
+      </div>
+
       <div id="dashCards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:16px"></div>
       <div class="card" id="dashAlertasCard">
         <h1 style="font-size:15px">⚠️ Vencendo nos próximos 60 dias ou já vencido</h1>
@@ -2398,13 +2489,13 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
     const diasDe = (validadeIso) => validadeIso ? Math.round((new Date(validadeIso + 'T00:00:00') - hoje) / 86400000) : null;
 
     const modulos = [
-      { nome: 'Funcionários', dados: funcs.data || [], icone: 'users', tab: 'func', semVencimento: true },
-      { nome: 'ASOs', dados: asos.data || [], icone: 'stethoscope', tab: 'aso', campoValidade: 'validade_data' },
-      { nome: 'Treinamentos / NRs', dados: treinos.data || [], icone: 'graduation-cap', tab: 'treino', campoValidade: 'validade_data' },
-      { nome: 'EPIs', dados: epis.data || [], icone: 'shield', tab: 'epi', campoValidade: 'troca' },
-      { nome: 'Integrações', dados: integs.data || [], icone: 'building-2', tab: 'integ', campoValidade: 'validade_data' },
-      { nome: 'Folha de Ponto', dados: pontos.data || [], icone: 'clock', tab: 'ponto', semVencimento: true },
-      { nome: 'Férias', dados: ferias.data || [], icone: 'palmtree', tab: 'ferias', campoValidade: 'limite_gozo' },
+      { nome: 'Funcionários', dados: funcs.data || [], icone: 'users', tab: 'func', semVencimento: true, cor: '#0092d6' },
+      { nome: 'ASOs', dados: asos.data || [], icone: 'stethoscope', tab: 'aso', campoValidade: 'validade_data', cor: '#3ab4f2' },
+      { nome: 'Treinamentos / NRs', dados: treinos.data || [], icone: 'graduation-cap', tab: 'treino', campoValidade: 'validade_data', cor: '#7dd0fb' },
+      { nome: 'EPIs', dados: epis.data || [], icone: 'shield', tab: 'epi', campoValidade: 'troca', cor: '#e8a33d' },
+      { nome: 'Integrações', dados: integs.data || [], icone: 'building-2', tab: 'integ', campoValidade: 'validade_data', cor: '#1fa97a' },
+      { nome: 'Folha de Ponto', dados: pontos.data || [], icone: 'clock', tab: 'ponto', semVencimento: true, cor: '#a78bfa' },
+      { nome: 'Férias', dados: ferias.data || [], icone: 'palmtree', tab: 'ferias', campoValidade: 'limite_gozo', cor: '#f472b6' },
     ];
 
     // Cartões clicáveis, cada um leva direto pra aba correspondente
@@ -2419,7 +2510,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
       const spine = vencidos ? 'bad' : pendentes ? 'warn' : 'ok';
       return `
         <div class="card spine dash-card ${m.semVencimento ? 'info' : spine}" data-tab="${m.tab}">
-          <svg class="icon-lg" data-lucide="${m.icone}" style="color:var(--blue-400);margin-bottom:6px"></svg>
+          <svg class="icon-lg" data-lucide="${m.icone}" style="color:${m.cor};margin-bottom:6px"></svg>
           <div style="font-family:var(--font-display);font-size:26px;font-weight:800">${m.dados.length}</div>
           <div class="small" style="margin-top:2px">${m.nome}</div>
           ${!m.semVencimento ? `<div style="margin-top:8px;font-size:10.5px">
@@ -2433,6 +2524,159 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
     }).join('');
     if (window.lucide) lucide.createIcons();
     document.querySelectorAll('#dashCards [data-tab]').forEach(card => {
+      card.addEventListener('click', () => switchTab(card.getAttribute('data-tab')));
+    });
+
+    // ---- Gráfico de rosca: taxa de conformidade geral (junta todos os módulos com vencimento) ----
+    let totalApto = 0, totalPendente = 0, totalVencido = 0;
+    const modulosComVencimento = modulos.filter(m => !m.semVencimento);
+    modulosComVencimento.forEach(m => {
+      m.dados.forEach(d => {
+        const dias = diasDe(d[m.campoValidade]);
+        if (dias === null) { totalApto++; return; }
+        if (dias < 0) totalVencido++; else if (dias <= 60) totalPendente++; else totalApto++;
+      });
+    });
+    const totalGeral = totalApto + totalPendente + totalVencido;
+    const pctConforme = totalGeral ? Math.round((totalApto / totalGeral) * 100) : 100;
+    document.getElementById('conformidadePct').textContent = totalGeral ? pctConforme + '%' : '—';
+    document.getElementById('conformidadeLegenda').innerHTML = `
+      <span class="small"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--success);margin-right:4px"></span>Em dia (${totalApto})</span>
+      <span class="small"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--warning);margin-right:4px"></span>Vencendo (${totalPendente})</span>
+      <span class="small"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--danger);margin-right:4px"></span>Vencido (${totalVencido})</span>
+    `;
+    if (window.Chart) {
+      const dadosRosca = totalGeral ? [totalApto, totalPendente, totalVencido] : [1, 0, 0];
+      if (window.__chartConformidade) window.__chartConformidade.destroy();
+      window.__chartConformidade = new Chart(document.getElementById('chartConformidade'), {
+        type: 'doughnut',
+        data: { datasets: [{ data: dadosRosca, backgroundColor: ['#1fa97a', '#e8a33d', '#e5484d'], borderWidth: 0, hoverOffset: 6 }] },
+        options: { cutout: '72%', plugins: { legend: { display: false }, tooltip: { enabled: true } }, animation: { duration: 500 } },
+      });
+
+      // ---- Gráfico de barras: quantidade de registros vigentes por categoria ----
+      if (window.__chartCategorias) window.__chartCategorias.destroy();
+      const coresCategorias = ['#0092d6', '#3ab4f2', '#7dd0fb', '#e8a33d', '#1fa97a', '#a78bfa', '#f472b6'];
+      window.__chartCategorias = new Chart(document.getElementById('chartCategorias'), {
+        type: 'bar',
+        data: {
+          labels: modulos.map(m => m.nome),
+          datasets: [{ data: modulos.map(m => m.dados.length), backgroundColor: coresCategorias, borderRadius: 6, maxBarThickness: 46 }],
+        },
+        options: {
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#a9b4c4', font: { size: 10.5 } }, grid: { display: false } },
+            y: { ticks: { color: '#a9b4c4', stepSize: 1 }, grid: { color: 'rgba(255,255,255,.07)' }, beginAtZero: true },
+          },
+          animation: { duration: 500 },
+        },
+      });
+
+      // ---- Gráfico de barras horizontais empilhadas: situação (em dia/vencendo/vencido) módulo por módulo ----
+      const contagemPorCategoria = modulosComVencimento.map(m => {
+        let apto = 0, pendente = 0, vencido = 0;
+        m.dados.forEach(d => {
+          const dias = diasDe(d[m.campoValidade]);
+          if (dias === null) { apto++; return; }
+          if (dias < 0) vencido++; else if (dias <= 60) pendente++; else apto++;
+        });
+        return { apto, pendente, vencido };
+      });
+      if (window.__chartSituacao) window.__chartSituacao.destroy();
+      window.__chartSituacao = new Chart(document.getElementById('chartSituacaoCategoria'), {
+        type: 'bar',
+        data: {
+          labels: modulosComVencimento.map(m => m.nome),
+          datasets: [
+            { label: 'Em dia', data: contagemPorCategoria.map(c => c.apto), backgroundColor: '#1fa97a', borderRadius: 4 },
+            { label: 'Vencendo', data: contagemPorCategoria.map(c => c.pendente), backgroundColor: '#e8a33d', borderRadius: 4 },
+            { label: 'Vencido', data: contagemPorCategoria.map(c => c.vencido), backgroundColor: '#e5484d', borderRadius: 4 },
+          ],
+        },
+        options: {
+          indexAxis: 'y',
+          plugins: { legend: { position: 'top', labels: { color: '#a9b4c4', font: { size: 10.5 }, boxWidth: 10 } } },
+          scales: {
+            x: { stacked: true, ticks: { color: '#a9b4c4', stepSize: 1 }, grid: { color: 'rgba(255,255,255,.07)' }, beginAtZero: true },
+            y: { stacked: true, ticks: { color: '#a9b4c4', font: { size: 10.5 } }, grid: { display: false } },
+          },
+          animation: { duration: 500 },
+        },
+      });
+
+      // ---- Gráfico de barras: quantos documentos vencem em cada um dos próximos 6 meses (+ já vencidos) ----
+      const baldeMeses = ['Já vencido']; // primeiro balde é sempre o que já passou
+      const hojeMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+      const nomesMesesCurto = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+      for (let i = 0; i < 6; i++) {
+        const m = new Date(hojeMes.getFullYear(), hojeMes.getMonth() + i, 1);
+        baldeMeses.push(`${nomesMesesCurto[m.getMonth()]}/${String(m.getFullYear()).slice(2)}`);
+      }
+      const contagemPorMes = new Array(baldeMeses.length).fill(0);
+      modulosComVencimento.forEach(m => {
+        m.dados.forEach(d => {
+          const validade = d[m.campoValidade];
+          if (!validade) return;
+          const dataValidade = new Date(validade + 'T00:00:00');
+          if (dataValidade < hojeMes) { contagemPorMes[0]++; return; }
+          const diffMeses = (dataValidade.getFullYear() - hojeMes.getFullYear()) * 12 + (dataValidade.getMonth() - hojeMes.getMonth());
+          if (diffMeses >= 0 && diffMeses < 6) contagemPorMes[diffMeses + 1]++;
+        });
+      });
+      if (window.__chartMeses) window.__chartMeses.destroy();
+      window.__chartMeses = new Chart(document.getElementById('chartVencimentosMes'), {
+        type: 'bar',
+        data: {
+          labels: baldeMeses,
+          datasets: [{
+            data: contagemPorMes, borderRadius: 6, maxBarThickness: 40,
+            backgroundColor: contagemPorMes.map((_, i) => i === 0 ? '#e5484d' : '#0092d6'),
+          }],
+        },
+        options: {
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#a9b4c4', font: { size: 10.5 } }, grid: { display: false } },
+            y: { ticks: { color: '#a9b4c4', stepSize: 1 }, grid: { color: 'rgba(255,255,255,.07)' }, beginAtZero: true },
+          },
+          animation: { duration: 500 },
+        },
+      });
+    }
+
+    // ---- Cartões de destaque no topo (igual as datas em destaque da referência) ----
+    let proximoVencimento = null;
+    modulosComVencimento.forEach(m => {
+      m.dados.forEach(d => {
+        const dias = diasDe(d[m.campoValidade]);
+        if (dias === null) return;
+        if (!proximoVencimento || dias < proximoVencimento.dias) {
+          proximoVencimento = { dias, validade: d[m.campoValidade], nome: d.funcionarios ? d.funcionarios.nome : '—', categoria: m.nome, tab: m.tab };
+        }
+      });
+    });
+    document.getElementById('dashDestaques').innerHTML = `
+      <div class="card spine ${totalVencido ? 'bad' : 'ok'}" style="flex:1;min-width:200px">
+        <div class="small">Total de Pendências</div>
+        <div style="font-family:var(--font-display);font-size:28px;font-weight:800;margin-top:2px">${totalPendente + totalVencido}</div>
+        <div class="small" style="margin-top:2px">${totalVencido} vencido(s) · ${totalPendente} vencendo</div>
+      </div>
+      <div class="card spine ${proximoVencimento && proximoVencimento.dias < 0 ? 'bad' : 'info'}" style="flex:2;min-width:260px" ${proximoVencimento ? `data-tab="${proximoVencimento.tab}"` : ''}>
+        <div class="small">${proximoVencimento && proximoVencimento.dias < 0 ? 'Vencimento mais antigo em aberto' : 'Próximo a vencer'}</div>
+        ${proximoVencimento ? `
+          <div style="font-family:var(--font-display);font-size:17px;font-weight:700;margin-top:2px">${proximoVencimento.nome} — ${proximoVencimento.categoria}</div>
+          <div class="small" style="margin-top:2px">${formatarDataBr(proximoVencimento.validade)} (${proximoVencimento.dias < 0 ? Math.abs(proximoVencimento.dias) + ' dia(s) vencido' : proximoVencimento.dias + ' dia(s) restantes'})</div>
+        ` : `<div class="small" style="margin-top:6px">Nada vencendo no momento.</div>`}
+      </div>
+      <div class="card spine ok" style="flex:1;min-width:200px">
+        <div class="small">Total de Funcionários</div>
+        <div style="font-family:var(--font-display);font-size:28px;font-weight:800;margin-top:2px">${(funcs.data || []).length}</div>
+        <div class="small" style="margin-top:2px">cadastrados no sistema</div>
+      </div>
+    `;
+    document.querySelectorAll('#dashDestaques [data-tab]').forEach(card => {
+      card.style.cursor = 'pointer';
       card.addEventListener('click', () => switchTab(card.getAttribute('data-tab')));
     });
 
