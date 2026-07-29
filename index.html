@@ -1883,7 +1883,10 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
       'Nome,CPF,Cargo,Telefone,Admissão,ASO Tipo,ASO Data,NR-06,NR-10,NR-33,NR-35,Integração Empresa,Integração Data,Férias Início,EPI - Capacete de segurança,EPI - Luva de raspa,Folha de Ponto',
       'João Pedro Alves,111.111.111-11,Soldador,(11) 90000-0001,01/03/2024,ASO Admissional,01/03/2024,15/03/2024,,,20/03/2024,ABL,25/03/2024,01/03/2024,01/03/2024,01/03/2024,05/07/2026',
     ];
-    const blob = new Blob([linhas.join('\n')], { type: 'text/csv;charset=utf-8' });
+    // O "\uFEFF" no início é o BOM (marca de UTF-8) — sem ele, o Excel costuma "adivinhar" errado
+    // a codificação do arquivo e troca acento por símbolo estranho (ex: "ã" vira "Ã£"). Com o BOM,
+    // o Excel reconhece que é UTF-8 e os nomes com acento abrem certinho.
+    const blob = new Blob(['\uFEFF' + linhas.join('\n')], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url; a.download = 'modelo_importacao_master_energy.csv'; a.click();
