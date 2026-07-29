@@ -322,29 +322,6 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
     </div>
 
     <div id="tabFuncionarios" class="hidden">
-      <div class="card spine ok">
-        <h1 style="font-size:15px"><svg class="icon" data-lucide="download-cloud"></svg>Backup completo</h1>
-        <div class="small" style="margin-bottom:10px">
-          Baixa uma cópia de tudo que está no banco de dados agora (todos os funcionários, ASOs, NRs, EPIs, integrações,
-          férias e folhas de ponto) num arquivo só, pra você guardar onde quiser — pendrive, HD externo, seu computador.
-          Isso não some do Supabase, é só uma cópia extra pra sua segurança.
-        </div>
-        <button class="btn-primary" id="baixarBackupBtn"><svg class="icon" data-lucide="download"></svg>Baixar backup completo</button>
-        <span class="small" id="backupStatusTexto" style="margin-left:10px"></span>
-      </div>
-      <div class="card" style="border:1px solid rgba(0,146,214,.4)">
-        <h1 style="font-size:15px">📋 Importação Completa — uma planilha com tudo</h1>
-        <div class="small" style="margin-bottom:10px">
-          Cole aqui uma planilha do Excel com <b>uma linha por funcionário</b> e quantas colunas quiser — o sistema lê o
-          <b>nome de cada coluna</b> (a primeira linha) e distribui sozinho cada informação pro lugar certo: funcionário,
-          ASO, cada NR, integração, férias, EPI (ex: "EPI - Capacete de segurança") e folha de ponto.
-          Colunas que você não usar podem ficar em branco ou nem existir.
-        </div>
-        <button class="btn-ghost" id="baixarModeloBtn" style="margin-bottom:10px">⬇️ Baixar modelo (.csv) para preencher no Excel</button>
-        <textarea id="importCompletaArea" style="min-height:140px" placeholder="Cole aqui a planilha inteira (com a linha de cabeçalho no topo)…"></textarea>
-        <button class="btn-primary" id="importCompletaBtn">Importar tudo</button>
-        <div id="importResumo" class="hidden" style="margin-top:12px;background:rgba(0,0,0,.2);border-radius:9px;padding:12px;font-size:12px;white-space:pre-wrap"></div>
-      </div>
       <div class="card">
         <h1 style="font-size:15px">Novo funcionário</h1>
         <div class="row">
@@ -393,6 +370,31 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
         </div>
         <textarea id="fBulkArea" placeholder="João Pedro Alves, 111.111.111-11, Soldador, (11) 90000-0001&#10;Marcia Souza Lima, 222.222.222-22, Encarregada, (11) 90000-0002"></textarea>
         <button class="btn-primary" id="fBulkBtn">Cadastrar todos</button>
+      </div>
+
+      <div class="card" style="border:1px solid rgba(0,146,214,.4)">
+        <h1 style="font-size:15px">📋 Importação Completa — uma planilha com tudo</h1>
+        <div class="small" style="margin-bottom:10px">
+          Cole aqui uma planilha do Excel com <b>uma linha por funcionário</b> e quantas colunas quiser — o sistema lê o
+          <b>nome de cada coluna</b> (a primeira linha) e distribui sozinho cada informação pro lugar certo: funcionário,
+          ASO, cada NR, integração, férias, EPI (ex: "EPI - Capacete de segurança") e folha de ponto.
+          Colunas que você não usar podem ficar em branco ou nem existir.
+        </div>
+        <button class="btn-ghost" id="baixarModeloBtn" style="margin-bottom:10px">⬇️ Baixar modelo (.csv) para preencher no Excel</button>
+        <textarea id="importCompletaArea" style="min-height:140px" placeholder="Cole aqui a planilha inteira (com a linha de cabeçalho no topo)…"></textarea>
+        <button class="btn-primary" id="importCompletaBtn">Importar tudo</button>
+        <div id="importResumo" class="hidden" style="margin-top:12px;background:rgba(0,0,0,.2);border-radius:9px;padding:12px;font-size:12px;white-space:pre-wrap"></div>
+      </div>
+
+      <div class="card spine ok">
+        <h1 style="font-size:15px"><svg class="icon" data-lucide="download-cloud"></svg>Backup completo</h1>
+        <div class="small" style="margin-bottom:10px">
+          Baixa uma cópia de tudo que está no banco de dados agora (todos os funcionários, ASOs, NRs, EPIs, integrações,
+          férias e folhas de ponto) num arquivo só, pra você guardar onde quiser — pendrive, HD externo, seu computador.
+          Isso não some do Supabase, é só uma cópia extra pra sua segurança.
+        </div>
+        <button class="btn-primary" id="baixarBackupBtn"><svg class="icon" data-lucide="download"></svg>Baixar backup completo</button>
+        <span class="small" id="backupStatusTexto" style="margin-left:10px"></span>
       </div>
 
       <div class="card">
