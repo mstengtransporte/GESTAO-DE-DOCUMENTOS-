@@ -390,6 +390,16 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
         <div id="importResumo" class="hidden" style="margin-top:12px;background:rgba(0,0,0,.2);border-radius:9px;padding:12px;font-size:12px;white-space:pre-wrap"></div>
       </div>
 
+      <div class="card spine warn">
+        <h1 style="font-size:15px"><svg class="icon" data-lucide="wand-2"></svg>Corrigir acentos quebrados</h1>
+        <div class="small" style="margin-bottom:10px">
+          Verifica todos os funcionários já cadastrados e conserta sozinho nomes com acento bagunçado
+          (ex: "JoÃ£o" vira "João"). Mostra a lista antes de mudar qualquer coisa, pra você conferir.
+        </div>
+        <button class="btn-ghost" id="verificarAcentosBtn"><svg class="icon" data-lucide="search"></svg>Verificar nomes com problema</button>
+        <div id="acentosResultado" class="hidden" style="margin-top:12px"></div>
+      </div>
+
       <div class="card spine ok">
         <h1 style="font-size:15px"><svg class="icon" data-lucide="download-cloud"></svg>Backup completo</h1>
         <div class="small" style="margin-bottom:10px">
@@ -1437,7 +1447,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
   }
 
   async function saveFuncionario() {
-    const nome = document.getElementById('fNome').value.trim();
+    const nome = corrigirMojibake(document.getElementById('fNome').value.trim());
     const cpf = document.getElementById('fCpf').value.trim() || null;
     if (!nome) { showAppStatus('err', 'Digite o nome do funcionário.'); return; }
 
@@ -1560,6 +1570,22 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
   // Normaliza texto pra comparar sem se importar com acento, maiúscula/minúscula, ou espaço extra —
   // usado em toda busca e verificação de duplicado do sistema, pra nunca deixar passar por causa
   // de um acento diferente, um espaço a mais, ou letra maiúscula/minúscula.
+  // Conserta acento "quebrado" automaticamente (ex: "JoÃ£o" vira "João"). Isso acontece quando um
+  // texto em UTF-8 é lido/salvo por engano como se fosse outro formato (Latin-1) — um problema técnico
+  // bem comum ao copiar de certas fontes (Excel antigo, alguns sistemas, e-mails). Se o texto já
+  // estiver certo, essa função NÃO mexe nele (só corrige quando reconhece o padrão de erro).
+  function corrigirMojibake(texto) {
+    if (!texto) return texto;
+    try {
+      const bytes = Uint8Array.from(texto, c => c.charCodeAt(0));
+      const decoder = new TextDecoder('utf-8', { fatal: true });
+      const corrigido = decoder.decode(bytes);
+      // Só aceita a correção se ela realmente mudou algo E o resultado não tem caracteres de controle estranhos
+      return corrigido !== texto ? corrigido : texto;
+    } catch (e) {
+      return texto; // não era um caso de acento quebrado — devolve como veio, sem arriscar estragar
+    }
+  }
   function normalizarTexto(t) {
     return (t || '').toString().trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
   }
@@ -1835,6 +1861,53 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
 
   document.getElementById('baixarBackupBtn')?.addEventListener('click', baixarBackupCompleto);
 
+  document.getElementById('verificarAcentosBtn')?.addEventListener('click', verificarNomesComAcentoQuebrado);
+
+  async function verificarNomesComAcentoQuebrado() {
+    const resultDiv = document.getElementById('acentosResultado');
+    resultDiv.classList.remove('hidden');
+    resultDiv.innerHTML = '<div class="small">Verificando…</div>';
+
+    const { data, error } = await sb.from('funcionarios').select('id, nome');
+    if (error) { resultDiv.innerHTML = `<div class="small" style="color:var(--danger)">Erro: ${error.message}</div>`; return; }
+
+    const comProblema = data
+      .map(f => ({ id: f.id, original: f.nome, corrigido: corrigirMojibake(f.nome) }))
+      .filter(f => f.corrigido !== f.original);
+
+    if (!comProblema.length) {
+      resultDiv.innerHTML = '<div class="small" style="color:var(--success)">Nenhum nome com acento quebrado encontrado — está tudo certo.</div>';
+      return;
+    }
+
+    resultDiv.innerHTML = `
+      <div class="small" style="margin-bottom:8px">Encontrei ${comProblema.length} nome(s) com problema. Confere antes de aplicar:</div>
+      <table style="margin-bottom:10px">
+        <thead><tr><th>Como está</th><th>Vai ficar</th></tr></thead>
+        <tbody>${comProblema.map(f => `<tr><td style="color:var(--danger)">${f.original}</td><td style="color:var(--success)">${f.corrigido}</td></tr>`).join('')}</tbody>
+      </table>
+      <button class="btn-primary" id="aplicarCorrecaoAcentosBtn">Corrigir esses ${comProblema.length} nome(s) agora</button>
+    `;
+    window.__correcoesAcentosPendentes = comProblema;
+    document.getElementById('aplicarCorrecaoAcentosBtn').addEventListener('click', aplicarCorrecaoDeAcentos);
+  }
+
+  async function aplicarCorrecaoDeAcentos() {
+    const lista = window.__correcoesAcentosPendentes || [];
+    if (!lista.length) return;
+    if (!confirm(`Confirma a correção de ${lista.length} nome(s)? Essa ação atualiza direto no banco de dados.`)) return;
+
+    showAppStatus('info', 'Corrigindo nomes…');
+    let sucesso = 0;
+    for (const item of lista) {
+      const { error } = await sb.from('funcionarios').update({ nome: item.corrigido }).eq('id', item.id);
+      if (!error) sucesso++;
+    }
+    showAppStatus('ok', `${sucesso} de ${lista.length} nome(s) corrigido(s) com sucesso.`);
+    document.getElementById('acentosResultado').classList.add('hidden');
+    loadFuncionarios();
+  }
+
   async function baixarBackupCompleto() {
     const statusEl = document.getElementById('backupStatusTexto');
     statusEl.textContent = 'Buscando tudo no banco de dados…';
@@ -1853,7 +1926,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
       const backup = {
         gerado_em: new Date().toISOString(),
         sistema: 'Master Energy — Gestão de SST',
-        funcionarios: funcs.data || [],
+        funcionarios: (funcs.data || []).slice().sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),
         treinamentos_nrs: treinos.data || [],
         asos: asos.data || [],
         epis: epis.data || [],
@@ -1920,7 +1993,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
         const idx = colunas.findIndex(c => c.tipo === tipo && (numero === undefined || c.numero === numero));
         return idx >= 0 ? (linha[idx] || '').trim() : '';
       };
-      const nome = obter('nome');
+      const nome = corrigirMojibake(obter('nome'));
       if (!nome) continue;
 
       const cpf = obter('cpf') || null;
@@ -2066,7 +2139,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
     const jaVistosNesteLote = new Set();
     const novos = [], duplicados = [];
     validas.forEach(c => {
-      const nome = c[0], cpf = c[1] || null;
+      const nome = corrigirMojibake(c[0]), cpf = c[1] || null;
       const nomeChave = nome.trim().toLowerCase();
       const cpfChave = cpf ? cpf.replace(/\D/g, '') : null;
       const existeNoBanco = existentes.some(f => (cpfChave && f.cpf && f.cpf.replace(/\D/g, '') === cpfChave) || normalizarTexto(f.nome) === normalizarTexto(nomeChave));
@@ -2076,7 +2149,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
       } else {
         jaVistosNesteLote.add(nomeChave);
         if (cpfChave) jaVistosNesteLote.add(cpfChave);
-        novos.push({ nome, cpf, cargo: c[2] || null, telefone: c[3] || null, status: 'pendente' });
+        novos.push({ nome, cpf, cargo: corrigirMojibake(c[2]) || null, telefone: c[3] || null, status: 'pendente' });
       }
     });
 
