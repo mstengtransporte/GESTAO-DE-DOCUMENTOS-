@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4/dist/exceljs.min.js"></script>
 <style>
 :root{
   /* ---- Paleta: azul industrial/segurança, refinado a partir da identidade da Master Energy ---- */
@@ -2381,77 +2382,197 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
     document.getElementById('baixarDossieBtn')?.addEventListener('click', gerarEBaixarDossie);
   }
 
-  // ================= DOSSIÊ — documento pronto pra imprimir/entregar numa fiscalização =================
+  // ================= DOSSIÊ — planilha Excel profissional, pronta pra fiscalização =================
   let ultimoResultadoFicha = null;
-  function gerarEBaixarDossie() {
+
+  const COR_CABECALHO = 'FF00477F';       // navy da Master Energy
+  const COR_CABECALHO_TXT = 'FFFFFFFF';
+  const COR_EM_DIA = 'FF1FA97A';   const COR_EM_DIA_TXT = 'FFFFFFFF';
+  const COR_A_VENCER = 'FFE8A33D'; const COR_A_VENCER_TXT = 'FF3A2A00';
+  const COR_VENCIDO = 'FFE5484D';  const COR_VENCIDO_TXT = 'FFFFFFFF';
+  const COR_PENDENTE = 'FFF97316'; const COR_PENDENTE_TXT = 'FFFFFFFF';
+
+  // Calcula a situação (cor + texto) de uma data de validade, comparando com hoje de verdade
+  function situacaoExcel(validadeIso) {
+    if (!validadeIso) return { texto: '🟠 PENDENTE', cor: COR_PENDENTE, corTexto: COR_PENDENTE_TXT, dias: null };
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    const dias = Math.round((new Date(validadeIso + 'T00:00:00') - hoje) / 86400000);
+    if (dias < 0) return { texto: '🔴 VENCIDO', cor: COR_VENCIDO, corTexto: COR_VENCIDO_TXT, dias };
+    if (dias <= 60) return { texto: '🟡 A VENCER', cor: COR_A_VENCER, corTexto: COR_A_VENCER_TXT, dias };
+    return { texto: '🟢 EM DIA', cor: COR_EM_DIA, corTexto: COR_EM_DIA_TXT, dias };
+  }
+  function dataExcel(iso) { return iso ? new Date(iso + 'T00:00:00') : null; }
+  function observacaoDe(s) {
+    if (s.dias === null) return 'Sem data de validade registrada';
+    if (s.dias < 0) return `Vencido há ${Math.abs(s.dias)} dia(s)`;
+    if (s.dias <= 60) return `Vence em ${s.dias} dia(s)`;
+    return 'Dentro do prazo';
+  }
+
+  function estilizarCabecalhoTabela(sheet, linhaIdx) {
+    const row = sheet.getRow(linhaIdx);
+    row.eachCell({ includeEmpty: true }, cell => {
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COR_CABECALHO } };
+      cell.font = { bold: true, color: { argb: COR_CABECALHO_TXT }, size: 11 };
+      cell.alignment = { vertical: 'middle', horizontal: 'left' };
+      cell.border = { bottom: { style: 'thin', color: { argb: 'FFDDDDDD' } } };
+    });
+    row.height = 22;
+    sheet.autoFilter = { from: { row: linhaIdx, column: 1 }, to: { row: linhaIdx, column: row.actualCellCount || row.cellCount } };
+  }
+  function ajustarLargurasColunas(sheet) {
+    sheet.columns.forEach(col => {
+      let max = 12;
+      col.eachCell({ includeEmpty: true }, cell => {
+        const valor = cell.value instanceof Date ? formatarDataBr(cell.value.toISOString().slice(0, 10)) : (cell.value ?? '');
+        const len = String(valor).length;
+        if (len > max) max = len;
+      });
+      col.width = Math.min(max + 3, 46);
+    });
+  }
+  function pintarStatus(cell, s) {
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: s.cor } };
+    cell.font = { bold: true, color: { argb: s.corTexto } };
+    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+  }
+  const FORMATO_DATA = 'dd/mm/yyyy';
+
+  // Cria uma aba de tabela padrão: cabeçalho estilizado + linhas + status colorido na coluna indicada
+  function criarAbaTabela(wb, nomeAba, cabecalhos, linhas, colunaStatusIdx) {
+    const sheet = wb.addWorksheet(nomeAba);
+    sheet.addRow(cabecalhos);
+    estilizarCabecalhoTabela(sheet, 1);
+    if (!linhas.length) {
+      sheet.addRow(['Nenhum registro nessa categoria.']);
+    } else {
+      linhas.forEach(linha => {
+        const row = sheet.addRow(linha.valores);
+        linha.datasIdx.forEach(i => { row.getCell(i + 1).numFmt = FORMATO_DATA; });
+        if (colunaStatusIdx !== undefined && linha.situacao) pintarStatus(row.getCell(colunaStatusIdx + 1), linha.situacao);
+      });
+    }
+    ajustarLargurasColunas(sheet);
+    return sheet;
+  }
+
+  async function gerarEBaixarDossie() {
     if (!ultimoResultadoFicha) return;
+    if (!window.ExcelJS) { showAppStatus('err', 'A biblioteca de Excel não carregou — confira sua internet e tente de novo.'); return; }
     const d = ultimoResultadoFicha;
     const f = d.funcionario;
-    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
-    const diasDe = (v) => v ? Math.round((new Date(v + 'T00:00:00') - hoje) / 86400000) : null;
-    const situacaoTexto = (v) => {
-      const dias = diasDe(v);
-      if (dias === null) return '—';
-      if (dias < 0) return `VENCIDO há ${Math.abs(dias)} dia(s)`;
-      if (dias <= 60) return `Vence em ${dias} dia(s)`;
-      return 'Em dia';
+    showAppStatus('info', 'Montando a planilha do dossiê…');
+
+    // Busca também o HISTÓRICO (documentos arquivados/substituídos) — a Ficha Completa só
+    // traz os atuais, então isso é uma busca extra só pra essa aba específica do Excel.
+    const [histAsos, histTreinos, histEpis, histIntegs, histFerias] = await Promise.all([
+      sb.from('asos').select('*').eq('funcionario_id', f.id).eq('arquivado', true),
+      sb.from('treinamentos').select('*').eq('funcionario_id', f.id).eq('arquivado', true),
+      sb.from('epis').select('*').eq('funcionario_id', f.id).eq('arquivado', true),
+      sb.from('integracoes').select('*').eq('funcionario_id', f.id).eq('arquivado', true),
+      sb.from('ferias').select('*').eq('funcionario_id', f.id).eq('arquivado', true),
+    ]);
+
+    const wb = new ExcelJS.Workbook();
+    wb.creator = 'Master Energy — Sistema de Gestão SST';
+    wb.created = new Date();
+
+    // ============ ABA 1: DADOS DO FUNCIONÁRIO (+ resumo geral) ============
+    const ws1 = wb.addWorksheet('Dados do Funcionário');
+    ws1.mergeCells('A1:C1');
+    ws1.getCell('A1').value = 'MASTER ENERGY — DOSSIÊ DE DOCUMENTAÇÃO SST';
+    ws1.getCell('A1').font = { bold: true, size: 14, color: { argb: COR_CABECALHO_TXT } };
+    ws1.getCell('A1').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COR_CABECALHO } };
+    ws1.getRow(1).height = 28;
+    ws1.addRow([]);
+    [
+      ['Nome completo', f.nome],
+      ['CPF', f.cpf || '—'],
+      ['Cargo', f.cargo || '—'],
+      ['Telefone', f.telefone || '—'],
+      ['Data de Admissão', dataExcel(f.admissao) || '—'],
+      ['Relatório gerado em', new Date()],
+    ].forEach(([label, valor]) => {
+      const row = ws1.addRow([label, valor]);
+      row.getCell(1).font = { bold: true };
+      if (valor instanceof Date) row.getCell(2).numFmt = 'dd/mm/yyyy hh:mm';
+    });
+
+    // Resumo geral — conta a situação de TODOS os documentos atuais do funcionário
+    const todosComValidade = [
+      ...d.asos.map(x => x.validade_data), ...d.treinos.map(x => x.validade_data),
+      ...d.epis.map(x => x.troca), ...d.integs.map(x => x.validade_data), ...d.ferias.map(x => x.limite_gozo),
+    ];
+    let cEmDia = 0, cAVencer = 0, cVencido = 0, cPendente = 0;
+    todosComValidade.forEach(v => {
+      const s = situacaoExcel(v);
+      if (s.dias === null) cPendente++; else if (s.dias < 0) cVencido++; else if (s.dias <= 60) cAVencer++; else cEmDia++;
+    });
+    ws1.addRow([]);
+    const tituloResumo = ws1.addRow(['RESUMO GERAL DE DOCUMENTOS']);
+    tituloResumo.getCell(1).font = { bold: true, size: 12 };
+    [['🟢 Em dia', cEmDia], ['🟡 A vencer (60 dias)', cAVencer], ['🔴 Vencido', cVencido], ['🟠 Pendente (sem data)', cPendente], ['Total de documentos', todosComValidade.length]]
+      .forEach(([label, valor]) => { const row = ws1.addRow([label, valor]); row.getCell(1).font = { bold: true }; });
+    ajustarLargurasColunas(ws1);
+
+    // ============ ABA 2: DOCUMENTOS (visão consolidada de tudo) ============
+    const linhasDocs = [];
+    const addDoc = (categoria, descricao, dataIso, validadeIso) => {
+      const s = situacaoExcel(validadeIso);
+      linhasDocs.push({ valores: [categoria, descricao, dataExcel(dataIso), dataExcel(validadeIso), s.texto, observacaoDe(s)], datasIdx: [2, 3], situacao: s });
     };
-    const linhaTabela = (colunas) => `<tr>${colunas.map(c => `<td>${c}</td>`).join('')}</tr>`;
-    const tabela = (titulo, cabecalhos, linhas) => `
-      <h3>${titulo}</h3>
-      ${linhas.length ? `<table><thead><tr>${cabecalhos.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${linhas.join('')}</tbody></table>` : '<p class="vazio">Nenhum registro nessa seção.</p>'}`;
+    d.treinos.forEach(t => addDoc('Curso / NR', t.curso, t.data_realizacao, t.validade_data));
+    d.asos.forEach(a => addDoc('ASO', a.tipo || 'ASO', a.data_realizacao, a.validade_data));
+    d.epis.forEach(e => addDoc('EPI', e.epi, e.entrega, e.troca));
+    d.integs.forEach(i => addDoc('Integração', i.empresa_integracao, i.data_realizacao, i.validade_data));
+    d.ferias.forEach(v => addDoc('Férias', `Período ${formatarDataBr(v.inicio_periodo)}`, v.inicio_periodo, v.limite_gozo));
+    criarAbaTabela(wb, 'Documentos', ['Categoria', 'Descrição', 'Data', 'Validade', 'Situação', 'Observações'], linhasDocs, 4);
 
-    const linhasAso = d.asos.map(a => linhaTabela([a.tipo || '—', formatarDataBr(a.data_realizacao), formatarDataBr(a.validade_data), situacaoTexto(a.validade_data), a.medico_trabalho || '—', a.clinica || '—']));
-    const linhasTreino = d.treinos.map(t => linhaTabela([t.curso, formatarDataBr(t.data_realizacao), formatarDataBr(t.validade_data), situacaoTexto(t.validade_data)]));
-    const linhasEpi = d.epis.map(e => linhaTabela([e.epi, e.ca || '—', formatarDataBr(e.entrega), formatarDataBr(e.troca), situacaoTexto(e.troca)]));
-    const linhasInteg = d.integs.map(i => linhaTabela([i.empresa_integracao, i.obra || '—', formatarDataBr(i.validade_data), situacaoTexto(i.validade_data)]));
-    const linhasPonto = d.pontos.map(p => linhaTabela([p.cliente || '—', mesAnoParaTexto(p.periodo), formatarDataBr(p.data_envio), p.recebido ? 'Sim' : 'Não', p.assinatura_funcionario ? 'Sim' : 'Não']));
-    const linhasFerias = d.ferias.map(v => linhaTabela([formatarDataBr(v.inicio_periodo), formatarDataBr(v.fim_aquisitivo), formatarDataBr(v.limite_gozo), situacaoTexto(v.limite_gozo)]));
+    // ============ ABA 3: CURSOS / NR E VALIDADES ============
+    criarAbaTabela(wb, 'Cursos NR e Validades', ['Curso', 'Realizado em', 'Válido até', 'Situação', 'Observações'],
+      d.treinos.map(t => { const s = situacaoExcel(t.validade_data); return { valores: [t.curso, dataExcel(t.data_realizacao), dataExcel(t.validade_data), s.texto, observacaoDe(s)], datasIdx: [1, 2], situacao: s }; }), 3);
 
-    const geradoEm = new Date().toLocaleString('pt-BR');
-    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Dossiê — ${f.nome}</title>
-<style>
-  body{font-family:Arial,Helvetica,sans-serif;color:#111;max-width:900px;margin:0 auto;padding:32px 24px;font-size:13px;}
-  h1{font-size:20px;margin-bottom:2px;}
-  h2{font-size:13px;color:#555;font-weight:normal;margin-top:0;}
-  h3{font-size:13.5px;background:#0a2647;color:#fff;padding:6px 10px;border-radius:4px;margin-top:26px;margin-bottom:8px;}
-  table{width:100%;border-collapse:collapse;margin-bottom:6px;}
-  th,td{border:1px solid #ccc;padding:6px 8px;text-align:left;font-size:12px;}
-  th{background:#f2f4f7;}
-  .vazio{color:#888;font-size:12px;font-style:italic;}
-  .cabecalho{border-bottom:3px solid #0092d6;padding-bottom:14px;margin-bottom:18px;}
-  .infogrid{display:flex;gap:24px;margin-top:8px;font-size:13px;}
-  .rodape{margin-top:36px;padding-top:12px;border-top:1px solid #ccc;font-size:10.5px;color:#888;}
-  @media print{ body{padding:0;} h3{-webkit-print-color-adjust:exact;print-color-adjust:exact;} }
-</style></head><body>
-  <div class="cabecalho">
-    <h1>MASTER ENERGY — Dossiê de Documentação SST</h1>
-    <h2>Sistema de Gestão de Saúde e Segurança do Trabalho</h2>
-    <div class="infogrid">
-      <div><b>Funcionário:</b> ${f.nome}</div>
-      <div><b>CPF:</b> ${f.cpf || '—'}</div>
-      <div><b>Cargo:</b> ${f.cargo || '—'}</div>
-      <div><b>Admissão:</b> ${formatarDataBr(f.admissao)}</div>
-    </div>
-  </div>
+    // ============ ABA 4: INTEGRAÇÃO ============
+    criarAbaTabela(wb, 'Integração', ['Empresa / Cliente', 'Obra', 'Realizado em', 'Válido até', 'Situação', 'Observações'],
+      d.integs.map(i => { const s = situacaoExcel(i.validade_data); return { valores: [i.empresa_integracao, i.obra || '—', dataExcel(i.data_realizacao), dataExcel(i.validade_data), s.texto, observacaoDe(s)], datasIdx: [2, 3], situacao: s }; }), 4);
 
-  ${tabela('ASOs — Atestados de Saúde Ocupacional', ['Tipo', 'Realizado em', 'Válido até', 'Situação', 'Médico', 'Clínica'], linhasAso)}
-  ${tabela('Treinamentos / Normas Regulamentadoras (NRs)', ['Curso', 'Realizado em', 'Válido até', 'Situação'], linhasTreino)}
-  ${tabela('EPIs — Equipamentos de Proteção Individual', ['EPI', 'CA', 'Entrega', 'Próxima troca', 'Situação'], linhasEpi)}
-  ${tabela('Integrações de Cliente', ['Empresa', 'Obra', 'Válido até', 'Situação'], linhasInteg)}
-  ${tabela('Folhas de Ponto', ['Cliente', 'Competência', 'Enviada em', 'Recebido', 'Assinada'], linhasPonto)}
-  ${tabela('Férias', ['Início do período', 'Fim aquisitivo', 'Limite para gozar', 'Situação'], linhasFerias)}
+    // ============ ABA 5: ASO / EXAMES ============
+    criarAbaTabela(wb, 'ASO Exames', ['Tipo', 'Data do Exame', 'Válido até', 'Situação', 'Médico do Trabalho', 'Clínica', 'Observações'],
+      d.asos.map(a => { const s = situacaoExcel(a.validade_data); return { valores: [a.tipo || '—', dataExcel(a.data_realizacao), dataExcel(a.validade_data), s.texto, a.medico_trabalho || '—', a.clinica || '—', observacaoDe(s)], datasIdx: [1, 2], situacao: s }; }), 3);
 
-  <div class="rodape">Documento gerado automaticamente pelo Sistema de Gestão SST da Master Energy em ${geradoEm}. Este dossiê reflete os documentos vigentes (não inclui histórico de versões substituídas) no momento da geração.</div>
-</body></html>`;
+    // ============ ABA 6: EPIs ============
+    criarAbaTabela(wb, 'EPIs', ['EPI', 'CA', 'Entrega', 'Próxima Troca', 'Situação', 'Observações'],
+      d.epis.map(e => { const s = situacaoExcel(e.troca); return { valores: [e.epi, e.ca || '—', dataExcel(e.entrega), dataExcel(e.troca), s.texto, observacaoDe(s)], datasIdx: [2, 3], situacao: s }; }), 4);
 
-    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    // ============ ABA 7: FOLHA DE PAGAMENTO ============
+    // Observação: o sistema controla "Folha de Ponto" (entrega mensal/competência), não folha de
+    // pagamento (salário) — não existe esse dado no sistema, então essa aba usa o que existe de
+    // verdade (Folha de Ponto), sem inventar valor nenhum.
+    criarAbaTabela(wb, 'Folha de Pagamento', ['Cliente', 'Competência', 'Entregue em', 'Recebido', 'Assinatura do Funcionário', 'Observações'],
+      d.pontos.map(p => ({ valores: [p.cliente || '—', mesAnoParaTexto(p.periodo), dataExcel(p.data_envio), p.recebido ? 'Sim' : 'Não', p.assinatura_funcionario ? 'Sim' : 'Não', 'Registro de Folha de Ponto (o sistema não controla folha de pagamento/salário)'], datasIdx: [2] })));
+
+    // ============ ABA 8: PENDÊNCIAS E VENCIMENTOS ============
+    const linhasPendencias = linhasDocs.filter(l => l.situacao.dias === null || l.situacao.dias <= 60);
+    criarAbaTabela(wb, 'Pendências e Vencimentos', ['Categoria', 'Descrição', 'Data', 'Validade', 'Situação', 'Observações'], linhasPendencias, 4);
+
+    // ============ ABA 9: HISTÓRICO (documentos substituídos por renovação) ============
+    const linhasHistorico = [];
+    (histTreinos.data || []).forEach(t => linhasHistorico.push({ valores: ['Curso / NR', t.curso, dataExcel(t.data_realizacao), dataExcel(t.validade_data), '⬜ Substituído'], datasIdx: [2, 3] }));
+    (histAsos.data || []).forEach(a => linhasHistorico.push({ valores: ['ASO', a.tipo || 'ASO', dataExcel(a.data_realizacao), dataExcel(a.validade_data), '⬜ Substituído'], datasIdx: [2, 3] }));
+    (histEpis.data || []).forEach(e => linhasHistorico.push({ valores: ['EPI', e.epi, dataExcel(e.entrega), dataExcel(e.troca), '⬜ Substituído'], datasIdx: [2, 3] }));
+    (histIntegs.data || []).forEach(i => linhasHistorico.push({ valores: ['Integração', i.empresa_integracao, dataExcel(i.data_realizacao), dataExcel(i.validade_data), '⬜ Substituído'], datasIdx: [2, 3] }));
+    (histFerias.data || []).forEach(v => linhasHistorico.push({ valores: ['Férias', `Período ${formatarDataBr(v.inicio_periodo)}`, dataExcel(v.inicio_periodo), dataExcel(v.limite_gozo), '⬜ Encerrado'], datasIdx: [2, 3] }));
+    criarAbaTabela(wb, 'Histórico', ['Categoria', 'Descrição', 'Data', 'Validade (na época)', 'Situação'], linhasHistorico);
+
+    // ---- Gera e baixa o arquivo .xlsx ----
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     const nomeArquivo = normalizarTexto(f.nome).replace(/\s+/g, '_');
-    a.href = url; a.download = `dossie_${nomeArquivo}_${new Date().toISOString().slice(0, 10)}.html`; a.click();
+    a.href = url; a.download = `dossie_${nomeArquivo}_${new Date().toISOString().slice(0, 10)}.xlsx`; a.click();
     URL.revokeObjectURL(url);
-    showAppStatus('ok', 'Dossiê baixado — abra o arquivo e use "Imprimir → Salvar como PDF" se quiser em PDF.');
+    showAppStatus('ok', 'Dossiê em Excel baixado com sucesso — 9 abas, com filtros e situação colorida.');
   }
 
   async function bulkTreinamentos() {
