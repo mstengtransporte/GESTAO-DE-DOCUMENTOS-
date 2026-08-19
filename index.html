@@ -2408,29 +2408,6 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
     if (s.dias <= 60) return `Vence em ${s.dias} dia(s)`;
     return 'Dentro do prazo';
   }
-
-  function estilizarCabecalhoTabela(sheet, linhaIdx) {
-    const row = sheet.getRow(linhaIdx);
-    row.eachCell({ includeEmpty: true }, cell => {
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COR_CABECALHO } };
-      cell.font = { bold: true, color: { argb: COR_CABECALHO_TXT }, size: 11 };
-      cell.alignment = { vertical: 'middle', horizontal: 'left' };
-      cell.border = { bottom: { style: 'thin', color: { argb: 'FFDDDDDD' } } };
-    });
-    row.height = 22;
-    sheet.autoFilter = { from: { row: linhaIdx, column: 1 }, to: { row: linhaIdx, column: row.actualCellCount || row.cellCount } };
-  }
-  function ajustarLargurasColunas(sheet) {
-    sheet.columns.forEach(col => {
-      let max = 12;
-      col.eachCell({ includeEmpty: true }, cell => {
-        const valor = cell.value instanceof Date ? formatarDataBr(cell.value.toISOString().slice(0, 10)) : (cell.value ?? '');
-        const len = String(valor).length;
-        if (len > max) max = len;
-      });
-      col.width = Math.min(max + 3, 46);
-    });
-  }
   function pintarStatus(cell, s) {
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: s.cor } };
     cell.font = { bold: true, color: { argb: s.corTexto } };
@@ -2438,22 +2415,53 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
   }
   const FORMATO_DATA = 'dd/mm/yyyy';
 
-  // Cria uma aba de tabela padrão: cabeçalho estilizado + linhas + status colorido na coluna indicada
-  function criarAbaTabela(wb, nomeAba, cabecalhos, linhas, colunaStatusIdx) {
-    const sheet = wb.addWorksheet(nomeAba);
-    sheet.addRow(cabecalhos);
-    estilizarCabecalhoTabela(sheet, 1);
-    if (!linhas.length) {
-      sheet.addRow(['Nenhum registro nessa categoria.']);
-    } else {
-      linhas.forEach(linha => {
-        const row = sheet.addRow(linha.valores);
-        linha.datasIdx.forEach(i => { row.getCell(i + 1).numFmt = FORMATO_DATA; });
-        if (colunaStatusIdx !== undefined && linha.situacao) pintarStatus(row.getCell(colunaStatusIdx + 1), linha.situacao);
+  const LARGURA_MAX_COLUNAS = 7; // a seção mais larga (ASO) tem 7 colunas — as demais usam menos e deixam o resto em branco
+  const BORDA_FINA = { style: 'thin', color: { argb: 'FFCCCCCC' } };
+  const BORDA_CELULA = { top: BORDA_FINA, left: BORDA_FINA, bottom: BORDA_FINA, right: BORDA_FINA };
+
+  function escreverTituloSecao(sheet, texto) {
+    const row = sheet.addRow([texto]);
+    sheet.mergeCells(row.number, 1, row.number, LARGURA_MAX_COLUNAS);
+    const cell = row.getCell(1);
+    cell.font = { bold: true, size: 12, color: { argb: COR_CABECALHO_TXT } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COR_CABECALHO } };
+    cell.alignment = { vertical: 'middle', horizontal: 'left' };
+    row.height = 22;
+    return row;
+  }
+  function escreverCabecalhoTabela(sheet, colunas) {
+    const row = sheet.addRow(colunas);
+    row.eachCell({ includeEmpty: true }, cell => {
+      cell.font = { bold: true, size: 10.5, color: { argb: 'FF00477F' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6EEF5' } };
+      cell.border = BORDA_CELULA;
+      cell.alignment = { vertical: 'middle' };
+    });
+    row.height = 18;
+    return row;
+  }
+  function escreverLinhaDados(sheet, valores, datasIdx, colunaStatusIdx, situacao) {
+    const row = sheet.addRow(valores);
+    row.eachCell({ includeEmpty: true }, cell => { cell.border = BORDA_CELULA; });
+    (datasIdx || []).forEach(i => { row.getCell(i + 1).numFmt = FORMATO_DATA; });
+    if (colunaStatusIdx !== undefined && situacao) pintarStatus(row.getCell(colunaStatusIdx + 1), situacao);
+    return row;
+  }
+  function escreverLinhaVazia(sheet) { sheet.addRow([]); }
+  function escreverSecaoVazia(sheet) {
+    const row = sheet.addRow(['Nenhum registro nessa categoria.']);
+    row.getCell(1).font = { italic: true, color: { argb: 'FF888888' } };
+  }
+  function ajustarLargurasColunasUnico(sheet) {
+    for (let c = 1; c <= LARGURA_MAX_COLUNAS; c++) {
+      let max = 12;
+      sheet.getColumn(c).eachCell({ includeEmpty: true }, cell => {
+        const valor = cell.value instanceof Date ? formatarDataBr(cell.value.toISOString().slice(0, 10)) : (cell.value ?? '');
+        const len = String(valor).length;
+        if (len > max) max = len;
       });
+      sheet.getColumn(c).width = Math.min(max + 2, 42);
     }
-    ajustarLargurasColunas(sheet);
-    return sheet;
   }
 
   async function gerarEBaixarDossie() {
@@ -2464,7 +2472,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
     showAppStatus('info', 'Montando a planilha do dossiê…');
 
     // Busca também o HISTÓRICO (documentos arquivados/substituídos) — a Ficha Completa só
-    // traz os atuais, então isso é uma busca extra só pra essa aba específica do Excel.
+    // traz os atuais, então isso é uma busca extra só pra essa seção específica do Excel.
     const [histAsos, histTreinos, histEpis, histIntegs, histFerias] = await Promise.all([
       sb.from('asos').select('*').eq('funcionario_id', f.id).eq('arquivado', true),
       sb.from('treinamentos').select('*').eq('funcionario_id', f.id).eq('arquivado', true),
@@ -2476,29 +2484,30 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
     const wb = new ExcelJS.Workbook();
     wb.creator = 'Master Energy — Sistema de Gestão SST';
     wb.created = new Date();
-
-    // ============ ABA 1: DADOS DO FUNCIONÁRIO (+ resumo geral) ============
-    const ws1 = wb.addWorksheet('Dados do Funcionário');
-    ws1.mergeCells('A1:C1');
-    ws1.getCell('A1').value = 'MASTER ENERGY — DOSSIÊ DE DOCUMENTAÇÃO SST';
-    ws1.getCell('A1').font = { bold: true, size: 14, color: { argb: COR_CABECALHO_TXT } };
-    ws1.getCell('A1').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COR_CABECALHO } };
-    ws1.getRow(1).height = 28;
-    ws1.addRow([]);
-    [
-      ['Nome completo', f.nome],
-      ['CPF', f.cpf || '—'],
-      ['Cargo', f.cargo || '—'],
-      ['Telefone', f.telefone || '—'],
-      ['Data de Admissão', dataExcel(f.admissao) || '—'],
-      ['Relatório gerado em', new Date()],
-    ].forEach(([label, valor]) => {
-      const row = ws1.addRow([label, valor]);
-      row.getCell(1).font = { bold: true };
-      if (valor instanceof Date) row.getCell(2).numFmt = 'dd/mm/yyyy hh:mm';
+    const sheet = wb.addWorksheet('Dossiê', {
+      pageSetup: {
+        paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0,
+        margins: { left: 0.4, right: 0.4, top: 0.6, bottom: 0.5, header: 0.3, footer: 0.3 },
+      },
     });
+    sheet.pageSetup.printTitlesRow = '1:1'; // repete a linha do cabeçalho da empresa em toda página impressa
 
-    // Resumo geral — conta a situação de TODOS os documentos atuais do funcionário
+    // ---- Cabeçalho geral (empresa + identificação do funcionário) ----
+    const linhaTitulo = sheet.addRow(['MASTER ENERGY — DOSSIÊ DE DOCUMENTAÇÃO SST']);
+    sheet.mergeCells(linhaTitulo.number, 1, linhaTitulo.number, LARGURA_MAX_COLUNAS);
+    linhaTitulo.getCell(1).font = { bold: true, size: 15, color: { argb: COR_CABECALHO_TXT } };
+    linhaTitulo.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COR_CABECALHO } };
+    linhaTitulo.getCell(1).alignment = { vertical: 'middle' };
+    linhaTitulo.height = 30;
+
+    const linhaFuncionario = sheet.addRow([`${f.nome}  |  CPF: ${f.cpf || '—'}  |  Cargo: ${f.cargo || '—'}  |  Admissão: ${formatarDataBr(f.admissao)}  |  Relatório gerado em: ${new Date().toLocaleString('pt-BR')}`]);
+    sheet.mergeCells(linhaFuncionario.number, 1, linhaFuncionario.number, LARGURA_MAX_COLUNAS);
+    linhaFuncionario.getCell(1).font = { bold: true, size: 10.5, color: { argb: 'FF00477F' } };
+    linhaFuncionario.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6EEF5' } };
+    linhaFuncionario.height = 20;
+    escreverLinhaVazia(sheet);
+
+    // ---- RESUMO GERAL ----
     const todosComValidade = [
       ...d.asos.map(x => x.validade_data), ...d.treinos.map(x => x.validade_data),
       ...d.epis.map(x => x.troca), ...d.integs.map(x => x.validade_data), ...d.ferias.map(x => x.limite_gozo),
@@ -2508,14 +2517,15 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
       const s = situacaoExcel(v);
       if (s.dias === null) cPendente++; else if (s.dias < 0) cVencido++; else if (s.dias <= 60) cAVencer++; else cEmDia++;
     });
-    ws1.addRow([]);
-    const tituloResumo = ws1.addRow(['RESUMO GERAL DE DOCUMENTOS']);
-    tituloResumo.getCell(1).font = { bold: true, size: 12 };
-    [['🟢 Em dia', cEmDia], ['🟡 A vencer (60 dias)', cAVencer], ['🔴 Vencido', cVencido], ['🟠 Pendente (sem data)', cPendente], ['Total de documentos', todosComValidade.length]]
-      .forEach(([label, valor]) => { const row = ws1.addRow([label, valor]); row.getCell(1).font = { bold: true }; });
-    ajustarLargurasColunas(ws1);
+    escreverTituloSecao(sheet, '1. DADOS DO FUNCIONÁRIO');
+    [['Nome completo', f.nome], ['CPF', f.cpf || '—'], ['Cargo', f.cargo || '—'], ['Telefone', f.telefone || '—'], ['Data de Admissão', formatarDataBr(f.admissao)]]
+      .forEach(([label, valor]) => { const row = sheet.addRow([label, valor]); row.getCell(1).font = { bold: true }; row.eachCell(c => c.border = BORDA_CELULA); });
+    const linhaResumoTitulo = sheet.addRow(['Resumo geral:', `🟢 Em dia: ${cEmDia}`, `🟡 A vencer: ${cAVencer}`, `🔴 Vencido: ${cVencido}`, `🟠 Pendente: ${cPendente}`, `Total: ${todosComValidade.length}`]);
+    linhaResumoTitulo.getCell(1).font = { bold: true };
+    linhaResumoTitulo.eachCell(c => c.border = BORDA_CELULA);
+    escreverLinhaVazia(sheet);
 
-    // ============ ABA 2: DOCUMENTOS (visão consolidada de tudo) ============
+    // ---- 2. DOCUMENTOS (consolidado) ----
     const linhasDocs = [];
     const addDoc = (categoria, descricao, dataIso, validadeIso) => {
       const s = situacaoExcel(validadeIso);
@@ -2526,43 +2536,74 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
     d.epis.forEach(e => addDoc('EPI', e.epi, e.entrega, e.troca));
     d.integs.forEach(i => addDoc('Integração', i.empresa_integracao, i.data_realizacao, i.validade_data));
     d.ferias.forEach(v => addDoc('Férias', `Período ${formatarDataBr(v.inicio_periodo)}`, v.inicio_periodo, v.limite_gozo));
-    criarAbaTabela(wb, 'Documentos', ['Categoria', 'Descrição', 'Data', 'Validade', 'Situação', 'Observações'], linhasDocs, 4);
+    escreverTituloSecao(sheet, '2. DOCUMENTOS (VISÃO CONSOLIDADA)');
+    escreverCabecalhoTabela(sheet, ['Categoria', 'Descrição', 'Data', 'Validade', 'Situação', 'Observações']);
+    if (!linhasDocs.length) escreverSecaoVazia(sheet);
+    else linhasDocs.forEach(l => escreverLinhaDados(sheet, l.valores, l.datasIdx, 4, l.situacao));
+    escreverLinhaVazia(sheet);
 
-    // ============ ABA 3: CURSOS / NR E VALIDADES ============
-    criarAbaTabela(wb, 'Cursos NR e Validades', ['Curso', 'Realizado em', 'Válido até', 'Situação', 'Observações'],
-      d.treinos.map(t => { const s = situacaoExcel(t.validade_data); return { valores: [t.curso, dataExcel(t.data_realizacao), dataExcel(t.validade_data), s.texto, observacaoDe(s)], datasIdx: [1, 2], situacao: s }; }), 3);
+    // ---- 3. CURSOS / NR ----
+    escreverTituloSecao(sheet, '3. CURSOS / NR E VALIDADES');
+    escreverCabecalhoTabela(sheet, ['Curso', 'Realizado em', 'Válido até', 'Situação', 'Observações']);
+    if (!d.treinos.length) escreverSecaoVazia(sheet);
+    else d.treinos.forEach(t => { const s = situacaoExcel(t.validade_data); escreverLinhaDados(sheet, [t.curso, dataExcel(t.data_realizacao), dataExcel(t.validade_data), s.texto, observacaoDe(s)], [1, 2], 3, s); });
+    escreverLinhaVazia(sheet);
 
-    // ============ ABA 4: INTEGRAÇÃO ============
-    criarAbaTabela(wb, 'Integração', ['Empresa / Cliente', 'Obra', 'Realizado em', 'Válido até', 'Situação', 'Observações'],
-      d.integs.map(i => { const s = situacaoExcel(i.validade_data); return { valores: [i.empresa_integracao, i.obra || '—', dataExcel(i.data_realizacao), dataExcel(i.validade_data), s.texto, observacaoDe(s)], datasIdx: [2, 3], situacao: s }; }), 4);
+    // ---- 4. INTEGRAÇÃO ----
+    escreverTituloSecao(sheet, '4. INTEGRAÇÃO');
+    escreverCabecalhoTabela(sheet, ['Empresa / Cliente', 'Obra', 'Realizado em', 'Válido até', 'Situação', 'Observações']);
+    if (!d.integs.length) escreverSecaoVazia(sheet);
+    else d.integs.forEach(i => { const s = situacaoExcel(i.validade_data); escreverLinhaDados(sheet, [i.empresa_integracao, i.obra || '—', dataExcel(i.data_realizacao), dataExcel(i.validade_data), s.texto, observacaoDe(s)], [2, 3], 4, s); });
+    escreverLinhaVazia(sheet);
 
-    // ============ ABA 5: ASO / EXAMES ============
-    criarAbaTabela(wb, 'ASO Exames', ['Tipo', 'Data do Exame', 'Válido até', 'Situação', 'Médico do Trabalho', 'Clínica', 'Observações'],
-      d.asos.map(a => { const s = situacaoExcel(a.validade_data); return { valores: [a.tipo || '—', dataExcel(a.data_realizacao), dataExcel(a.validade_data), s.texto, a.medico_trabalho || '—', a.clinica || '—', observacaoDe(s)], datasIdx: [1, 2], situacao: s }; }), 3);
+    // ---- 5. ASO / EXAMES ----
+    escreverTituloSecao(sheet, '5. ASO / EXAMES');
+    escreverCabecalhoTabela(sheet, ['Tipo', 'Data do Exame', 'Válido até', 'Situação', 'Médico do Trabalho', 'Clínica', 'Observações']);
+    if (!d.asos.length) escreverSecaoVazia(sheet);
+    else d.asos.forEach(a => { const s = situacaoExcel(a.validade_data); escreverLinhaDados(sheet, [a.tipo || '—', dataExcel(a.data_realizacao), dataExcel(a.validade_data), s.texto, a.medico_trabalho || '—', a.clinica || '—', observacaoDe(s)], [1, 2], 3, s); });
+    escreverLinhaVazia(sheet);
 
-    // ============ ABA 6: EPIs ============
-    criarAbaTabela(wb, 'EPIs', ['EPI', 'CA', 'Entrega', 'Próxima Troca', 'Situação', 'Observações'],
-      d.epis.map(e => { const s = situacaoExcel(e.troca); return { valores: [e.epi, e.ca || '—', dataExcel(e.entrega), dataExcel(e.troca), s.texto, observacaoDe(s)], datasIdx: [2, 3], situacao: s }; }), 4);
+    // ---- 6. EPIs ----
+    escreverTituloSecao(sheet, '6. EPIs');
+    escreverCabecalhoTabela(sheet, ['EPI', 'CA', 'Entrega', 'Próxima Troca', 'Situação', 'Observações']);
+    if (!d.epis.length) escreverSecaoVazia(sheet);
+    else d.epis.forEach(e => { const s = situacaoExcel(e.troca); escreverLinhaDados(sheet, [e.epi, e.ca || '—', dataExcel(e.entrega), dataExcel(e.troca), s.texto, observacaoDe(s)], [2, 3], 4, s); });
+    escreverLinhaVazia(sheet);
 
-    // ============ ABA 7: FOLHA DE PAGAMENTO ============
+    // ---- 7. FOLHA DE PAGAMENTO ----
     // Observação: o sistema controla "Folha de Ponto" (entrega mensal/competência), não folha de
-    // pagamento (salário) — não existe esse dado no sistema, então essa aba usa o que existe de
+    // pagamento (salário) — não existe esse dado no sistema, então essa seção usa o que existe de
     // verdade (Folha de Ponto), sem inventar valor nenhum.
-    criarAbaTabela(wb, 'Folha de Pagamento', ['Cliente', 'Competência', 'Entregue em', 'Recebido', 'Assinatura do Funcionário', 'Observações'],
-      d.pontos.map(p => ({ valores: [p.cliente || '—', mesAnoParaTexto(p.periodo), dataExcel(p.data_envio), p.recebido ? 'Sim' : 'Não', p.assinatura_funcionario ? 'Sim' : 'Não', 'Registro de Folha de Ponto (o sistema não controla folha de pagamento/salário)'], datasIdx: [2] })));
+    escreverTituloSecao(sheet, '7. FOLHA DE PAGAMENTO (registros de Folha de Ponto do sistema)');
+    escreverCabecalhoTabela(sheet, ['Cliente', 'Competência', 'Entregue em', 'Recebido', 'Assinatura do Funcionário', 'Observações']);
+    if (!d.pontos.length) escreverSecaoVazia(sheet);
+    else d.pontos.forEach(p => escreverLinhaDados(sheet, [p.cliente || '—', mesAnoParaTexto(p.periodo), dataExcel(p.data_envio), p.recebido ? 'Sim' : 'Não', p.assinatura_funcionario ? 'Sim' : 'Não', 'O sistema não controla folha de pagamento/salário'], [2]));
+    escreverLinhaVazia(sheet);
 
-    // ============ ABA 8: PENDÊNCIAS E VENCIMENTOS ============
+    // ---- 8. PENDÊNCIAS E VENCIMENTOS ---- (única seção com filtro ativo — a mais útil de filtrar)
+    escreverTituloSecao(sheet, '8. PENDÊNCIAS E VENCIMENTOS');
+    const linhaCabecalhoPendencias = escreverCabecalhoTabela(sheet, ['Categoria', 'Descrição', 'Data', 'Validade', 'Situação', 'Observações']);
     const linhasPendencias = linhasDocs.filter(l => l.situacao.dias === null || l.situacao.dias <= 60);
-    criarAbaTabela(wb, 'Pendências e Vencimentos', ['Categoria', 'Descrição', 'Data', 'Validade', 'Situação', 'Observações'], linhasPendencias, 4);
+    if (!linhasPendencias.length) escreverSecaoVazia(sheet);
+    else linhasPendencias.forEach(l => escreverLinhaDados(sheet, l.valores, l.datasIdx, 4, l.situacao));
+    if (linhasPendencias.length) {
+      sheet.autoFilter = { from: { row: linhaCabecalhoPendencias.number, column: 1 }, to: { row: linhaCabecalhoPendencias.number + linhasPendencias.length, column: 6 } };
+    }
+    escreverLinhaVazia(sheet);
 
-    // ============ ABA 9: HISTÓRICO (documentos substituídos por renovação) ============
+    // ---- 9. HISTÓRICO ----
+    escreverTituloSecao(sheet, '9. HISTÓRICO (documentos substituídos por renovação)');
+    escreverCabecalhoTabela(sheet, ['Categoria', 'Descrição', 'Data', 'Validade (na época)', 'Situação']);
     const linhasHistorico = [];
-    (histTreinos.data || []).forEach(t => linhasHistorico.push({ valores: ['Curso / NR', t.curso, dataExcel(t.data_realizacao), dataExcel(t.validade_data), '⬜ Substituído'], datasIdx: [2, 3] }));
-    (histAsos.data || []).forEach(a => linhasHistorico.push({ valores: ['ASO', a.tipo || 'ASO', dataExcel(a.data_realizacao), dataExcel(a.validade_data), '⬜ Substituído'], datasIdx: [2, 3] }));
-    (histEpis.data || []).forEach(e => linhasHistorico.push({ valores: ['EPI', e.epi, dataExcel(e.entrega), dataExcel(e.troca), '⬜ Substituído'], datasIdx: [2, 3] }));
-    (histIntegs.data || []).forEach(i => linhasHistorico.push({ valores: ['Integração', i.empresa_integracao, dataExcel(i.data_realizacao), dataExcel(i.validade_data), '⬜ Substituído'], datasIdx: [2, 3] }));
-    (histFerias.data || []).forEach(v => linhasHistorico.push({ valores: ['Férias', `Período ${formatarDataBr(v.inicio_periodo)}`, dataExcel(v.inicio_periodo), dataExcel(v.limite_gozo), '⬜ Encerrado'], datasIdx: [2, 3] }));
-    criarAbaTabela(wb, 'Histórico', ['Categoria', 'Descrição', 'Data', 'Validade (na época)', 'Situação'], linhasHistorico);
+    (histTreinos.data || []).forEach(t => linhasHistorico.push([['Curso / NR', t.curso, dataExcel(t.data_realizacao), dataExcel(t.validade_data), '⬜ Substituído'], [2, 3]]));
+    (histAsos.data || []).forEach(a => linhasHistorico.push([['ASO', a.tipo || 'ASO', dataExcel(a.data_realizacao), dataExcel(a.validade_data), '⬜ Substituído'], [2, 3]]));
+    (histEpis.data || []).forEach(e => linhasHistorico.push([['EPI', e.epi, dataExcel(e.entrega), dataExcel(e.troca), '⬜ Substituído'], [2, 3]]));
+    (histIntegs.data || []).forEach(i => linhasHistorico.push([['Integração', i.empresa_integracao, dataExcel(i.data_realizacao), dataExcel(i.validade_data), '⬜ Substituído'], [2, 3]]));
+    (histFerias.data || []).forEach(v => linhasHistorico.push([['Férias', `Período ${formatarDataBr(v.inicio_periodo)}`, dataExcel(v.inicio_periodo), dataExcel(v.limite_gozo), '⬜ Encerrado'], [2, 3]]));
+    if (!linhasHistorico.length) escreverSecaoVazia(sheet);
+    else linhasHistorico.forEach(([valores, datasIdx]) => escreverLinhaDados(sheet, valores, datasIdx));
+
+    ajustarLargurasColunasUnico(sheet);
 
     // ---- Gera e baixa o arquivo .xlsx ----
     const buffer = await wb.xlsx.writeBuffer();
@@ -2572,7 +2613,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
     const nomeArquivo = normalizarTexto(f.nome).replace(/\s+/g, '_');
     a.href = url; a.download = `dossie_${nomeArquivo}_${new Date().toISOString().slice(0, 10)}.xlsx`; a.click();
     URL.revokeObjectURL(url);
-    showAppStatus('ok', 'Dossiê em Excel baixado com sucesso — 9 abas, com filtros e situação colorida.');
+    showAppStatus('ok', 'Dossiê em Excel baixado com sucesso — tudo numa aba só, pronto pra imprimir em A4.');
   }
 
   async function bulkTreinamentos() {
