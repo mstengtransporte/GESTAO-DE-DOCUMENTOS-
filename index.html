@@ -12,8 +12,8 @@
 <style>
 :root{
   /* ---- Paleta: azul industrial/segurança, refinado a partir da identidade da Master Energy ---- */
-  --navy-950:#03101f; --navy-900:#0a2647; --navy-800:#0f3258; --navy-700:#154070;
-  --blue-500:#0092d6; --blue-400:#3ab4f2; --blue-300:#7dd0fb;
+  --navy-950:#03101f; --navy-900:#00477f; --navy-800:#0f3258; --navy-700:#154070;
+  --blue-500:#009fe3; --blue-400:#3ab4f2; --blue-300:#7dd0fb;
   --amber-500:#e8a33d; --amber-400:#f0b75f;
   --white:#ffffff;
   --success:#1fa97a; --success-bg:rgba(31,169,122,.15);
@@ -67,6 +67,15 @@ td{font-variant-numeric:tabular-nums;}
 .pill.apto{background:var(--success-bg);color:var(--success);}
 .pill.pendente{background:var(--warning-bg);color:var(--warning);}
 .pill.bloqueado{background:var(--danger-bg);color:var(--danger);animation:pulso-alerta 1.6s ease-in-out infinite;}
+.doc-count{display:inline-block;font-size:11px;font-weight:700;margin-right:8px;font-variant-numeric:tabular-nums;}
+.acoes-rapidas-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;}
+.acao-rapida-btn{
+  display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 10px;text-align:center;
+  background:var(--surface-1);border:1px solid var(--surface-border);border-radius:11px;color:var(--ink-50);
+  font-size:12px;font-weight:600;transition:transform .12s,border-color .15s,background .15s;
+}
+.acao-rapida-btn:hover{background:var(--surface-2);border-color:var(--blue-500);transform:translateY(-2px);}
+.acao-rapida-btn svg{color:var(--blue-400);}
 @keyframes pulso-alerta{
   0%,100%{box-shadow:0 0 0 0 rgba(229,72,77,.55);}
   50%{box-shadow:0 0 0 5px rgba(229,72,77,0);}
@@ -166,6 +175,27 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
 .sidebar-user{font-size:11px;color:var(--ink-500);padding:6px 10px 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
 .main-content{flex:1;min-width:0;padding:28px 32px 60px;max-width:1180px;}
+
+.app-topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:20px;flex-wrap:wrap;}
+.app-topbar-title{font-family:var(--font-display);font-weight:800;font-size:21px;color:var(--white);letter-spacing:-.01em;}
+.app-topbar-actions{display:flex;align-items:center;gap:10px;}
+.app-topbar-search{
+  display:flex;align-items:center;gap:8px;background:var(--surface-1);border:1px solid var(--surface-border);
+  border-radius:9px;padding:8px 12px;min-width:230px;
+}
+.app-topbar-search input{border:none;background:transparent;padding:0;margin:0;font-size:12.5px;}
+.app-topbar-search input:focus{outline:none;}
+.app-topbar-search svg{color:var(--ink-500);flex:none;}
+.topbar-icon-btn{
+  position:relative;width:38px;height:38px;flex:none;border-radius:9px;
+  background:var(--surface-1);border:1px solid var(--surface-border);color:var(--ink-300);
+  display:flex;align-items:center;justify-content:center;padding:0;
+}
+.topbar-icon-btn:hover{background:var(--surface-2);color:var(--white);}
+.topbar-badge{
+  position:absolute;top:-5px;right:-5px;background:var(--danger);color:#fff;font-size:10px;font-weight:800;
+  min-width:17px;height:17px;border-radius:999px;display:flex;align-items:center;justify-content:center;padding:0 3px;
+}
 
 /* ---- Tela de login: ocupa a página inteira, sem sidebar ---- */
 .auth-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
@@ -308,6 +338,22 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
     </aside>
 
     <main class="main-content">
+    <div class="app-topbar">
+      <div>
+        <div class="app-topbar-title" id="appTopbarTitle">Dashboard</div>
+        <div class="small" id="appTopbarSubtitle">Gestão completa de documentos, cursos, integrações e prazos</div>
+      </div>
+      <div class="app-topbar-actions">
+        <div class="app-topbar-search">
+          <svg class="icon" data-lucide="search" style="margin:0"></svg>
+          <input type="text" id="topbarBuscaTermo" placeholder="Buscar funcionário…">
+        </div>
+        <button class="topbar-icon-btn" id="topbarAlertasBtn" aria-label="Alertas">
+          <svg class="icon" data-lucide="bell" style="margin:0"></svg>
+          <span class="topbar-badge hidden" id="topbarAlertasBadge">0</span>
+        </button>
+      </div>
+    </div>
     <button class="btn-ghost" id="voltarBtn" style="margin-bottom:14px;display:none"><svg class="icon" data-lucide="arrow-left"></svg>Voltar</button>
     <div id="appStatus" class="status"></div>
 
@@ -417,8 +463,8 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
           <button class="btn-ghost" id="refreshBtn">Atualizar lista</button>
         </div>
         <table>
-          <thead><tr><th>Nome</th><th>CPF</th><th>Cargo</th><th>Status</th><th>Telefone</th><th></th></tr></thead>
-          <tbody id="empTableBody"><tr><td colspan="6" class="small">Carregando…</td></tr></tbody>
+          <thead><tr><th>Nome</th><th>Cargo</th><th>CPF</th><th>Status Geral</th><th>Documentos</th><th>Telefone</th><th></th></tr></thead>
+          <tbody id="empTableBody"><tr><td colspan="7" class="small">Carregando…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -805,7 +851,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
 
     <!-- ============ ABA: DASHBOARD ============ -->
     <div id="tabDash" class="hidden">
-      <div class="card">
+      <div class="card hidden">
         <h1 style="font-size:15px">Buscar funcionário</h1>
         <div class="row">
           <div style="flex:2"><input type="text" id="dashBuscaTermo" placeholder="Nome ou CPF…"></div>
@@ -845,6 +891,16 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
           <h1 style="font-size:15px">Vencimentos por Mês</h1>
           <div class="small" style="margin-bottom:6px">Quantos documentos vencem em cada um dos próximos meses — pra se planejar com antecedência</div>
           <canvas id="chartVencimentosMes" style="max-height:270px"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <h1 style="font-size:15px">⚡ Ações Rápidas</h1>
+        <div class="acoes-rapidas-grid">
+          <button class="acao-rapida-btn" data-tab="func"><svg class="icon-lg" data-lucide="user-plus"></svg>Novo Funcionário</button>
+          <button class="acao-rapida-btn" data-tab="func"><svg class="icon-lg" data-lucide="upload"></svg>Upload em Lote</button>
+          <button class="acao-rapida-btn" data-tab="func"><svg class="icon-lg" data-lucide="download-cloud"></svg>Backup / Relatório</button>
+          <button class="acao-rapida-btn" data-tab="busca"><svg class="icon-lg" data-lucide="search"></svg>Ficha Completa</button>
         </div>
       </div>
 
@@ -1113,6 +1169,19 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
       buscarFichaCompleta();
     });
     document.getElementById('dashBuscaTermo').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('dashBuscaBtn').click(); });
+
+    document.getElementById('topbarBuscaTermo').addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      const termo = e.target.value.trim();
+      if (!termo) return;
+      switchTab('busca');
+      document.getElementById('buscaTermo').value = termo;
+      buscarFichaCompleta();
+    });
+    document.getElementById('topbarAlertasBtn').addEventListener('click', () => switchTab('dash'));
+    document.querySelectorAll('.acao-rapida-btn').forEach(btn => {
+      btn.addEventListener('click', () => switchTab(btn.getAttribute('data-tab')));
+    });
 
     document.getElementById('saveIntegBtn').addEventListener('click', saveInteg);
     document.getElementById('refreshIntegBtn').addEventListener('click', loadIntegracoes);
@@ -1388,12 +1457,27 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
   const TAB_BTN = { dash: 'tabDashBtn', busca: 'tabBuscaBtn', func: 'tabFuncBtn', treino: 'tabTreinoBtn', aso: 'tabAsoBtn', epi: 'tabEpiBtn', ponto: 'tabPontoBtn', integ: 'tabIntegBtn', ferias: 'tabFeriasBtn' };
   let tabAtual = null;
   let historicoTabs = [];
+  const TAB_TITULOS = {
+    dash: ['Dashboard', 'Visão geral do compliance documental de todos os funcionários'],
+    busca: ['Ficha Completa', 'Busque um funcionário e veja tudo que está registrado sobre ele'],
+    func: ['Funcionários', 'Cadastro, importação em massa e backup dos dados da equipe'],
+    treino: ['Treinamentos / NRs', 'Controle de cursos de Normas Regulamentadoras'],
+    aso: ['ASOs', 'Atestados de Saúde Ocupacional'],
+    epi: ['EPIs', 'Equipamentos de Proteção Individual entregues'],
+    ponto: ['Folha de Ponto', 'Controle de entrega mensal por competência'],
+    integ: ['Integração de Cliente', 'Integrações de segurança por empresa/obra'],
+    ferias: ['Férias', 'Períodos aquisitivos e controle de gozo'],
+  };
   function switchTab(tab, viaVoltar) {
     // Guarda de onde a pessoa veio, pra o botão "Voltar" saber pra onde ir —
     // exceto quando a própria navegação já é um "voltar" (senão criaria um loop).
     if (!viaVoltar && tabAtual && tabAtual !== tab) historicoTabs.push(tabAtual);
     tabAtual = tab;
     document.getElementById('voltarBtn').style.display = historicoTabs.length ? 'inline-flex' : 'none';
+    if (TAB_TITULOS[tab]) {
+      document.getElementById('appTopbarTitle').textContent = TAB_TITULOS[tab][0];
+      document.getElementById('appTopbarSubtitle').textContent = TAB_TITULOS[tab][1];
+    }
 
     TABS.forEach(t => {
       document.getElementById(TAB_DIV[t]).classList.toggle('hidden', t !== tab);
@@ -1420,26 +1504,70 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
   // ---------- CRUD Funcionários ----------
   async function loadFuncionarios() {
     const tbody = document.getElementById('empTableBody');
-    tbody.innerHTML = '<tr><td colspan="6" class="small">Carregando…</td></tr>';
-    const { data, error } = await sb.from('funcionarios').select('*').order('nome', { ascending: true });
-    if (error) {
-      tbody.innerHTML = `<tr><td colspan="6" class="small" style="color:var(--danger)">Erro ao carregar: ${error.message}</td></tr>`;
-      showAppStatus('err', 'Erro ao carregar funcionários: ' + error.message);
+    tbody.innerHTML = '<tr><td colspan="7" class="small">Carregando…</td></tr>';
+
+    // Busca tudo de uma vez só (funcionários + documentos de todas as seções), em vez de
+    // consultar o banco um funcionário por vez — muito mais rápido com listas grandes.
+    const [funcs, asos, treinos, epis, integs, ferias] = await Promise.all([
+      sb.from('funcionarios').select('*').order('nome', { ascending: true }),
+      sb.from('asos').select('funcionario_id, validade_data').eq('arquivado', false),
+      sb.from('treinamentos').select('funcionario_id, validade_data').eq('arquivado', false),
+      sb.from('epis').select('funcionario_id, troca').eq('arquivado', false),
+      sb.from('integracoes').select('funcionario_id, validade_data').eq('arquivado', false),
+      sb.from('ferias').select('funcionario_id, limite_gozo').eq('arquivado', false),
+    ]);
+    if (funcs.error) {
+      tbody.innerHTML = `<tr><td colspan="7" class="small" style="color:var(--danger)">Erro ao carregar: ${funcs.error.message}</td></tr>`;
+      showAppStatus('err', 'Erro ao carregar funcionários: ' + funcs.error.message);
       return;
     }
+    const data = funcs.data;
     if (!data.length) {
-      tbody.innerHTML = '<tr><td colspan="6" class="small">Nenhum funcionário cadastrado ainda.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="small">Nenhum funcionário cadastrado ainda.</td></tr>';
       return;
     }
-    tbody.innerHTML = data.map(f => `
+
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    const diasDeLocal = (v) => v ? Math.round((new Date(v + 'T00:00:00') - hoje) / 86400000) : null;
+
+    // Agrupa, por funcionário, quantos documentos estão em dia / a vencer / vencidos
+    const resumoPorFuncionario = {};
+    const garantirResumo = (id) => resumoPorFuncionario[id] || (resumoPorFuncionario[id] = { apto: 0, pendente: 0, vencido: 0 });
+    [[asos.data, 'validade_data'], [treinos.data, 'validade_data'], [epis.data, 'troca'], [integs.data, 'validade_data'], [ferias.data, 'limite_gozo']]
+      .forEach(([lista, campo]) => {
+        (lista || []).forEach(d => {
+          const r = garantirResumo(d.funcionario_id);
+          const dias = diasDeLocal(d[campo]);
+          if (dias === null) r.apto++;
+          else if (dias < 0) r.vencido++;
+          else if (dias <= 60) r.pendente++;
+          else r.apto++;
+        });
+      });
+
+    tbody.innerHTML = data.map(f => {
+      const r = resumoPorFuncionario[f.id] || { apto: 0, pendente: 0, vencido: 0 };
+      const totalDocs = r.apto + r.pendente + r.vencido;
+      // Status geral = o pior status entre os documentos dele (se tem 1 vencido, já conta como vencido)
+      const statusGeral = totalDocs === 0 ? f.status : (r.vencido ? 'bloqueado' : r.pendente ? 'pendente' : 'apto');
+      const textoStatus = { apto: 'Em Dia', pendente: 'A Vencer', bloqueado: 'Vencido' }[statusGeral] || statusGeral;
+      return `
       <tr>
         <td>${linkNome(f.nome)}</td>
-        <td>${f.cpf || '—'}</td>
         <td>${f.cargo || '—'}</td>
-        <td><span class="pill ${f.status}">${f.status}</span></td>
+        <td>${f.cpf || '—'}</td>
+        <td><span class="pill ${statusGeral}">${textoStatus}</span></td>
+        <td>
+          ${totalDocs === 0 ? '<span class="small">sem documentos</span>' : `
+            <span class="doc-count ok" title="Em dia">🟢 ${r.apto}</span>
+            <span class="doc-count warn" title="A vencer">🟡 ${r.pendente}</span>
+            <span class="doc-count bad" title="Vencido">🔴 ${r.vencido}</span>
+          `}
+        </td>
         <td>${f.telefone || '—'}</td>
         <td><button class="del-btn" data-id="${f.id}">Excluir</button></td>
-      </tr>`).join('');
+      </tr>`;
+    }).join('');
 
     tbody.querySelectorAll('.del-btn').forEach(btn => {
       btn.addEventListener('click', () => deleteFuncionario(btn.getAttribute('data-id')));
@@ -2620,6 +2748,10 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
       });
     });
     const totalGeral = totalApto + totalPendente + totalVencido;
+    const totalAlertas = totalPendente + totalVencido;
+    const badgeEl = document.getElementById('topbarAlertasBadge');
+    badgeEl.textContent = totalAlertas > 99 ? '99+' : totalAlertas;
+    badgeEl.classList.toggle('hidden', totalAlertas === 0);
     const pctConforme = totalGeral ? Math.round((totalApto / totalGeral) * 100) : 100;
     document.getElementById('conformidadePct').textContent = totalGeral ? pctConforme + '%' : '—';
     document.getElementById('conformidadeLegenda').innerHTML = `
