@@ -126,6 +126,28 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
 .file-link:hover{text-decoration:underline;}
 .link-funcionario{color:var(--blue-300);cursor:pointer;font-weight:600;}
 .link-funcionario:hover{text-decoration:underline;color:var(--white);}
+.avatar-iniciais{
+  display:inline-flex;align-items:center;justify-content:center;border-radius:50%;color:#fff;
+  font-weight:800;flex:none;vertical-align:middle;letter-spacing:-.02em;
+}
+.nome-com-avatar{display:inline-flex;align-items:center;gap:9px;}
+
+.calendario-horizontal{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;}
+.calendario-dia{
+  flex:none;width:78px;border-radius:10px;padding:10px 6px;text-align:center;
+  background:var(--surface-1);border:1px solid var(--surface-border);cursor:default;transition:transform .12s;
+}
+.calendario-dia.tem-vencimento{cursor:pointer;}
+.calendario-dia.tem-vencimento:hover{transform:translateY(-2px);border-color:var(--blue-500);}
+.calendario-dia.hoje{border-color:var(--blue-500);border-width:2px;}
+.calendario-dia-semana{font-size:9.5px;color:var(--ink-500);text-transform:uppercase;font-weight:700;}
+.calendario-dia-numero{font-family:var(--font-display);font-size:18px;font-weight:800;margin:3px 0;}
+.calendario-dia-badge{font-size:10px;font-weight:800;border-radius:999px;padding:1px 7px;display:inline-block;}
+.calendario-dia-badge.vencido{background:var(--danger-bg);color:var(--danger);}
+.calendario-dia-badge.vencendo{background:var(--warning-bg);color:var(--warning);}
+
+.zona-arrastar{border-radius:10px;transition:background .15s,box-shadow .15s;padding:6px;margin:-6px;}
+.zona-arrastando{background:rgba(0,159,227,.1);box-shadow:0 0 0 2px var(--blue-500) inset;}
 .toggle-senha{
   position:absolute;right:4px;top:0;height:38px;width:34px;display:flex;align-items:center;justify-content:center;
   background:transparent;border:none;color:var(--ink-500);padding:0;margin:0;
@@ -404,6 +426,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
         <div class="row">
           <div><label>Nome completo *</label><input type="text" id="fNome"></div>
           <div><label>CPF</label><input type="text" id="fCpf" placeholder="000.000.000-00"></div>
+          <div><label>Matrícula</label><input type="text" id="fMatricula" placeholder="Ex: ME001"></div>
         </div>
         <div class="row">
           <div>
@@ -490,8 +513,8 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
           <button class="btn-ghost" id="refreshBtn">Atualizar lista</button>
         </div>
         <table>
-          <thead><tr><th>Nome</th><th>Cargo</th><th>CPF</th><th>Status Geral</th><th>Documentos</th><th>Telefone</th><th></th></tr></thead>
-          <tbody id="empTableBody"><tr><td colspan="7" class="small">Carregando…</td></tr></tbody>
+          <thead><tr><th>Nome</th><th>Cargo</th><th>CPF</th><th>Matrícula</th><th>Status Geral</th><th>Documentos</th><th>Telefone</th><th></th></tr></thead>
+          <tbody id="empTableBody"><tr><td colspan="8" class="small">Carregando…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -922,6 +945,12 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
       </div>
 
       <div class="card">
+        <h1 style="font-size:15px">📅 Calendário de Vencimentos — Próximos 14 dias</h1>
+        <div class="small" style="margin-bottom:10px">Cada dia mostra quantos documentos vencem nele. Clica num dia com vencimento pra ver os detalhes.</div>
+        <div id="calendarioHorizontal" class="calendario-horizontal"></div>
+      </div>
+
+      <div class="card">
         <h1 style="font-size:15px">⚡ Ações Rápidas</h1>
         <div class="acoes-rapidas-grid">
           <button class="acao-rapida-btn" data-tab="func"><svg class="icon-lg" data-lucide="user-plus"></svg>Novo Funcionário</button>
@@ -1149,17 +1178,36 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
 
     // Função genérica que liga: seleção de arquivo (mostra botão de remover + tenta ler) e o botão de remover em si
     function ligarCampoDeArquivo(inputId, nomeId, removerBtnId, boxSugestaoId, alvo) {
-      document.getElementById(inputId).addEventListener('change', async (e) => {
-        const f = e.target.files[0];
+      const input = document.getElementById(inputId);
+      const zona = input.closest('div') || input.parentElement;
+      zona.classList.add('zona-arrastar');
+
+      const processarArquivoEscolhido = async (f) => {
         document.getElementById(nomeId).textContent = f ? `Selecionado: ${f.name}` : '';
         document.getElementById(removerBtnId).style.display = f ? 'inline-block' : 'none';
         if (boxSugestaoId) document.getElementById(boxSugestaoId).classList.add('hidden');
         if (!f) return;
         if (f.type === 'application/pdf' && alvo) { await processarPdf(f, alvo); return; }
         if (f.type.startsWith('image/') && alvo) { await processarImagem(f, alvo); return; }
+      };
+
+      input.addEventListener('change', async (e) => { await processarArquivoEscolhido(e.target.files[0]); });
+
+      // Arrastar e soltar — solta o PDF/foto direto em cima do campo, sem precisar clicar em "Escolher arquivo"
+      ['dragenter', 'dragover'].forEach(evento => zona.addEventListener(evento, (e) => {
+        e.preventDefault(); e.stopPropagation(); zona.classList.add('zona-arrastando');
+      }));
+      ['dragleave', 'drop'].forEach(evento => zona.addEventListener(evento, (e) => {
+        e.preventDefault(); e.stopPropagation(); zona.classList.remove('zona-arrastando');
+      }));
+      zona.addEventListener('drop', async (e) => {
+        const arquivo = e.dataTransfer.files[0];
+        if (!arquivo) return;
+        input.files = e.dataTransfer.files; // reflete no <input> de verdade, como se tivesse escolhido pelo clique
+        await processarArquivoEscolhido(arquivo);
       });
+
       document.getElementById(removerBtnId).addEventListener('click', () => {
-        const input = document.getElementById(inputId);
         input.value = ''; // limpa o arquivo escolhido de verdade
         document.getElementById(nomeId).textContent = '';
         document.getElementById(removerBtnId).style.display = 'none';
@@ -1531,7 +1579,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
   // ---------- CRUD Funcionários ----------
   async function loadFuncionarios() {
     const tbody = document.getElementById('empTableBody');
-    tbody.innerHTML = '<tr><td colspan="7" class="small">Carregando…</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="small">Carregando…</td></tr>';
 
     // Busca tudo de uma vez só (funcionários + documentos de todas as seções), em vez de
     // consultar o banco um funcionário por vez — muito mais rápido com listas grandes.
@@ -1544,13 +1592,13 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
       sb.from('ferias').select('funcionario_id, limite_gozo').eq('arquivado', false),
     ]);
     if (funcs.error) {
-      tbody.innerHTML = `<tr><td colspan="7" class="small" style="color:var(--danger)">Erro ao carregar: ${funcs.error.message}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" class="small" style="color:var(--danger)">Erro ao carregar: ${funcs.error.message}</td></tr>`;
       showAppStatus('err', 'Erro ao carregar funcionários: ' + funcs.error.message);
       return;
     }
     const data = funcs.data;
     if (!data.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="small">Nenhum funcionário cadastrado ainda.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="small">Nenhum funcionário cadastrado ainda.</td></tr>';
       return;
     }
 
@@ -1588,9 +1636,10 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
       const textoStatus = { apto: 'Em Dia', pendente: 'A Vencer', bloqueado: 'Vencido' }[statusGeral] || statusGeral;
       return `
       <tr${r.bloqueadoEntrada ? ' class="linha-bloqueada"' : ''}>
-        <td>${linkNome(f.nome)}${r.bloqueadoEntrada ? '<div class="aviso-bloqueio">🚨 ENTRADA BLOQUEADA</div>' : ''}</td>
+        <td>${linkNomeComAvatar(f.nome)}${r.bloqueadoEntrada ? '<div class="aviso-bloqueio">🚨 ENTRADA BLOQUEADA</div>' : ''}</td>
         <td>${f.cargo || '—'}</td>
         <td>${f.cpf || '—'}</td>
+        <td>${f.matricula || '—'}</td>
         <td><span class="pill ${statusGeral}">${textoStatus}</span></td>
         <td>
           ${totalDocs === 0 ? '<span class="small">sem documentos</span>' : `
@@ -1630,6 +1679,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
 
     const payload = {
       nome, cpf,
+      matricula: document.getElementById('fMatricula').value.trim() || null,
       cargo: (() => { const sel = document.getElementById('fCargoSelect').value; return sel === '__outro__' ? document.getElementById('fCargo').value.trim() || null : sel || null; })(),
       telefone: document.getElementById('fTelefone').value.trim() || null,
       status: document.getElementById('fStatus').value,
@@ -1642,7 +1692,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
       showAppStatus('err', 'Erro ao salvar: ' + error.message); return;
     }
     showAppStatus('ok', 'Funcionário salvo com sucesso no banco de dados.');
-    ['fNome', 'fCpf', 'fCargo', 'fTelefone', 'fAdmissao'].forEach(id => document.getElementById(id).value = '');
+    ['fNome', 'fCpf', 'fMatricula', 'fCargo', 'fTelefone', 'fAdmissao'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('fCargoSelect').value = '';
     document.getElementById('fCargo').style.display = 'none';
     loadFuncionarios();
@@ -1759,6 +1809,23 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
   function linkNome(nome) {
     if (!nome) return '—';
     return `<span class="link-funcionario" data-nome="${nome.replace(/"/g, '&quot;')}">${nome}</span>`;
+  }
+  // Avatar com as iniciais da pessoa — cada nome sempre cai na mesma cor (calculada a partir do
+  // próprio nome), então a mesma pessoa aparece sempre com a mesma "cara" em qualquer tela.
+  const CORES_AVATAR = ['#0092d6', '#1fa97a', '#e8a33d', '#a78bfa', '#f472b6', '#3ab4f2', '#f97316'];
+  function avatarIniciais(nome, tamanho) {
+    if (!nome) return '';
+    const partes = nome.trim().split(/\s+/);
+    const iniciais = (partes[0][0] + (partes.length > 1 ? partes[partes.length - 1][0] : '')).toUpperCase();
+    let hash = 0;
+    for (let i = 0; i < nome.length; i++) hash = nome.charCodeAt(i) + ((hash << 5) - hash);
+    const cor = CORES_AVATAR[Math.abs(hash) % CORES_AVATAR.length];
+    const tam = tamanho || 30;
+    return `<span class="avatar-iniciais" style="width:${tam}px;height:${tam}px;font-size:${Math.round(tam * 0.38)}px;background:${cor}">${iniciais}</span>`;
+  }
+  function linkNomeComAvatar(nome, tamanho) {
+    if (!nome) return '—';
+    return `<span class="link-funcionario nome-com-avatar" data-nome="${nome.replace(/"/g, '&quot;')}">${avatarIniciais(nome, tamanho)}<span>${nome}</span></span>`;
   }
   function irParaFichaCompleta(nome) {
     switchTab('busca');
@@ -2390,9 +2457,12 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
     resultDiv.innerHTML = `
       <div class="card" style="border:1px solid rgba(0,146,214,.5)">
         <div class="topbar">
-          <div>
-            <h1 style="font-size:17px">${encontrado.nome}</h1>
-            <div class="small">CPF: ${encontrado.cpf || '—'} · Cargo: ${encontrado.cargo || '—'} · Status geral: <span class="pill ${encontrado.status}">${encontrado.status}</span></div>
+          <div style="display:flex;align-items:center;gap:14px">
+            ${avatarIniciais(encontrado.nome, 48)}
+            <div>
+              <h1 style="font-size:17px">${encontrado.nome}</h1>
+              <div class="small">CPF: ${encontrado.cpf || '—'} · Cargo: ${encontrado.cargo || '—'} · Status geral: <span class="pill ${encontrado.status}">${encontrado.status}</span></div>
+            </div>
           </div>
           <button class="btn-ghost" id="baixarDossieBtn"><svg class="icon" data-lucide="file-text"></svg>Baixar Dossiê</button>
         </div>
@@ -3093,6 +3163,38 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
         },
       });
     }
+
+    // ---- Calendário horizontal — próximos 14 dias, com quantos vencimentos em cada um ----
+    const diasCalendario = [];
+    const hojeCal = new Date(); hojeCal.setHours(0, 0, 0, 0);
+    for (let i = 0; i < 14; i++) {
+      const dia = new Date(hojeCal); dia.setDate(dia.getDate() + i);
+      diasCalendario.push({ data: dia, vencidos: 0, vencendo: 0 });
+    }
+    modulosComVencimento.forEach(m => {
+      m.dados.forEach(d => {
+        const validade = d[m.campoValidade];
+        if (!validade) return;
+        const dataValidade = new Date(validade + 'T00:00:00');
+        const diaEncontrado = diasCalendario.find(dc => dc.data.getTime() === dataValidade.getTime());
+        if (diaEncontrado) diaEncontrado.vencendo++;
+      });
+    });
+    const nomesDiaSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    document.getElementById('calendarioHorizontal').innerHTML = diasCalendario.map(dc => {
+      const ehHoje = dc.data.getTime() === hojeCal.getTime();
+      const temVencimento = dc.vencendo > 0;
+      const isoData = dc.data.toISOString().slice(0, 10);
+      return `
+        <div class="calendario-dia ${ehHoje ? 'hoje' : ''} ${temVencimento ? 'tem-vencimento' : ''}" ${temVencimento ? `data-dia="${isoData}"` : ''}>
+          <div class="calendario-dia-semana">${nomesDiaSemana[dc.data.getDay()]}</div>
+          <div class="calendario-dia-numero">${dc.data.getDate()}</div>
+          ${temVencimento ? `<span class="calendario-dia-badge vencendo">${dc.vencendo} venc.</span>` : '<span class="small">—</span>'}
+        </div>`;
+    }).join('');
+    document.querySelectorAll('#calendarioHorizontal [data-dia]').forEach(el => {
+      el.addEventListener('click', () => switchTab('dash')); // já está no dashboard; foca a tabela de alertas abaixo
+    });
 
     // ---- Cartões de destaque no topo (igual as datas em destaque da referência) ----
     let proximoVencimento = null;
