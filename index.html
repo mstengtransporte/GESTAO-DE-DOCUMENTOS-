@@ -2016,6 +2016,40 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
     if (alvo) irParaFichaCompleta(alvo.getAttribute('data-nome'));
   });
 
+  // ESC fecha o que estiver aberto na hora (nunca "volta de tela" e nunca apaga dado de
+  // formulário) — segue a mesma ideia que ESC já tem em qualquer programa: cancelar/fechar
+  // o que está na frente, não navegar. Confere em ordem de prioridade, um de cada vez.
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+
+    // 1) Se a caixa de "Registrar gozo" (Férias) estiver aberta, fecha ela primeiro
+    const gozoCard = document.getElementById('gozoCard');
+    if (gozoCard && !gozoCard.classList.contains('hidden')) {
+      gozoCard.classList.add('hidden');
+      return;
+    }
+
+    // 2) Se alguma caixa de sugestão de leitura automática (OCR) estiver aberta, fecha ela
+    const caixasOcr = ['ocrSuggestionBox', 'ocrSuggestionBoxAso', 'ocrSuggestionBoxInteg'];
+    const caixaOcrAberta = caixasOcr.find(id => {
+      const el = document.getElementById(id);
+      return el && !el.classList.contains('hidden');
+    });
+    if (caixaOcrAberta) {
+      document.getElementById(caixaOcrAberta).classList.add('hidden');
+      return;
+    }
+
+    // 3) Se o foco estiver num campo de BUSCA (não num formulário de cadastro), limpa e tira o
+    // foco — buscar é passageiro, então limpar aqui é seguro e esperado; nunca faz isso em
+    // campos de formulário (nome, CPF, datas etc.), pra nunca apagar algo que a pessoa digitou.
+    const camposBusca = ['topbarBuscaTermo', 'buscaTermo', 'dashBuscaTermo', 'tFuncionarioBusca', 'aFuncionarioBusca', 'eFuncionarioBusca', 'pFuncionarioBusca', 'iFuncionarioBusca', 'vFuncionarioBusca'];
+    if (document.activeElement && camposBusca.includes(document.activeElement.id)) {
+      document.activeElement.value = '';
+      document.activeElement.blur();
+    }
+  });
+
   // Sempre que um registro NOVO é salvo, arquiva sozinho qualquer registro ANTERIOR do mesmo
   // tipo (mesmo curso, mesmo tipo de ASO, mesmo EPI, mesma empresa de integração) daquele mesmo
   // funcionário — assim nunca fica "duplicado" na tela principal, só o mais recente aparece,
