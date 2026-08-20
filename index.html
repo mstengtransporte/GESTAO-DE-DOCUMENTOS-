@@ -191,7 +191,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
 }
 .brand{display:flex;align-items:center;gap:10px;padding:4px 8px 20px;position:relative;}
 .brand-mark{
-  width:38px;height:38px;border-radius:10px;flex:none;position:relative;overflow:hidden;
+  width:46px;height:46px;border-radius:10px;flex:none;position:relative;overflow:hidden;
   background:linear-gradient(135deg,var(--blue-500),var(--navy-700));
   display:flex;align-items:center;justify-content:center;
   box-shadow:0 4px 14px rgba(0,146,214,.35);
@@ -212,6 +212,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
   background:transparent;border:1px solid transparent;color:var(--ink-300);margin-bottom:2px;
 }
 .nav-item svg{width:16px;height:16px;stroke-width:2;flex:none;}
+.nav-item [data-icone-marca] svg{width:auto !important;height:auto !important;}
 .nav-item:hover{background:var(--surface-1);color:var(--ink-50);}
 .nav-item.btn-primary{background:linear-gradient(135deg,var(--blue-500),#0b6fb0);color:#fff;box-shadow:0 4px 14px rgba(0,146,214,.28);border-color:transparent;}
 .nav-item.btn-ghost{background:transparent;border-color:transparent;}
@@ -306,7 +307,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
   <div id="authScreen" class="auth-page">
   <div class="card auth-card">
     <div class="brand" style="padding-bottom:22px">
-      <div class="brand-mark" data-icone-marca="app" data-icone-tamanho="38"></div>
+      <div class="brand-mark" data-icone-marca="app" data-icone-tamanho="44"></div>
       <div><div class="brand-name">MASTER ENERGY</div><div class="brand-sub">Gestão de SST</div></div>
     </div>
     <h1 id="authTitle">Entrar no sistema</h1>
@@ -355,25 +356,25 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
   <div id="appScreen" class="hidden app-shell">
     <aside class="sidebar">
       <div class="brand">
-        <div class="brand-mark" data-icone-marca="app" data-icone-tamanho="38"></div>
+        <div class="brand-mark" data-icone-marca="app" data-icone-tamanho="44"></div>
         <div><div class="brand-name">MASTER ENERGY</div><div class="brand-sub">Gestão de SST</div></div>
       </div>
 
       <div class="sidebar-nav">
       <div class="nav-group-label">Visão geral</div>
-      <button class="nav-item btn-ghost" id="tabDashBtn"><span data-icone-marca="dashboard" data-icone-tamanho="17" style="display:inline-flex"></span>Dashboard</button>
-      <button class="nav-item btn-ghost" id="tabBuscaBtn"><span data-icone-marca="pesquisar" data-icone-tamanho="17" style="display:inline-flex"></span>Ficha Completa</button>
+      <button class="nav-item btn-ghost" id="tabDashBtn"><span data-icone-marca="dashboard" data-icone-tamanho="30" style="display:inline-flex"></span>Dashboard</button>
+      <button class="nav-item btn-ghost" id="tabBuscaBtn"><span data-icone-marca="pesquisar" data-icone-tamanho="30" style="display:inline-flex"></span>Ficha Completa</button>
 
       <div class="nav-group-label">Cadastro</div>
-      <button class="nav-item btn-primary" id="tabFuncBtn"><span data-icone-marca="funcionarios" data-icone-tamanho="17" style="display:inline-flex"></span>Funcionários</button>
+      <button class="nav-item btn-primary" id="tabFuncBtn"><span data-icone-marca="funcionarios" data-icone-tamanho="30" style="display:inline-flex"></span>Funcionários</button>
 
       <div class="nav-group-label">Documentos monitorados</div>
-      <button class="nav-item btn-ghost" id="tabTreinoBtn"><span data-icone-marca="cursos-nr" data-icone-tamanho="17" style="display:inline-flex"></span>Treinamentos / NRs</button>
-      <button class="nav-item btn-ghost" id="tabAsoBtn"><span data-icone-marca="aso-medico" data-icone-tamanho="17" style="display:inline-flex"></span>ASOs</button>
-      <button class="nav-item btn-ghost" id="tabEpiBtn"><span data-icone-marca="ficha-epis" data-icone-tamanho="17" style="display:inline-flex"></span>EPIs</button>
-      <button class="nav-item btn-ghost" id="tabIntegBtn"><span data-icone-marca="integracao" data-icone-tamanho="17" style="display:inline-flex"></span>Integração de Cliente</button>
+      <button class="nav-item btn-ghost" id="tabTreinoBtn"><span data-icone-marca="cursos-nr" data-icone-tamanho="30" style="display:inline-flex"></span>Treinamentos / NRs</button>
+      <button class="nav-item btn-ghost" id="tabAsoBtn"><span data-icone-marca="aso-medico" data-icone-tamanho="30" style="display:inline-flex"></span>ASOs</button>
+      <button class="nav-item btn-ghost" id="tabEpiBtn"><span data-icone-marca="ficha-epis" data-icone-tamanho="30" style="display:inline-flex"></span>EPIs</button>
+      <button class="nav-item btn-ghost" id="tabIntegBtn"><span data-icone-marca="integracao" data-icone-tamanho="30" style="display:inline-flex"></span>Integração de Cliente</button>
       <button class="nav-item btn-ghost" id="tabFeriasBtn"><svg data-lucide="palmtree"></svg>Férias</button>
-      <button class="nav-item btn-ghost" id="tabPontoBtn"><span data-icone-marca="folha-pagamento" data-icone-tamanho="17" style="display:inline-flex"></span>Folha de Ponto</button>
+      <button class="nav-item btn-ghost" id="tabPontoBtn"><span data-icone-marca="folha-pagamento" data-icone-tamanho="30" style="display:inline-flex"></span>Folha de Ponto</button>
       </div>
 
       <div class="sidebar-foot">
@@ -394,7 +395,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
           <input type="text" id="topbarBuscaTermo" placeholder="Buscar funcionário…">
         </div>
         <button class="topbar-icon-btn" id="topbarAlertasBtn" aria-label="Alertas">
-          <span data-icone-marca="alertas" data-icone-tamanho="18" style="display:inline-flex"></span>
+          <span data-icone-marca="alertas" data-icone-tamanho="26" style="display:inline-flex"></span>
           <span class="topbar-badge hidden" id="topbarAlertasBadge">0</span>
         </button>
       </div>
@@ -1637,7 +1638,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
       const textoStatus = { apto: 'Em Dia', pendente: 'A Vencer', bloqueado: 'Vencido' }[statusGeral] || statusGeral;
       return `
       <tr${r.bloqueadoEntrada ? ' class="linha-bloqueada"' : ''}>
-        <td>${linkNomeComAvatar(f.nome)}${r.bloqueadoEntrada ? `<div class="aviso-bloqueio">${iconeMarca('cadeado', 12)} ENTRADA BLOQUEADA</div>` : ''}</td>
+        <td>${linkNomeComAvatar(f.nome)}${r.bloqueadoEntrada ? `<div class="aviso-bloqueio">${iconeMarca('cadeado', 18)} ENTRADA BLOQUEADA</div>` : ''}</td>
         <td>${f.cargo || '—'}</td>
         <td>${f.cpf || '—'}</td>
         <td>${f.matricula || '—'}</td>
