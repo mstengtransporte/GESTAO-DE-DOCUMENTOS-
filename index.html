@@ -94,7 +94,7 @@ td{font-variant-numeric:tabular-nums;}
 /* ---- Aviso de "Entrada Bloqueada" — ASO ou NR-35/NR-10 vencidos, o mais crítico do sistema ---- */
 .linha-bloqueada{background:rgba(220,38,38,.06);}
 .aviso-bloqueio{
-  display:inline-block;margin-top:3px;font-size:9.5px;font-weight:800;letter-spacing:.03em;
+  display:inline-flex;align-items:center;gap:4px;margin-top:3px;font-size:9.5px;font-weight:800;letter-spacing:.03em;
   color:#fff;background:#DC2626;padding:2px 7px;border-radius:5px;
   animation:pulso-bloqueio 1.1s ease-in-out infinite;
 }
@@ -306,7 +306,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
   <div id="authScreen" class="auth-page">
   <div class="card auth-card">
     <div class="brand" style="padding-bottom:22px">
-      <div class="brand-mark"><svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v6c0 5.2 3.8 9.4 9 10.5 5.2-1.1 9-5.3 9-10.5V7l-9-5Z"/><path d="m9 12 2 2 4-4"/></svg></div>
+      <div class="brand-mark" data-icone-marca="app" data-icone-tamanho="38"></div>
       <div><div class="brand-name">MASTER ENERGY</div><div class="brand-sub">Gestão de SST</div></div>
     </div>
     <h1 id="authTitle">Entrar no sistema</h1>
@@ -355,25 +355,25 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
   <div id="appScreen" class="hidden app-shell">
     <aside class="sidebar">
       <div class="brand">
-        <div class="brand-mark"><svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v6c0 5.2 3.8 9.4 9 10.5 5.2-1.1 9-5.3 9-10.5V7l-9-5Z"/><path d="m9 12 2 2 4-4"/></svg></div>
+        <div class="brand-mark" data-icone-marca="app" data-icone-tamanho="38"></div>
         <div><div class="brand-name">MASTER ENERGY</div><div class="brand-sub">Gestão de SST</div></div>
       </div>
 
       <div class="sidebar-nav">
       <div class="nav-group-label">Visão geral</div>
-      <button class="nav-item btn-ghost" id="tabDashBtn"><svg data-lucide="layout-dashboard"></svg>Dashboard</button>
-      <button class="nav-item btn-ghost" id="tabBuscaBtn"><svg data-lucide="search"></svg>Ficha Completa</button>
+      <button class="nav-item btn-ghost" id="tabDashBtn"><span data-icone-marca="dashboard" data-icone-tamanho="17" style="display:inline-flex"></span>Dashboard</button>
+      <button class="nav-item btn-ghost" id="tabBuscaBtn"><span data-icone-marca="pesquisar" data-icone-tamanho="17" style="display:inline-flex"></span>Ficha Completa</button>
 
       <div class="nav-group-label">Cadastro</div>
-      <button class="nav-item btn-primary" id="tabFuncBtn"><svg data-lucide="users"></svg>Funcionários</button>
+      <button class="nav-item btn-primary" id="tabFuncBtn"><span data-icone-marca="funcionarios" data-icone-tamanho="17" style="display:inline-flex"></span>Funcionários</button>
 
       <div class="nav-group-label">Documentos monitorados</div>
-      <button class="nav-item btn-ghost" id="tabTreinoBtn"><svg data-lucide="graduation-cap"></svg>Treinamentos / NRs</button>
-      <button class="nav-item btn-ghost" id="tabAsoBtn"><svg data-lucide="stethoscope"></svg>ASOs</button>
-      <button class="nav-item btn-ghost" id="tabEpiBtn"><svg data-lucide="shield"></svg>EPIs</button>
-      <button class="nav-item btn-ghost" id="tabIntegBtn"><svg data-lucide="building-2"></svg>Integração de Cliente</button>
+      <button class="nav-item btn-ghost" id="tabTreinoBtn"><span data-icone-marca="cursos-nr" data-icone-tamanho="17" style="display:inline-flex"></span>Treinamentos / NRs</button>
+      <button class="nav-item btn-ghost" id="tabAsoBtn"><span data-icone-marca="aso-medico" data-icone-tamanho="17" style="display:inline-flex"></span>ASOs</button>
+      <button class="nav-item btn-ghost" id="tabEpiBtn"><span data-icone-marca="ficha-epis" data-icone-tamanho="17" style="display:inline-flex"></span>EPIs</button>
+      <button class="nav-item btn-ghost" id="tabIntegBtn"><span data-icone-marca="integracao" data-icone-tamanho="17" style="display:inline-flex"></span>Integração de Cliente</button>
       <button class="nav-item btn-ghost" id="tabFeriasBtn"><svg data-lucide="palmtree"></svg>Férias</button>
-      <button class="nav-item btn-ghost" id="tabPontoBtn"><svg data-lucide="clock"></svg>Folha de Ponto</button>
+      <button class="nav-item btn-ghost" id="tabPontoBtn"><span data-icone-marca="folha-pagamento" data-icone-tamanho="17" style="display:inline-flex"></span>Folha de Ponto</button>
       </div>
 
       <div class="sidebar-foot">
@@ -394,7 +394,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
           <input type="text" id="topbarBuscaTermo" placeholder="Buscar funcionário…">
         </div>
         <button class="topbar-icon-btn" id="topbarAlertasBtn" aria-label="Alertas">
-          <svg class="icon" data-lucide="bell" style="margin:0"></svg>
+          <span data-icone-marca="alertas" data-icone-tamanho="18" style="display:inline-flex"></span>
           <span class="topbar-badge hidden" id="topbarAlertasBadge">0</span>
         </button>
       </div>
@@ -995,6 +995,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
     wireAppForm();
     wireResetForm();
     if (window.lucide) lucide.createIcons();
+    preencherIconesMarcaEstaticos();
 
     // Detecta quando a pessoa chega pelo link de "esqueci minha senha" vindo do e-mail
     sb.auth.onAuthStateChange((event) => {
@@ -1636,7 +1637,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
       const textoStatus = { apto: 'Em Dia', pendente: 'A Vencer', bloqueado: 'Vencido' }[statusGeral] || statusGeral;
       return `
       <tr${r.bloqueadoEntrada ? ' class="linha-bloqueada"' : ''}>
-        <td>${linkNomeComAvatar(f.nome)}${r.bloqueadoEntrada ? '<div class="aviso-bloqueio">🚨 ENTRADA BLOQUEADA</div>' : ''}</td>
+        <td>${linkNomeComAvatar(f.nome)}${r.bloqueadoEntrada ? `<div class="aviso-bloqueio">${iconeMarca('cadeado', 12)} ENTRADA BLOQUEADA</div>` : ''}</td>
         <td>${f.cargo || '—'}</td>
         <td>${f.cpf || '—'}</td>
         <td>${f.matricula || '—'}</td>
@@ -1799,6 +1800,181 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
       return texto; // não era um caso de acento quebrado — devolve como veio, sem arriscar estragar
     }
   }
+  const ICONES_MARCA_RAW = {
+    'status-em-dia': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" fill="none">
+<defs>
+ <radialGradient id="g" cx="30%" cy="25%" r="78%"><stop offset="0" stop-color="#43EF79" stop-opacity=".42"/><stop offset=".55" stop-color="#079447" stop-opacity=".18"/><stop offset="1" stop-color="#061A2D" stop-opacity=".03"/></radialGradient>
+ <filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="12" result="b"/><feFlood flood-color="#43EF79" flood-opacity=".34"/><feComposite in2="b" operator="in"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<circle cx="256" cy="256" r="196" fill="url(#g)" stroke="#43EF79" stroke-opacity=".30" stroke-width="3"/>
+<circle cx="256" cy="256" r="156" fill="#079447" fill-opacity=".08" stroke="#43EF79" stroke-opacity=".12" stroke-width="2"/>
+<g transform="translate(160 160) scale(8)" stroke="#43EF79" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"><circle cx="12" cy="12" r="8.5"/><path d="m8 12 2.5 2.5L16.5 9"/></g>
+</svg>`,
+    'status-a-vencer': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" fill="none">
+<defs>
+ <radialGradient id="g" cx="30%" cy="25%" r="78%"><stop offset="0" stop-color="#FFD04A" stop-opacity=".42"/><stop offset=".55" stop-color="#F08A00" stop-opacity=".18"/><stop offset="1" stop-color="#061A2D" stop-opacity=".03"/></radialGradient>
+ <filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="12" result="b"/><feFlood flood-color="#FFD04A" flood-opacity=".34"/><feComposite in2="b" operator="in"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<circle cx="256" cy="256" r="196" fill="url(#g)" stroke="#FFD04A" stroke-opacity=".30" stroke-width="3"/>
+<circle cx="256" cy="256" r="156" fill="#F08A00" fill-opacity=".08" stroke="#FFD04A" stroke-opacity=".12" stroke-width="2"/>
+<g transform="translate(160 160) scale(8)" stroke="#FFD04A" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3 2"/></g>
+</svg>`,
+    'status-pendente': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" fill="none">
+<defs>
+ <radialGradient id="g" cx="30%" cy="25%" r="78%"><stop offset="0" stop-color="#FFAB3D" stop-opacity=".42"/><stop offset=".55" stop-color="#E66A00" stop-opacity=".18"/><stop offset="1" stop-color="#061A2D" stop-opacity=".03"/></radialGradient>
+ <filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="12" result="b"/><feFlood flood-color="#FFAB3D" flood-opacity=".34"/><feComposite in2="b" operator="in"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<circle cx="256" cy="256" r="196" fill="url(#g)" stroke="#FFAB3D" stroke-opacity=".30" stroke-width="3"/>
+<circle cx="256" cy="256" r="156" fill="#E66A00" fill-opacity=".08" stroke="#FFAB3D" stroke-opacity=".12" stroke-width="2"/>
+<g transform="translate(160 160) scale(8)" stroke="#FFAB3D" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v6M12 16.5h.01"/></g>
+</svg>`,
+    'status-vencido': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" fill="none">
+<defs>
+ <radialGradient id="g" cx="30%" cy="25%" r="78%"><stop offset="0" stop-color="#FF5360" stop-opacity=".42"/><stop offset=".55" stop-color="#C91F2A" stop-opacity=".18"/><stop offset="1" stop-color="#061A2D" stop-opacity=".03"/></radialGradient>
+ <filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="12" result="b"/><feFlood flood-color="#FF5360" flood-opacity=".34"/><feComposite in2="b" operator="in"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<circle cx="256" cy="256" r="196" fill="url(#g)" stroke="#FF5360" stroke-opacity=".30" stroke-width="3"/>
+<circle cx="256" cy="256" r="156" fill="#C91F2A" fill-opacity=".08" stroke="#FF5360" stroke-opacity=".12" stroke-width="2"/>
+<g transform="translate(160 160) scale(8)" stroke="#FF5360" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"><circle cx="12" cy="12" r="8.5"/><path d="m8.5 8.5 7 7M15.5 8.5l-7 7"/></g>
+</svg>`,
+    'dashboard': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" fill="none">
+<defs>
+ <radialGradient id="g" cx="30%" cy="25%" r="78%"><stop offset="0" stop-color="#0A9EF0" stop-opacity=".42"/><stop offset=".55" stop-color="#075DB5" stop-opacity=".18"/><stop offset="1" stop-color="#061A2D" stop-opacity=".03"/></radialGradient>
+ <filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="12" result="b"/><feFlood flood-color="#0A9EF0" flood-opacity=".34"/><feComposite in2="b" operator="in"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<circle cx="256" cy="256" r="196" fill="url(#g)" stroke="#0A9EF0" stroke-opacity=".30" stroke-width="3"/>
+<circle cx="256" cy="256" r="156" fill="#075DB5" fill-opacity=".08" stroke="#0A9EF0" stroke-opacity=".12" stroke-width="2"/>
+<g transform="translate(160 160) scale(8)" stroke="#0A9EF0" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"><path d="M4 11.5 12 4l8 7.5v8a1.5 1.5 0 0 1-1.5 1.5h-5v-6h-3v6h-5A1.5 1.5 0 0 1 4 19.5z"/></g>
+</svg>`,
+    'funcionarios': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" fill="none">
+<defs>
+ <radialGradient id="g" cx="30%" cy="25%" r="78%"><stop offset="0" stop-color="#12A8F2" stop-opacity=".42"/><stop offset=".55" stop-color="#075DB5" stop-opacity=".18"/><stop offset="1" stop-color="#061A2D" stop-opacity=".03"/></radialGradient>
+ <filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="12" result="b"/><feFlood flood-color="#12A8F2" flood-opacity=".34"/><feComposite in2="b" operator="in"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<circle cx="256" cy="256" r="196" fill="url(#g)" stroke="#12A8F2" stroke-opacity=".30" stroke-width="3"/>
+<circle cx="256" cy="256" r="156" fill="#075DB5" fill-opacity=".08" stroke="#12A8F2" stroke-opacity=".12" stroke-width="2"/>
+<g transform="translate(160 160) scale(8)" stroke="#12A8F2" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-3.4 2.2-5.2 5.5-5.2s5.1 1.8 5.5 5.2M16 5.5a3 3 0 0 1 0 5.8M16 14.8c2.6.1 4.2 1.8 4.5 4.2"/></g>
+</svg>`,
+    'cursos-nr': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" fill="none">
+<defs>
+ <radialGradient id="g" cx="30%" cy="25%" r="78%"><stop offset="0" stop-color="#29E66F" stop-opacity=".42"/><stop offset=".55" stop-color="#0B9D51" stop-opacity=".18"/><stop offset="1" stop-color="#061A2D" stop-opacity=".03"/></radialGradient>
+ <filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="12" result="b"/><feFlood flood-color="#29E66F" flood-opacity=".34"/><feComposite in2="b" operator="in"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<circle cx="256" cy="256" r="196" fill="url(#g)" stroke="#29E66F" stroke-opacity=".30" stroke-width="3"/>
+<circle cx="256" cy="256" r="156" fill="#0B9D51" fill-opacity=".08" stroke="#29E66F" stroke-opacity=".12" stroke-width="2"/>
+<g transform="translate(160 160) scale(8)" stroke="#29E66F" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"><path d="M3 7.5 12 4l9 3.5-9 3.5z"/><path d="M6 10v5c2.8 2.8 9.2 2.8 12 0v-5M21 8v5"/></g>
+</svg>`,
+    'aso-medico': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" fill="none">
+<defs>
+ <radialGradient id="g" cx="30%" cy="25%" r="78%"><stop offset="0" stop-color="#28E28A" stop-opacity=".42"/><stop offset=".55" stop-color="#078B62" stop-opacity=".18"/><stop offset="1" stop-color="#061A2D" stop-opacity=".03"/></radialGradient>
+ <filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="12" result="b"/><feFlood flood-color="#28E28A" flood-opacity=".34"/><feComposite in2="b" operator="in"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<circle cx="256" cy="256" r="196" fill="url(#g)" stroke="#28E28A" stroke-opacity=".30" stroke-width="3"/>
+<circle cx="256" cy="256" r="156" fill="#078B62" fill-opacity=".08" stroke="#28E28A" stroke-opacity=".12" stroke-width="2"/>
+<g transform="translate(160 160) scale(8)" stroke="#28E28A" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"><path d="M7 3.5h10v17H7z"/><path d="M9.5 7h5M9.5 10h5M9.5 13h5M9.5 16h2.5"/><path d="m14 17 1.3 1.3L18 15.6"/></g>
+</svg>`,
+    'ficha-epis': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" fill="none">
+<defs>
+ <radialGradient id="g" cx="30%" cy="25%" r="78%"><stop offset="0" stop-color="#19D5C0" stop-opacity=".42"/><stop offset=".55" stop-color="#087F7A" stop-opacity=".18"/><stop offset="1" stop-color="#061A2D" stop-opacity=".03"/></radialGradient>
+ <filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="12" result="b"/><feFlood flood-color="#19D5C0" flood-opacity=".34"/><feComposite in2="b" operator="in"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<circle cx="256" cy="256" r="196" fill="url(#g)" stroke="#19D5C0" stroke-opacity=".30" stroke-width="3"/>
+<circle cx="256" cy="256" r="156" fill="#087F7A" fill-opacity=".08" stroke="#19D5C0" stroke-opacity=".12" stroke-width="2"/>
+<g transform="translate(160 160) scale(8)" stroke="#19D5C0" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"><path d="M5 14.5v-3a7 7 0 0 1 14 0v3"/><path d="M3.5 14.5h17v4h-17z"/><path d="M9 11.5h6"/></g>
+</svg>`,
+    'integracao': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" fill="none">
+<defs>
+ <radialGradient id="g" cx="30%" cy="25%" r="78%"><stop offset="0" stop-color="#9B6CFF" stop-opacity=".42"/><stop offset=".55" stop-color="#4F46E5" stop-opacity=".18"/><stop offset="1" stop-color="#061A2D" stop-opacity=".03"/></radialGradient>
+ <filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="12" result="b"/><feFlood flood-color="#9B6CFF" flood-opacity=".34"/><feComposite in2="b" operator="in"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<circle cx="256" cy="256" r="196" fill="url(#g)" stroke="#9B6CFF" stroke-opacity=".30" stroke-width="3"/>
+<circle cx="256" cy="256" r="156" fill="#4F46E5" fill-opacity=".08" stroke="#9B6CFF" stroke-opacity=".12" stroke-width="2"/>
+<g transform="translate(160 160) scale(8)" stroke="#9B6CFF" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"><circle cx="7" cy="12" r="3.5"/><circle cx="17" cy="12" r="3.5"/><path d="M10.5 12h5M8.5 9.5l3.5-3M15.5 14.5l-3.5 3"/></g>
+</svg>`,
+    'folha-pagamento': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" fill="none">
+<defs>
+ <radialGradient id="g" cx="30%" cy="25%" r="78%"><stop offset="0" stop-color="#22B7FF" stop-opacity=".42"/><stop offset=".55" stop-color="#1769AA" stop-opacity=".18"/><stop offset="1" stop-color="#061A2D" stop-opacity=".03"/></radialGradient>
+ <filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="12" result="b"/><feFlood flood-color="#22B7FF" flood-opacity=".34"/><feComposite in2="b" operator="in"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<circle cx="256" cy="256" r="196" fill="url(#g)" stroke="#22B7FF" stroke-opacity=".30" stroke-width="3"/>
+<circle cx="256" cy="256" r="156" fill="#1769AA" fill-opacity=".08" stroke="#22B7FF" stroke-opacity=".12" stroke-width="2"/>
+<g transform="translate(160 160) scale(8)" stroke="#22B7FF" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"><path d="M5 3.5h14v17H5z"/><path d="M8 8h8M8 11.5h8M8 15h5M8 18.5h3"/></g>
+</svg>`,
+    'pesquisar': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" fill="none">
+<defs>
+ <radialGradient id="g" cx="30%" cy="25%" r="78%"><stop offset="0" stop-color="#48C8FF" stop-opacity=".42"/><stop offset=".55" stop-color="#0284C7" stop-opacity=".18"/><stop offset="1" stop-color="#061A2D" stop-opacity=".03"/></radialGradient>
+ <filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="12" result="b"/><feFlood flood-color="#48C8FF" flood-opacity=".34"/><feComposite in2="b" operator="in"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<circle cx="256" cy="256" r="196" fill="url(#g)" stroke="#48C8FF" stroke-opacity=".30" stroke-width="3"/>
+<circle cx="256" cy="256" r="156" fill="#0284C7" fill-opacity=".08" stroke="#48C8FF" stroke-opacity=".12" stroke-width="2"/>
+<g transform="translate(160 160) scale(8)" stroke="#48C8FF" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"><circle cx="10.5" cy="10.5" r="5.5"/><path d="m15 15 5 5"/></g>
+</svg>`,
+    'alertas': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" fill="none">
+<defs>
+ <radialGradient id="g" cx="30%" cy="25%" r="78%"><stop offset="0" stop-color="#FF4856" stop-opacity=".42"/><stop offset=".55" stop-color="#C91F2B" stop-opacity=".18"/><stop offset="1" stop-color="#061A2D" stop-opacity=".03"/></radialGradient>
+ <filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="12" result="b"/><feFlood flood-color="#FF4856" flood-opacity=".34"/><feComposite in2="b" operator="in"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<circle cx="256" cy="256" r="196" fill="url(#g)" stroke="#FF4856" stroke-opacity=".30" stroke-width="3"/>
+<circle cx="256" cy="256" r="156" fill="#C91F2B" fill-opacity=".08" stroke="#FF4856" stroke-opacity=".12" stroke-width="2"/>
+<g transform="translate(160 160) scale(8)" stroke="#FF4856" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"><path d="M6 16.5h12l-1.3-2V10a4.7 4.7 0 0 0-9.4 0v4.5z"/><path d="M10 19a2 2 0 0 0 4 0"/></g>
+</svg>`,
+    'cadeado': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" fill="none">
+<defs>
+ <radialGradient id="g" cx="30%" cy="25%" r="78%"><stop offset="0" stop-color="#F5B942" stop-opacity=".42"/><stop offset=".55" stop-color="#B77908" stop-opacity=".18"/><stop offset="1" stop-color="#061A2D" stop-opacity=".03"/></radialGradient>
+ <filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="12" result="b"/><feFlood flood-color="#F5B942" flood-opacity=".34"/><feComposite in2="b" operator="in"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<circle cx="256" cy="256" r="196" fill="url(#g)" stroke="#F5B942" stroke-opacity=".30" stroke-width="3"/>
+<circle cx="256" cy="256" r="156" fill="#B77908" fill-opacity=".08" stroke="#F5B942" stroke-opacity=".12" stroke-width="2"/>
+<g transform="translate(160 160) scale(8)" stroke="#F5B942" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></g>
+</svg>`,
+    'app': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<defs>
+ <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#082641"/><stop offset="1" stop-color="#061A2D"/></linearGradient>
+ <linearGradient id="m" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#18B8FF"/><stop offset="1" stop-color="#0798E6"/></linearGradient>
+ <filter id="p"><feGaussianBlur stdDeviation="22" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<rect width="100%" height="100%" rx="225.28" fill="url(#bg)"/>
+<circle cx="512.0" cy="512.0" r="368.64" fill="#0798E6" opacity=".08"/>
+<path d="M204.8 686.08 L399.36 296.96 Q450.56 204.8 512.0 256.0 L583.68 348.16 L727.04 184.32 Q808.96 102.4 839.68 184.32 L768.0 430.08 Q727.04 563.2 645.12 604.16 Q583.68 624.64 614.4 501.76 L655.36 358.4 L532.48 481.28 L440.32 624.64 Q389.12 737.28 317.44 716.8 Z" fill="url(#m)" filter="url(#p)"/>
+<path d="M655.36 481.28 L778.24 358.4 L727.04 614.4 Q696.32 716.8 624.64 665.6 Z" fill="#075DB5"/>
+</svg>`,
+  };
+
+  // Renderiza um ícone de marca própria da Master Energy (SVG com gradiente/brilho embutido).
+  // Cada instância recebe IDs únicos internamente — os SVGs originais reaproveitam os mesmos
+  // nomes de id (ex: "g", "glow", ou no caso do logo "bg", "m", "p"), e como vários ícones vão
+  // pra mesma página, preciso trocar TODO id interno por um exclusivo pra cada renderização,
+  // senão o segundo ícone "rouba" sem querer o gradiente/brilho definido pelo primeiro.
+  let __contadorIconeMarca = 0;
+  function iconeMarca(chave, tamanhoPx) {
+    const bruto = ICONES_MARCA_RAW[chave];
+    if (!bruto) return '';
+    __contadorIconeMarca++;
+    const sufixo = __contadorIconeMarca;
+    const tam = tamanhoPx || 22;
+    let svg = bruto.replace(/width="\d+"/, `width="${tam}"`).replace(/height="\d+"/, `height="${tam}"`);
+    // Acha TODO id="..." definido nesse SVG e troca ele (e as referências url(#...) que apontam
+    // pra ele) por uma versão exclusiva dessa renderização — funciona pra qualquer nome de id.
+    const idsEncontrados = new Set(Array.from(svg.matchAll(/id="([^"]+)"/g)).map(m => m[1]));
+    idsEncontrados.forEach(idOriginal => {
+      const idNovo = `${idOriginal}-${sufixo}`;
+      svg = svg.replace(new RegExp(`id="${idOriginal}"`, 'g'), `id="${idNovo}"`)
+                .replace(new RegExp(`url\\(#${idOriginal}\\)`, 'g'), `url(#${idNovo})`);
+    });
+    return svg;
+  }
+
+  // Preenche todo marcador estático [data-icone-marca] da página (usado na tela de login,
+  // barra lateral e topbar) — precisa rodar depois que o HTML já existe na tela.
+  function preencherIconesMarcaEstaticos() {
+    document.querySelectorAll('[data-icone-marca]').forEach(el => {
+      const chave = el.getAttribute('data-icone-marca');
+      const tamanho = parseInt(el.getAttribute('data-icone-tamanho')) || 22;
+      el.innerHTML = iconeMarca(chave, tamanho);
+    });
+  }
+
+
   function normalizarTexto(t) {
     return (t || '').toString().trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
   }
