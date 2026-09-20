@@ -105,7 +105,17 @@ async function esperarTempoMinimoSplash() {
   }
 }
 
+// FASE DE TESTES: login desligado por enquanto (Edson pediu pra tirar até o
+// sistema estar pronto). Pra reativar depois, troque pra "true" aqui E rode
+// o SQL "supabase_reativar_login.sql" no Supabase.
+const EXIGIR_LOGIN = false;
+
 async function iniciar() {
+  if (!EXIGIR_LOGIN) {
+    await esperarTempoMinimoSplash();
+    await entrarNoApp({ id: '00000000-0000-0000-0000-000000000000', email: 'teste@masterenergy.com' });
+    return;
+  }
   const vieloDeRecuperacaoSenha =
     window.location.hash.includes("type=recovery") ||
     window.location.search.includes("type=recovery");
@@ -237,19 +247,26 @@ function mostrarAvisoPapel(tipo, detalhe) {
 
 async function entrarNoApp(user) {
   usuarioAtual = user;
-  const resultadoPerfil = await buscarPerfil(user.id);
 
-  if (resultadoPerfil && resultadoPerfil.erro) {
-    // Não deu pra confirmar o perfil de verdade — por segurança, trata como acesso
-    // negado também. NUNCA deixa passar assumindo admin "por via das dúvidas".
-    perfilAtual = null;
-    erroAoBuscarPerfil = true;
-    await bloquearAcessoNaoAdmin();
-    return;
+  if (!EXIGIR_LOGIN) {
+    // Sem login por enquanto — entra direto como admin, pra dar pra ver e testar tudo.
+    perfilAtual = { id: user.id, nome: 'Acesso sem login (fase de testes)', email: user.email, perfil: 'admin_mestre' };
+    erroAoBuscarPerfil = false;
+  } else {
+    const resultadoPerfil = await buscarPerfil(user.id);
+
+    if (resultadoPerfil && resultadoPerfil.erro) {
+      // Não deu pra confirmar o perfil de verdade — por segurança, trata como acesso
+      // negado também. NUNCA deixa passar assumindo admin "por via das dúvidas".
+      perfilAtual = null;
+      erroAoBuscarPerfil = true;
+      await bloquearAcessoNaoAdmin();
+      return;
+    }
+
+    perfilAtual = resultadoPerfil;
+    erroAoBuscarPerfil = false;
   }
-
-  perfilAtual = resultadoPerfil;
-  erroAoBuscarPerfil = false;
 
   // ============================================================================
   // TRAVA DE SEGURANÇA — barra aqui, ANTES de mostrar qualquer tela do sistema ou
