@@ -1,0 +1,409 @@
+:root{
+  --azul-claro: #00A3E0;
+  --azul-escuro: #0D3D63;
+  --azul-medio: #1B5F8C;
+  --fundo: #EAF4FA;
+  --superficie: #FFFFFF;
+  --borda: #D3E7F2;
+  --texto: #0D3D63;
+  --texto-fraco: #5B7A93;
+  --sucesso: #1FA35A;
+  --erro: #D64545;
+}
+
+*{ box-sizing: border-box; }
+
+body{
+  margin: 0;
+  min-height: 100vh;
+  background: var(--fundo);
+  color: var(--texto);
+  font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+}
+
+/* CORREÇÃO DE BUG — faixa branca no rodapé da tela de login (2026-08-31):
+   enquanto uma tela de autenticação (splash/login/cadastro/esqueci senha) está
+   na tela, o body fica com a MESMA cor escura da imagem de fundo. Assim, se
+   sobrar um pedacinho de espaço por qualquer motivo (zoom, moldura de janela,
+   navegador diferente), esse pedacinho fica escuro que nem a imagem, nunca
+   aparece como uma faixa branca cortando ela — não depende mais de acertar a
+   altura em pixel perfeito. */
+body.fundo-tela-auth{
+  background: #0b1220;
+  /* CORREÇÃO (2026-08-31): em vez de continuar tentando acertar a altura EXATA da
+     tela (frágil, já tentamos 2 vezes sem sucesso total), a rolagem fica travada de
+     propósito enquanto uma tela de login/cadastro está ativa. Sem conseguir rolar,
+     não tem como sobrar espaço nenhum pra aparecer embaixo — nem branco, nem escuro.
+     Isso NÃO afeta o app principal (a classe só existe enquanto está na tela de
+     login/cadastro/etc — assim que entra no sistema, a rolagem volta ao normal). */
+  overflow: hidden;
+}
+html.fundo-tela-auth{ overflow: hidden; }
+
+.hidden{ display: none !important; }
+
+.tela-auth{
+  /* CORREÇÃO DE BUG (2026-08-31): antes era "min-height:100vh" — ou seja,
+     "no mínimo a altura da tela". Em algumas janelas a página acabava ficando
+     um pouco MAIOR que 100vh (zoom, moldura da janela, etc.), sobrando um
+     pedaço sem imagem nenhuma por baixo, mostrando a cor de fundo padrão do
+     site (parecendo uma faixa branca cortando a foto). Agora é "height:100vh"
+     (altura EXATA, nunca mais que isso) — a imagem de fundo sempre cobre a
+     tela inteira, sem sobrar nada. Se o conteúdo do formulário for maior que
+     a tela (celular pequeno, por exemplo), só o card rola por dentro
+     (overflow-y:auto), a imagem de fundo continua fixa e completa.
+  */
+  height: 100vh;
+  height: 100dvh; /* versão mais precisa em celular; navegador antigo ignora e fica com a de cima */
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.cartao-auth{
+  background: var(--superficie);
+  width: 100%;
+  max-width: 380px;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(13, 61, 99, 0.12);
+  padding: 32px 28px;
+}
+
+.cartao-auth h1{
+  font-size: 20px;
+  margin: 0 0 4px;
+  color: var(--azul-escuro);
+  text-align: center;
+}
+
+.cartao-auth .subtitulo{
+  margin: 0 0 24px;
+  text-align: center;
+  color: var(--texto-fraco);
+  font-size: 13px;
+}
+
+.cartao-auth form{
+  display: flex;
+  flex-direction: column;
+}
+
+.cartao-auth label{
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--azul-escuro);
+  margin-bottom: 6px;
+}
+
+.cartao-auth input{
+  width: 100%;
+  padding: 11px 13px;
+  border: 1.5px solid var(--borda);
+  border-radius: 10px;
+  font-size: 15px;
+  margin-bottom: 14px;
+  outline: none;
+  font-family: inherit;
+}
+
+.cartao-auth input:focus{
+  border-color: var(--azul-claro);
+}
+
+.dica-campo{
+  margin: -10px 0 14px;
+  font-size: 11.5px;
+  color: var(--texto-fraco);
+}
+
+.cartao-auth button[type="submit"]{
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: var(--azul-escuro);
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  margin-top: 6px;
+}
+.cartao-auth button[type="submit"]:hover{ background: var(--azul-claro); }
+.cartao-auth button[type="submit"]:disabled{ opacity: .6; cursor: not-allowed; }
+
+.link-trocar{
+  text-align: center;
+  font-size: 13px;
+  color: var(--texto-fraco);
+  margin: 18px 0 0;
+}
+.link-trocar a{
+  color: var(--azul-claro);
+  font-weight: 600;
+  text-decoration: none;
+}
+.link-trocar a:hover{ text-decoration: underline; }
+
+.mensagem-erro{
+  background: #FCE1DF;
+  color: #B4180F;
+  border: 1px solid #F3A9A3;
+  border-radius: 9px;
+  padding: 9px 12px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.mensagem-sucesso{
+  background: #E7F8EE;
+  color: var(--sucesso);
+  border: 1px solid #BEEBCF;
+  border-radius: 9px;
+  padding: 9px 12px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.spinner{
+  width: 34px;
+  height: 34px;
+  border: 4px solid var(--borda);
+  border-top-color: var(--azul-claro);
+  border-radius: 50%;
+  animation: girar 0.8s linear infinite;
+  margin-bottom: 12px;
+}
+@keyframes girar{
+  to{ transform: rotate(360deg); }
+}
+.tela-auth p{ color: var(--texto-fraco); font-size: 13px; }
+
+.tela-splash{ background: var(--azul-escuro, #0D3D63); }
+.splash-moldura{
+  background: #fff;
+  padding: 14px;
+  border-radius: 20px;
+  box-shadow: 0 10px 34px rgba(0,0,0,.35);
+  margin-bottom: 22px;
+  max-width: 340px;
+  width: 100%;
+}
+.splash-imagem{
+  display: block;
+  width: 100%;
+  border-radius: 8px;
+}
+.splash-marca{
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: .3px;
+  margin: 4px 0 20px;
+  text-align: center;
+}
+
+.cabecalho-app{
+  background: var(--azul-escuro);
+  color: #fff;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.cabecalho-app h1{
+  font-size: 18px;
+  margin: 0;
+}
+.usuario-info{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+.badge-admin{
+  background: var(--azul-claro);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 20px;
+}
+.btn-logout{
+  background: none;
+  border: 1px solid var(--azul-medio);
+  color: #fff;
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 12.5px;
+}
+.btn-logout:hover{ background: var(--azul-medio); }
+
+.abas-app{
+  display: flex;
+  gap: 8px;
+  padding: 12px 20px 0;
+  background: var(--fundo);
+  border-bottom: 1px solid var(--borda);
+}
+.aba{
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: 10px 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--texto-fraco);
+  cursor: pointer;
+}
+.aba.ativa{
+  color: var(--azul-escuro);
+  border-bottom-color: var(--azul-claro);
+}
+
+.conteudo-aba{
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 20px 60px;
+}
+.conteudo-aba h2{
+  color: var(--azul-escuro);
+  font-size: 19px;
+}
+
+.tabela-usuarios{
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface, #fff);
+  color: var(--texto, #0D3D63);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(13,61,99,.06);
+}
+.tabela-usuarios th, .tabela-usuarios td{
+  text-align: left;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  border-bottom: 1px solid var(--card-border, var(--borda));
+}
+.tabela-usuarios th{
+  background: var(--surface-2, #E3F5FC);
+  color: var(--texto, var(--azul-escuro));
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+}
+.tag-papel{
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 20px;
+}
+.tag-papel.admin{ background: var(--surface-2, #E3F5FC); color: var(--azul-claro); }
+.tag-papel.comum{ background: var(--surface-2, #F2F0EA); color: var(--text-muted, var(--texto-fraco)); }
+.btn-mini{
+  font-size: 11.5px;
+  font-weight: 600;
+  background: var(--surface, #fff);
+  border: 1px solid var(--card-border, var(--borda));
+  color: var(--texto, var(--azul-escuro));
+  border-radius: 8px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+.btn-mini:hover{ background: var(--bg, var(--fundo)); }
+
+.barra-conta-topo{
+  background: #0A2E4D;
+  color: #fff;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+  flex-wrap: wrap;
+}
+.btn-logout-topo{
+  background: none;
+  border: 1px solid #2C5478;
+  color: #fff;
+  border-radius: 8px;
+  padding: 5px 11px;
+  cursor: pointer;
+  font-size: 11.5px;
+}
+.btn-logout-topo:hover{ background: #123A5C; }
+.btn-logout-topo.hidden{ display: none !important; }
+
+.painel-usuarios-supabase{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.painel-usuarios-conteudo{
+  background: var(--surface, #fff);
+  color: var(--texto, #0D3D63);
+  width: 100%;
+  max-width: 480px;
+  max-height: 80vh;
+  overflow-y: auto;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+}
+
+/* ============================================================
+   FUNDO DA TELA DE LOGIN — só a tela de login mesmo (não mexe em
+   "esqueci a senha", "cadastro" nem na tela de carregamento), pra
+   dar identidade visual própria da Master Energy, diferenciando
+   de outros sites. O cartão tem fundo SÓLIDO (não transparente) —
+   assim, não importa qual parte da foto caia atrás dele em cada
+   formato de tela, nunca aparece nada vazando por trás, ficando
+   sempre legível, em qualquer tamanho de tela.
+   ============================================================ */
+#telaLogin{
+  /* CORREÇÃO DE BUG — PARTE 2 (2026-08-31): essa regra aqui, por ser um ID
+     (#telaLogin), tem prioridade sobre a classe genérica ".tela-auth" —
+     por isso a primeira correção não bastou, o "min-height:100vh" daqui
+     continuava valendo e sobrepondo a de lá. Corrigindo aqui também.
+  */
+  background: #0b1220 url('login-fundo-escala.jpg') center center / cover no-repeat;
+  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto;
+  position: relative;
+}
+#telaLogin .cartao-auth{
+  background: rgb(10,18,32);
+  border: 1px solid rgba(255,255,255,.14);
+  box-shadow: 0 20px 60px rgba(0,0,0,.6);
+}
+#telaLogin .cartao-auth h1{ color: #fff; }
+#telaLogin .cartao-auth .subtitulo{ color: #9ca3af; }
+#telaLogin .cartao-auth label{ color: #cfe3f5; }
+#telaLogin .cartao-auth input{
+  background: rgba(20,28,46,.8);
+  border-color: rgba(255,255,255,.18);
+  color: #fff;
+}
+#telaLogin .cartao-auth input::placeholder{ color: #7c8aa0; }
+#telaLogin .link-trocar{ color: #cfe3f5; }
+#telaLogin .link-trocar a{ color: #3ea6ff; }
+/* Mesmo botão "gradiente azul" usado no RDO, pra manter a identidade visual
+   igual nos dois sistemas. */
+#telaLogin .cartao-auth button[type="submit"]{
+  background: linear-gradient(135deg,#1457c8,#0d8fd8);
+}
+#telaLogin .cartao-auth button[type="submit"]:hover{
+  background: linear-gradient(135deg,#1457c8,#00A3E0);
+}
