@@ -22,7 +22,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js" defer></script>
 <style>
 /* ═══════════════════════════════════════════════════════════
-   RDO MASTER ENERGY — ULTRA PRO DESIGN
+   RDO ESF — ULTRA PRO DESIGN
    ═══════════════════════════════════════════════════════════ */
 :root{
   --bg:#dce3ee;
@@ -1734,7 +1734,7 @@ body.dark #workers-body tr:hover{background-color:rgba(58,110,232,.08)}
   <div class="topbar-left">
     <img class="topbar-logo" src="esf-logo-sidebar.svg" alt="ESF">
     <div class="topbar-brand">
-      <span class="topbar-brand-name">RDO MASTER ENERGY</span>
+      <span class="topbar-brand-name">RDO ESF</span>
       <span class="topbar-brand-tag">Montagem e Manutenção Industrial</span>
     </div>
     <div class="topbar-title">RDO — Diário de Obra PRO<small>Relatório Diário de Campo</small></div>
@@ -1792,6 +1792,9 @@ body.dark #workers-body tr:hover{background-color:rgba(58,110,232,.08)}
 <div id="aviso-operacional" class="no-print" style="background:#fef3c7;color:#7c5a00;border-bottom:2px solid #fd8a14;padding:7px 14px;font-size:12px;font-weight:800;text-align:center">
   ⚠️ Atenção: O RDO só será transmitido ao sistema após clicar em "Salvar e Enviar".
 </div>
+<div class="no-print" style="width:100%;max-width:960px;margin:12px auto 0;border-radius:16px;overflow:hidden;height:150px;background:#061224">
+  <img src="esf-banner-panoramico.png" alt="ESF ERP — Sistema de Gestão" style="width:100%;height:100%;object-fit:cover;object-position:center center">
+</div>
 
 <div class="page" id="rdo-page">
   <!-- A barra "RDOs do mesmo dia" (pills acumulando no topo a cada RDO salvo) foi
@@ -1809,7 +1812,7 @@ body.dark #workers-body tr:hover{background-color:rgba(58,110,232,.08)}
     <div class="banner-logo-wrap">
       <img class="banner-logo" src="esf-logo-sidebar.svg" alt="ESF">
       <div class="banner-brand">
-        <span class="banner-brand-name"><span class="bn-master">RDO Master</span> <span class="bn-energy">Energy</span></span>
+        <span class="banner-brand-name"><span class="bn-master">RDO</span> <span class="bn-energy">ESF</span></span>
         <span class="banner-brand-tag">Montagem e Manutenção Industrial</span>
       </div>
     </div>
@@ -1820,13 +1823,13 @@ body.dark #workers-body tr:hover{background-color:rgba(58,110,232,.08)}
     <div class="banner-title">
       <h1 id="banner-data-display">—</h1>
       <p id="banner-dia-display">Obra / Projeto</p>
-      <p style="font-size:8px;opacity:.5;letter-spacing:2px;margin-top:3px">MASTER ENERGY · MONTAGEM E MANUTENÇÃO INDUSTRIAL</p>
+      <p style="font-size:8px;opacity:.5;letter-spacing:2px;margin-top:3px">ESF · MONTAGEM E MANUTENÇÃO INDUSTRIAL</p>
     </div>
   </div>
 
   <!-- CABEÇALHO -->
   <div class="rdo-header">
-    <div class="rdo-header-bar">📋 IDENTIFICAÇÃO DO RELATÓRIO — MASTER ENERGY</div>
+    <div class="rdo-header-bar">📋 IDENTIFICAÇÃO DO RELATÓRIO — ESF</div>
     <div id="faixa-feriado-100" style="display:none;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#f5c518,#d4a017);color:#3a2a00;font-weight:900;font-size:11.5px;text-align:center;padding:7px 10px;border-bottom:2px solid #000;text-transform:uppercase;letter-spacing:.3px"></div>
     <div class="rdo-header-grid">
       <div class="hfield"><label>Nº RDO <span style="font-weight:400;font-size:9px;opacity:.7">(automático)</span></label><input type="text" id="h-nrdo" placeholder="RDO-001" readonly style="cursor:not-allowed;opacity:.85"></div>
@@ -2442,7 +2445,7 @@ function getSupabaseClient(){
           persistSession:true,
           autoRefreshToken:true,
           detectSessionInUrl:false,
-          storageKey:'rdo-master-energy-auth',
+          storageKey:'rdo-esf-auth',
           storage:window.localStorage
         }
       });
@@ -2475,7 +2478,7 @@ async function verificarSessaoEIniciar(){
   const overlay=document.getElementById('login-overlay');
   if(!EXIGIR_LOGIN){
     // Sem login por enquanto — entra direto como admin, pra dar pra ver e testar tudo.
-    usuarioAtual={id:'00000000-0000-0000-0000-000000000000', email:'teste@masterenergy.com', nome:'Acesso sem login (fase de testes)', papel:'admin_mestre', empresa_id:null};
+    usuarioAtual={id:'00000000-0000-0000-0000-000000000000', email:'teste@esf.com', nome:'Acesso sem login (fase de testes)', papel:'admin_mestre', empresa_id:null};
     removerTelaLogin();
     iniciarAppAposLogin();
     return;
@@ -8190,7 +8193,7 @@ function gerarPdfComJsPDF(){
 
   // Bloco esquerdo: marca + tagline (igual à tela)
   doc.setFont('helvetica','bold'); doc.setFontSize(11.5); st(C.white);
-  doc.text('MASTER ENERGY', marcaX, y+11);
+  doc.text('ESF', marcaX, y+11);
   doc.setFont('helvetica','normal'); doc.setFontSize(5.3); st([195,208,232]);
   doc.text('MONTAGEM E MANUTENÇÃO INDUSTRIAL', marcaX, y+15);
 
@@ -8205,7 +8208,7 @@ function gerarPdfComJsPDF(){
   doc.setFont('helvetica','bold'); doc.setFontSize(11); st(C.white);
   doc.text((dataFormatada||'—')+(dia?' — '+dia.split('-')[0]:''), M+CW-2, y+11, {align:'right'});
   doc.setFont('helvetica','normal'); doc.setFontSize(5); st([195,208,232]);
-  doc.text('MASTER ENERGY · MONTAGEM E MANUTENÇÃO INDUSTRIAL', M+CW-2, y+15, {align:'right'});
+  doc.text('ESF · MONTAGEM E MANUTENÇÃO INDUSTRIAL', M+CW-2, y+15, {align:'right'});
 
   y+=HDR_H+1;
 
@@ -8873,7 +8876,7 @@ async function exportarXLSX(){
   const ws1=wb.addWorksheet('RDO',{properties:{tabColor:{argb:'FF0A3C64'}}});
   const NCOL=11;
   ws1.mergeCells(1,1,1,NCOL);
-  ws1.getCell(1,1).value='MASTER ENERGY — MONTAGEM E MANUTENÇÃO INDUSTRIAL';
+  ws1.getCell(1,1).value='ESF — MONTAGEM E MANUTENÇÃO INDUSTRIAL';
   ws1.mergeCells(2,1,2,NCOL);
   ws1.getCell(2,1).value='DIÁRIO DE OBRA — RELATÓRIO DIÁRIO DE CAMPO (RDO)';
   for(let r=1;r<=2;r++){
@@ -10143,7 +10146,7 @@ async function exportarRelatorioAbsenteismo(){
     // Linha 1 — título corporativo
     ws.mergeCells(1,1,1,colunas.length);
     const tituloCell=ws.getCell(1,1);
-    tituloCell.value='MASTER ENERGY  •  RELATÓRIO GLOBAL DE ABSENTEÍSMO';
+    tituloCell.value='ESF  •  RELATÓRIO GLOBAL DE ABSENTEÍSMO';
     tituloCell.font={name:'Calibri',size:16,bold:true,color:{argb:BRANCO}};
     tituloCell.alignment={horizontal:'center',vertical:'middle'};
     tituloCell.fill={type:'pattern',pattern:'solid',fgColor:{argb:AZUL_MARINHO}};
@@ -10250,7 +10253,7 @@ async function exportarRelatorioAbsenteismo(){
     const carimbo=`${agora.getFullYear()}-${String(agora.getMonth()+1).padStart(2,'0')}-${String(agora.getDate()).padStart(2,'0')}_${String(agora.getHours()).padStart(2,'0')}h${String(agora.getMinutes()).padStart(2,'0')}`;
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
-    a.href=url;a.download=`Absenteismo_MasterEnergy_ateo_${carimbo}.xlsx`;
+    a.href=url;a.download=`Absenteismo_ESF_ateo_${carimbo}.xlsx`;
     document.body.appendChild(a);a.click();document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
@@ -10267,7 +10270,7 @@ function gerarRelatorioMultiplo(){
   const sL={sem:'SEM ATIVIDADE',and:'EM ANDAMENTO',ext:'EXTRA ESCOPO / ADICIONAL',par:'PARALISADO',blq:'ABSENTEÍSMO',conc:'CONCLUÍDO'};
   const wb=XLSX.utils.book_new();
   // ABA RESUMO
-  const resumoRows=[['MASTER ENERGY — RELATÓRIO CONSOLIDADO DE H.H'],[]];
+  const resumoRows=[['ESF — RELATÓRIO CONSOLIDADO DE H.H'],[]];
   resumoRows.push(['DATA','DIA','OBRA','RDO','ENCARREGADO','DISCIPLINA','TOTAL H.H','OSE01','OSE02','OSE03','OSE04','OSE05','OSE06']);
   let grandTotal=0;
   const detalhes=[];
@@ -10295,7 +10298,7 @@ function gerarRelatorioMultiplo(){
   // ABA POR RDO
   detalhes.forEach(({d,dataFmt,diaStr,oseTotals,total})=>{
     const h=d.header||{};
-    const rows=[['MASTER ENERGY — DIÁRIO DE OBRA'],[`Data: ${dataFmt} (${diaStr}) | RDO: ${h.nrdo||''} | Obra: ${(h.obra||'').toUpperCase()}`],[`Encarregado: ${(h.enc||'').toUpperCase()} | Disciplina: ${(h.disc||'').toUpperCase()}`],[]];
+    const rows=[['ESF — DIÁRIO DE OBRA'],[`Data: ${dataFmt} (${diaStr}) | RDO: ${h.nrdo||''} | Obra: ${(h.obra||'').toUpperCase()}`],[`Encarregado: ${(h.enc||'').toUpperCase()} | Disciplina: ${(h.disc||'').toUpperCase()}`],[]];
     rows.push(['#','FUNCIONÁRIO','FUNÇÃO','OSE01','OSE02','OSE03','OSE04','OSE05','OSE06','TOTAL H.H']);
     (d.workers||[]).forEach((w,i)=>{
       if(!w.name&&!w.hrs?.some(v=>v))return;
@@ -10318,7 +10321,7 @@ function gerarRelatorioMultiplo(){
   });
   const de=document.getElementById('mpdf-de').value||'';
   const ate=document.getElementById('mpdf-ate').value||'';
-  const fname=`RelatorioMasterEnergy_${de||'inicio'}_a_${ate||'fim'}.xlsx`;
+  const fname=`RelatorioESF_${de||'inicio'}_a_${ate||'fim'}.xlsx`;
   XLSX.writeFile(wb,fname);
   document.getElementById('multipdf-modal').classList.remove('show');
   showToast(`📥 Relatório exportado (${checks.length} RDOs)!`,'#6030bb');
@@ -10665,7 +10668,7 @@ async function exportarHorasExtrasExcel(){
 
   ws.mergeCells(1,1,3,LARG);
   const titulo=ws.getCell(1,1);
-  titulo.value='RDO MASTER ENERGY';
+  titulo.value='RDO ESF';
   titulo.font={name:'Arial',size:22,bold:true,color:{argb:'FFFFFFFF'}};
   titulo.alignment={horizontal:'center',vertical:'middle'};
   for(let r=1;r<=3;r++) for(let c=1;c<=LARG;c++) ws.getCell(r,c).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFD97706'}};
@@ -10811,7 +10814,7 @@ async function exportarHorasExtrasExcel(){
   const blob=new Blob([buffer],{type:'application/octet-stream'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
-  a.href=url; a.download=`HORAS_EXTRAS_MASTERENERGY_PERIODO_${dataBRArquivo(de)}_A_${dataBRArquivo(ate)}.xlsx`; a.click();
+  a.href=url; a.download=`HORAS_EXTRAS_ESF_PERIODO_${dataBRArquivo(de)}_A_${dataBRArquivo(ate)}.xlsx`; a.click();
   setTimeout(()=>URL.revokeObjectURL(url),3000);
   showToast('📥 Controle de Horas Extras exportado!','#fd8a14');
 }
@@ -11011,7 +11014,7 @@ async function construirWorkbookExtraEscopo(grupos,subtitulo){
 
   ws.mergeCells(1,1,3,LARG);
   const titulo=ws.getCell(1,1);
-  titulo.value='RDO MASTER ENERGY';
+  titulo.value='RDO ESF';
   titulo.font={name:'Arial',size:22,bold:true,color:{argb:'FFFFFFFF'}};
   titulo.alignment={horizontal:'center',vertical:'middle'};
   for(let r=1;r<=3;r++) for(let c=1;c<=LARG;c++) ws.getCell(r,c).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF158038'}};
@@ -11153,9 +11156,9 @@ async function exportarExtraEscopoExcel(){
     const g=grupos[0];
     nomeArquivo=`${sanitizarNomeArquivo(g.nrdo)} - EXTRA ESCOPO - ${dataBRArquivo(g.data)} - OBRA ${sanitizarNomeArquivo(g.obra).toUpperCase()} - DISCIPLINA ${sanitizarNomeArquivo(g.disc||'—').toUpperCase()} - ENCARREGADO ${sanitizarNomeArquivo(g.encarregado).toUpperCase()}.xlsx`;
   }else if(encFiltro){
-    nomeArquivo=`EXTRA_ESCOPO_MASTERENERGY_ENCARREGADO_${sanitizarNomeArquivo(encFiltro).toUpperCase().replace(/\s+/g,'_')}_PERIODO_${deArq}_A_${ateArq}.xlsx`;
+    nomeArquivo=`EXTRA_ESCOPO_ESF_ENCARREGADO_${sanitizarNomeArquivo(encFiltro).toUpperCase().replace(/\s+/g,'_')}_PERIODO_${deArq}_A_${ateArq}.xlsx`;
   }else{
-    nomeArquivo=`EXTRA_ESCOPO_MASTERENERGY_PERIODO_${deArq}_A_${ateArq}.xlsx`;
+    nomeArquivo=`EXTRA_ESCOPO_ESF_PERIODO_${deArq}_A_${ateArq}.xlsx`;
   }
   await baixarWorkbookExtraEscopo(wb,nomeArquivo);
   showToast('📥 Controle de Extra Escopo exportado com formatação!','#158038');
@@ -11369,7 +11372,7 @@ function gerarPdfExtraEscopo(grupos,subtitulo,tituloPrincipal,corTema){
   doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(255,255,255);
   doc.text(tituloPrincipal, M+CW/2, y+7, {align:'center'});
   doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
-  doc.text('MASTER ENERGY — MONTAGEM E MANUTENÇÃO INDUSTRIAL', M+CW/2, y+12.5, {align:'center'});
+  doc.text('ESF — MONTAGEM E MANUTENÇÃO INDUSTRIAL', M+CW/2, y+12.5, {align:'center'});
   y+=18;
 
   doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(90,90,90);
@@ -11467,7 +11470,7 @@ function compartilharExtraEscopoTodos(){
   const doc=gerarPdfExtraEscopo(grupos, `Período: ${de?formatarDataBR(de):'início'} até ${ate?formatarDataBR(ate):'hoje'}`);
   const agora=new Date();
   const carimbo=`${agora.getFullYear()}-${String(agora.getMonth()+1).padStart(2,'0')}-${String(agora.getDate()).padStart(2,'0')}`;
-  compartilharOuBaixarPdfExtraEscopo(doc,`Extra_Escopo_MasterEnergy_${carimbo}.pdf`,'Controle consolidado de Extra Escopo/Adicional');
+  compartilharOuBaixarPdfExtraEscopo(doc,`Extra_Escopo_ESF_${carimbo}.pdf`,'Controle consolidado de Extra Escopo/Adicional');
 }
 
 // ════════════════════════════════════════════════════════════
@@ -11779,7 +11782,7 @@ function compartilharAndamentoTodos(){
   const doc=gerarPdfExtraEscopo(grupos, `Período: ${de?formatarDataBR(de):'início'} até ${ate?formatarDataBR(ate):'hoje'}`, 'CONTROLE DE ANDAMENTO POR PROJETO', [26,82,200]);
   const agora=new Date();
   const carimbo=`${agora.getFullYear()}-${String(agora.getMonth()+1).padStart(2,'0')}-${String(agora.getDate()).padStart(2,'0')}`;
-  compartilharOuBaixarPdfExtraEscopo(doc,`Andamento_MasterEnergy_${carimbo}.pdf`,'Controle consolidado de Andamento por Projeto');
+  compartilharOuBaixarPdfExtraEscopo(doc,`Andamento_ESF_${carimbo}.pdf`,'Controle consolidado de Andamento por Projeto');
 }
 
 // ── MONTAGEM DA PLANILHA DE ANDAMENTO — função única e reutilizável ────────────────────
@@ -11797,7 +11800,7 @@ async function construirWorkbookAndamento(grupos,subtitulo){
 
   ws.mergeCells(1,1,3,LARG);
   const titulo=ws.getCell(1,1);
-  titulo.value='RDO MASTER ENERGY';
+  titulo.value='RDO ESF';
   titulo.font={name:'Arial',size:22,bold:true,color:{argb:'FFFFFFFF'}};
   titulo.alignment={horizontal:'center',vertical:'middle'};
   for(let r=1;r<=3;r++) for(let c=1;c<=LARG;c++) ws.getCell(r,c).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1A52C8'}};
@@ -11921,9 +11924,9 @@ async function exportarAndamentoExcel(){
     const g=grupos[0];
     nomeArquivo=`${sanitizarNomeArquivo(g.nrdo)} - ANDAMENTO - ${dataBRArquivo(g.data)} - OBRA ${sanitizarNomeArquivo(g.obra).toUpperCase()} - DISCIPLINA ${sanitizarNomeArquivo(g.disc||'—').toUpperCase()} - ENCARREGADO ${sanitizarNomeArquivo(g.encarregado).toUpperCase()}.xlsx`;
   }else if(encFiltro){
-    nomeArquivo=`ANDAMENTO_MASTERENERGY_ENCARREGADO_${sanitizarNomeArquivo(encFiltro).toUpperCase().replace(/\s+/g,'_')}_PERIODO_${deArq}_A_${ateArq}.xlsx`;
+    nomeArquivo=`ANDAMENTO_ESF_ENCARREGADO_${sanitizarNomeArquivo(encFiltro).toUpperCase().replace(/\s+/g,'_')}_PERIODO_${deArq}_A_${ateArq}.xlsx`;
   }else{
-    nomeArquivo=`ANDAMENTO_MASTERENERGY_PERIODO_${deArq}_A_${ateArq}.xlsx`;
+    nomeArquivo=`ANDAMENTO_ESF_PERIODO_${deArq}_A_${ateArq}.xlsx`;
   }
   await baixarWorkbookExtraEscopo(wb,nomeArquivo); // utilitário genérico de download — não tem lógica específica de Extra Escopo
   showToast('📥 Controle de Andamento exportado com formatação!','#00b5fe');
@@ -12871,7 +12874,7 @@ async function exportarBackupCompletoExcel(btn){
     let L=1;
     ws.mergeCells(1,1,3,largura);
     const tituloCell=ws.getCell(1,1);
-    tituloCell.value='RDO MASTER ENERGY — RELATÓRIO CONSOLIDADO';
+    tituloCell.value='RDO ESF — RELATÓRIO CONSOLIDADO';
     tituloCell.font={name:'Arial',size:24,bold:true,color:{argb:'FFFFFFFF'}};
     tituloCell.alignment={vertical:'middle',horizontal:'center'};
     for(let r=1;r<=3;r++) for(let c=1;c<=largura;c++) ws.getCell(r,c).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0A3C64'}};
@@ -13337,7 +13340,7 @@ async function exportarProjetosExcel(){
 
   ws.mergeCells(1,1,3,LARG);
   const titulo=ws.getCell(1,1);
-  titulo.value='RDO MASTER ENERGY';
+  titulo.value='RDO ESF';
   titulo.font={name:'Arial',size:22,bold:true,color:{argb:'FFFFFFFF'}};
   titulo.alignment={horizontal:'center',vertical:'middle'};
   for(let r=1;r<=3;r++) for(let c=1;c<=LARG;c++) ws.getCell(r,c).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0A3C64'}};
@@ -13387,7 +13390,7 @@ async function exportarProjetosExcel(){
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
   const carimbo=hojeLocal();
-  a.href=url; a.download=`Horas_Por_Projeto_MasterEnergy_${carimbo}.xlsx`; a.click();
+  a.href=url; a.download=`Horas_Por_Projeto_ESF_${carimbo}.xlsx`; a.click();
   setTimeout(()=>URL.revokeObjectURL(url),3000);
   showToast('📥 Horas por projeto exportado com formatação!','#6830cc');
 }
@@ -13699,7 +13702,7 @@ function compartilharBackup(){
 function nomeArquivoBackup(){
   const agora=new Date();
   const carimbo=`${agora.getFullYear()}-${String(agora.getMonth()+1).padStart(2,'0')}-${String(agora.getDate()).padStart(2,'0')}_${String(agora.getHours()).padStart(2,'0')}h${String(agora.getMinutes()).padStart(2,'0')}`;
-  return `Backup_RDO_MasterEnergy_${carimbo}.json`;
+  return `Backup_RDO_ESF_${carimbo}.json`;
 }
 
 // Guarda quando foi a última vez que um backup foi feito (exportado, compartilhado ou
