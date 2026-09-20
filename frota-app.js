@@ -53,7 +53,7 @@ function criarPainelDebug() {
   const btn = document.createElement('button');
   btn.id = 'debugToggle';
   btn.textContent = '🐞';
-  btn.title = 'Painel de debug (Master Energy)';
+  btn.title = 'Painel de debug (ESF)';
   btn.style.cssText = 'position:fixed;bottom:14px;right:14px;z-index:99999;width:42px;height:42px;border-radius:50%;background:#1B3F91;color:#fff;border:2px solid #2F9BFF;font-size:18px;box-shadow:0 4px 14px rgba(0,0,0,.5);cursor:pointer;';
 
   const panel = document.createElement('div');
@@ -61,7 +61,7 @@ function criarPainelDebug() {
   panel.style.cssText = 'display:none;position:fixed;left:8px;right:8px;bottom:64px;max-height:50vh;background:#0A1220;border:1px solid #2F9BFF88;border-radius:12px;z-index:99999;flex-direction:column;font-family:monospace;font-size:11px;box-shadow:0 8px 30px rgba(0,0,0,.6);color:#EAF3FF;';
   panel.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:1px solid #2A3B5C;background:#101A2E;border-radius:12px 12px 0 0;">
-      <strong style="color:#2F9BFF;">Debug — Master Energy</strong>
+      <strong style="color:#2F9BFF;">Debug — ESF</strong>
       <div>
         <button id="debugRetest" style="background:none;border:1px solid #2A3B5C;color:#EAF3FF;border-radius:6px;padding:2px 8px;margin-right:4px;">Testar conexão</button>
         <button id="debugClear" style="background:none;border:1px solid #2A3B5C;color:#EAF3FF;border-radius:6px;padding:2px 8px;">Limpar</button>

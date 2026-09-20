@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RDO — Master Energy</title>
+<title>RDO — ESF</title>
 <!-- PWA: permite "Instalar app" / "Adicionar à tela inicial" no celular e no computador —
      ícone oficial novo (raio + "M" azul sobre fundo azul-marinho escuro, com "RDO" escrito) -->
 <link rel="manifest" href="./rdo-manifest.json">
@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="./esf-apple-touch-icon.svg">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="RDO Master Energy">
+<meta name="apple-mobile-web-app-title" content="RDO ESF">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
@@ -348,7 +348,7 @@ body.dark #menu-usuario-dropdown{background:#1a2530}
    OBRAS PARADAS (aviso, dias úteis sem RDO)
    ══════════════════════════════════════ */
 .obras-paradas-bar{
-  background:#fffbeb;border:2.5px solid #d97706;
+  background:#fffbeb;border:2.5px solid #fd8a14;
   padding:9px 14px;margin-bottom:12px;
   box-shadow:3px 3px 0 #92400e;
   display:flex;align-items:center;gap:10px;flex-wrap:wrap
@@ -359,11 +359,11 @@ body.dark .obras-paradas-label{color:#fbbf24}
 .obras-paradas-lista{display:flex;gap:6px;flex-wrap:wrap}
 .obra-parada-pill{
   display:inline-flex;align-items:center;gap:5px;
-  background:#fef3c7;border:2px solid #d97706;color:#92400e;
+  background:#fef3c7;border:2px solid #fd8a14;color:#92400e;
   padding:5px 10px;font-size:11px;font-weight:800;
   text-transform:uppercase;white-space:nowrap
 }
-body.dark .obra-parada-pill{background:rgba(217,119,6,.2);color:#fbbf24;border-color:#d97706}
+body.dark .obra-parada-pill{background:rgba(217,119,6,.2);color:#fbbf24;border-color:#fd8a14}
 .obra-parada-pill b{font-weight:900}
 
 /* ══════════════════════════════════════
@@ -535,7 +535,7 @@ textarea.hrs.col-sem {background:#ffffff!important;border-color:#b0bdd0!importan
 textarea.hrs.falta{background:#8a1010!important;border-color:#600000!important;color:#fff!important;font-weight:900!important;font-size:8px!important;letter-spacing:-.3px!important}
 textarea.hrs.cedo {background:#8a1010!important;border-color:#600000!important;color:#fff!important;font-weight:900!important;font-size:8px!important;letter-spacing:-.3px!important}
 textarea.hrs.integracao{background:#0891b2!important;border-color:#0e5e70!important;color:#fff!important;font-weight:900!important;font-size:8px!important;letter-spacing:-.3px!important}
-textarea.hrs.aguardando{background:#d97706!important;border-color:#8a4c04!important;color:#fff!important;font-weight:900!important;font-size:8px!important;letter-spacing:-.3px!important}
+textarea.hrs.aguardando{background:#fd8a14!important;border-color:#8a4c04!important;color:#fff!important;font-weight:900!important;font-size:8px!important;letter-spacing:-.3px!important}
 textarea.hrs.outro{background:#8a1010!important;border-color:#600000!important;color:#fff!important;font-weight:900!important;font-size:7px!important;letter-spacing:-.2px!important}
 select.hrs-status{
   font-size:7px;padding:0 1px;border:none;background:transparent;
@@ -926,10 +926,10 @@ input.login-input,
   width:100%;background:#f59e0b;color:#fff;border:none;border-radius:9px;padding:13px;
   font-size:14.5px;font-weight:900;cursor:pointer;box-shadow:0 3px 0 #b45309;
 }
-.pendencias-btn:hover{background:#d97706}
+.pendencias-btn:hover{background:#fd8a14}
 .pendencias-btn:active{transform:translateY(2px);box-shadow:none}
 #check-modal.show{display:flex}
-.check-item{border-left:4px solid #d97706;background:#fffbeb;padding:8px 10px;margin-bottom:6px;font-size:11.5px}
+.check-item{border-left:4px solid #fd8a14;background:#fffbeb;padding:8px 10px;margin-bottom:6px;font-size:11.5px}
 .check-item.grave{border-left-color:#dc2626;background:#fef2f2}
 .check-item b{display:block;margin-bottom:2px}
 .check-ok{text-align:center;padding:24px;color:#158038;font-weight:900;font-size:14px}
@@ -1016,7 +1016,7 @@ input.login-input,
 .aviso-data-divergente{
   position:fixed;top:64px;left:50%;transform:translateX(-50%) translateY(-8px);
   max-width:min(92vw,520px);
-  background:#fef3c7;color:#7c5a00;border:2px solid #d97706;border-radius:12px;
+  background:#fef3c7;color:#7c5a00;border:2px solid #fd8a14;border-radius:12px;
   padding:12px 40px 12px 16px;box-shadow:0 6px 18px rgba(0,0,0,.22);
   z-index:9999;opacity:0;pointer-events:none;transition:opacity .25s, transform .25s;
   font-size:13px;font-weight:800;line-height:1.5;text-align:left;
@@ -1026,7 +1026,7 @@ input.login-input,
   position:absolute;top:4px;right:6px;background:none;border:none;
   font-size:16px;font-weight:900;color:#7c5a00;cursor:pointer;padding:6px 9px;line-height:1;
 }
-body.dark .aviso-data-divergente{background:#3a2e05;color:#fbbf24;border-color:#d97706;}
+body.dark .aviso-data-divergente{background:#3a2e05;color:#fbbf24;border-color:#fd8a14;}
 body.dark .aviso-data-divergente .fechar-aviso-divergente{color:#fbbf24;}
 
 /* ══════════════════════════════════════
@@ -1362,7 +1362,7 @@ body.dark .aviso-data-divergente .fechar-aviso-divergente{color:#fbbf24;}
   textarea.hrs.falta{ background:#8a1010!important;color:#fff!important;font-size:7pt!important;border-color:#600!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important }
   textarea.hrs.cedo{ background:#8a1010!important;color:#fff!important;font-size:7pt!important;border-color:#600!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important }
   textarea.hrs.integracao{ background:#0891b2!important;color:#fff!important;font-size:7pt!important;border-color:#0e5e70!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important }
-  textarea.hrs.aguardando{ background:#d97706!important;color:#fff!important;font-size:7pt!important;border-color:#8a4c04!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important }
+  textarea.hrs.aguardando{ background:#fd8a14!important;color:#fff!important;font-size:7pt!important;border-color:#8a4c04!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important }
   textarea.hrs.outro{ background:#8a1010!important;color:#fff!important;font-size:6.5pt!important;border-color:#600!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important }
   /* Total H.H por linha — azul marinho */
   td.total-hrs{
@@ -1701,7 +1701,7 @@ body.dark #workers-body tr:hover{background-color:rgba(58,110,232,.08)}
 <div id="login-overlay" style="position:fixed;inset:0;z-index:99999;background:#0b1220 url('esf-fundo-login-rdo.svg') center center / cover no-repeat;color-scheme:dark">
   <div style="position:absolute;bottom:6px;right:8px;font-size:9px;color:rgba(255,255,255,.35);font-family:monospace;pointer-events:none">v2026.08.23-3-paineis-abertura-instantanea</div>
   <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:calc(100% - 32px);max-width:380px;background:rgb(10,17,32);border:1px solid rgba(255,255,255,.14);border-radius:18px;padding:32px 28px;box-shadow:0 20px 60px rgba(0,0,0,.6);text-transform:none;font-weight:400">
-    <h1 style="font-size:20px;margin:0 0 4px;color:#fff;text-align:center;font-weight:700">RDO <span style="color:#3ea6ff">Master Energy</span></h1>
+    <h1 style="font-size:20px;margin:0 0 4px;color:#fff;text-align:center;font-weight:700">RDO <span style="color:#3ea6ff">ESF</span></h1>
     <p style="margin:0 0 24px;text-align:center;color:#9ca3af;font-size:13px;letter-spacing:.5px;font-weight:600">DIÁRIO DE OBRA PRO</p>
     <form id="login-form" onsubmit="return false" style="display:flex;flex-direction:column">
       <label for="login-email" style="font-size:12.5px;font-weight:600;color:#cfe3f5;margin-bottom:6px">E-mail</label>
@@ -1732,7 +1732,7 @@ body.dark #workers-body tr:hover{background-color:rgba(58,110,232,.08)}
 <!-- TOPBAR -->
 <div class="topbar">
   <div class="topbar-left">
-    <img class="topbar-logo" src="data:image/jpeg;base64,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" alt="Master Energy">
+    <img class="topbar-logo" src="esf-logo-sidebar.svg" alt="ESF">
     <div class="topbar-brand">
       <span class="topbar-brand-name">RDO MASTER ENERGY</span>
       <span class="topbar-brand-tag">Montagem e Manutenção Industrial</span>
@@ -1782,14 +1782,14 @@ body.dark #workers-body tr:hover{background-color:rgba(58,110,232,.08)}
          no meio de vários. -->
     <button class="btn admin-only-btn" style="background:#158038;color:#fff" onclick="abrirExtraEscopo()" title="Controle consolidado de todo o Extra Escopo/Adicional registrado">🟢 <span>Extra Escopo</span></button>
     <button class="btn admin-only-btn" style="background:#00b5fe;color:#fff" onclick="abrirAndamento()" title="Controle consolidado de horas por projeto (Em Andamento)">🔵 <span>Andamento</span></button>
-    <button class="btn admin-only-btn" style="background:#d97706;color:#fff" onclick="abrirHorasExtras()" title="Controle de horas extras (acima de 9h/dia, domingos e feriados), com justificativas">⏱️ <span>Horas Extras</span></button>
+    <button class="btn admin-only-btn" style="background:#fd8a14;color:#fff" onclick="abrirHorasExtras()" title="Controle de horas extras (acima de 9h/dia, domingos e feriados), com justificativas">⏱️ <span>Horas Extras</span></button>
     <button class="btn admin-only-btn" id="btn-absenteismo" style="background:#b91c1c;color:#fff" onclick="abrirModalAbsenteismo()" title="Gera relatório de FALTA/SAIU MAIS CEDO/TRANSFERIDO, com opção de período">🚨 <span>Absenteísmo</span></button>
     <button class="btn admin-only-btn" id="btn-folha-ponto" style="background:linear-gradient(180deg,#e2e8f0 0%,#94a3b8 55%,#64748b 100%);color:#1e293b;text-shadow:0 1px 0 rgba(255,255,255,.4)" onclick="abrirFolhaPonto()" title="Folha de ponto de conferência — cruza os RDOs de todos os encarregados, por funcionário e por dia (uso interno, não substitui o relógio de ponto oficial)">🗓️ <span>Folha de Ponto</span></button>
     <button class="btn" style="background:#dc2626;color:#fff" onclick="fazerLogout()" title="Sair da conta">🚪 <span>Sair</span></button>
   </div>
   <div id="aviso-rdo-pendente" onclick="abrirListaPendentes()" style="cursor:pointer"></div>
 </div>
-<div id="aviso-operacional" class="no-print" style="background:#fef3c7;color:#7c5a00;border-bottom:2px solid #d97706;padding:7px 14px;font-size:12px;font-weight:800;text-align:center">
+<div id="aviso-operacional" class="no-print" style="background:#fef3c7;color:#7c5a00;border-bottom:2px solid #fd8a14;padding:7px 14px;font-size:12px;font-weight:800;text-align:center">
   ⚠️ Atenção: O RDO só será transmitido ao sistema após clicar em "Salvar e Enviar".
 </div>
 
@@ -1807,7 +1807,7 @@ body.dark #workers-body tr:hover{background-color:rgba(58,110,232,.08)}
   <!-- BANNER -->
   <div class="rdo-banner">
     <div class="banner-logo-wrap">
-      <img class="banner-logo" src="data:image/jpeg;base64,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" alt="Master Energy">
+      <img class="banner-logo" src="esf-logo-sidebar.svg" alt="ESF">
       <div class="banner-brand">
         <span class="banner-brand-name"><span class="bn-master">RDO Master</span> <span class="bn-energy">Energy</span></span>
         <span class="banner-brand-tag">Montagem e Manutenção Industrial</span>
@@ -2192,7 +2192,7 @@ body.dark #workers-body tr:hover{background-color:rgba(58,110,232,.08)}
      deixa a pessoa escolher. Nunca apaga nada, nunca decide sozinho. -->
 <div id="duplicidade-obra-modal">
   <div class="multipdf-box" style="max-width:420px">
-    <div class="multipdf-header" style="background:linear-gradient(135deg,#d97706,#92400e)">
+    <div class="multipdf-header" style="background:linear-gradient(135deg,#fd8a14,#92400e)">
       <span>ℹ️ RDO já existe</span>
       <button onclick="fecharDuplicidadeObraModal()" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer">✕</button>
     </div>
@@ -2279,7 +2279,7 @@ body.dark #workers-body tr:hover{background-color:rgba(58,110,232,.08)}
      banco na hora do envio (função salvar_rdo_completo_v2) -->
 <div id="horas-extras-modal">
   <div class="multipdf-box" style="max-width:1180px;width:90vw;max-height:92vh">
-    <div class="multipdf-header" style="background:linear-gradient(135deg,#d97706,#b45309)">
+    <div class="multipdf-header" style="background:linear-gradient(135deg,#fd8a14,#b45309)">
       <span>⏱️ Controle de Horas Extras</span>
       <button onclick="document.getElementById('horas-extras-modal').classList.remove('show')" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer">✕</button>
     </div>
@@ -2288,14 +2288,14 @@ body.dark #workers-body tr:hover{background-color:rgba(58,110,232,.08)}
         <input type="date" id="he-de" title="Data inicial" style="flex:1;min-width:118px;padding:6px">
         <input type="date" id="he-ate" title="Data final" style="flex:1;min-width:118px;padding:6px">
         <select id="he-encarregado" title="Ver só de um encarregado" style="flex:1.6;min-width:150px;padding:6px"><option value="">— Todos os encarregados —</option></select>
-        <button type="button" onclick="carregarHorasExtras()" style="background:#d97706;color:#fff;border:2px solid #b45309;padding:6px 12px;font-size:11px;font-weight:900;cursor:pointer;white-space:nowrap">🔍 Filtrar</button>
+        <button type="button" onclick="carregarHorasExtras()" style="background:#fd8a14;color:#fff;border:2px solid #b45309;padding:6px 12px;font-size:11px;font-weight:900;cursor:pointer;white-space:nowrap">🔍 Filtrar</button>
       </div>
       <div id="he-resumo" style="flex-shrink:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:6px"></div>
       <div id="he-lista-wrap" style="flex:1;min-height:160px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;scroll-behavior:smooth;border:2px solid #000;padding:14px 14px 34px"></div>
     </div>
     <div class="multipdf-footer" style="flex-wrap:wrap">
       <button class="multipdf-cancel" onclick="document.getElementById('horas-extras-modal').classList.remove('show')">Fechar</button>
-      <button class="multipdf-gerar" style="background:#d97706" onclick="exportarHorasExtrasExcel()">📥 Exportar Excel (Normal/70%/100%)</button>
+      <button class="multipdf-gerar" style="background:#fd8a14" onclick="exportarHorasExtrasExcel()">📥 Exportar Excel (Normal/70%/100%)</button>
     </div>
   </div>
 </div>
@@ -2371,10 +2371,10 @@ body.dark #workers-body tr:hover{background-color:rgba(58,110,232,.08)}
         ☁️ Use isso ao abrir o app num aparelho novo, ou se quiser garantir que este aparelho tem todos os RDOs que já foram salvos na nuvem por qualquer aparelho.
       </div>
       <button type="button" onclick="restaurarDoSupabase()" style="background:#7c3aed;color:#fff;border:2px solid #5b21b6;padding:14px 12px;font-size:13px;font-weight:900;cursor:pointer;text-transform:uppercase;min-height:48px">☁️ BUSCAR E RESTAURAR DA NUVEM</button>
-      <div style="font-size:10.5px;color:var(--text3);line-height:1.5;background:#fef3c7;padding:8px 10px;border-left:3px solid #d97706">
+      <div style="font-size:10.5px;color:var(--text3);line-height:1.5;background:#fef3c7;padding:8px 10px;border-left:3px solid #fd8a14">
         ⚠️ Se algum RDO seu tiver ficado só neste aparelho sem chegar no admin (por queda de internet, por exemplo), use o botão abaixo pra conferir e reenviar. Ele nunca apaga nem duplica nada — só reenvia o que realmente ainda não chegou.
       </div>
-      <button type="button" onclick="verificarEReenviarPendentes()" style="background:#d97706;color:#fff;border:2px solid #92400e;padding:14px 12px;font-size:13px;font-weight:900;cursor:pointer;text-transform:uppercase;min-height:48px">🔄 CONFERIR E REENVIAR PENDENTES</button>
+      <button type="button" onclick="verificarEReenviarPendentes()" style="background:#fd8a14;color:#fff;border:2px solid #92400e;padding:14px 12px;font-size:13px;font-weight:900;cursor:pointer;text-transform:uppercase;min-height:48px">🔄 CONFERIR E REENVIAR PENDENTES</button>
       <button type="button" class="admin-only-btn" onclick="exportarBackupCompletoExcel(this)" style="background:#0d5228;color:#fff;border:2px solid #063d1c;padding:14px 12px;font-size:13px;font-weight:900;cursor:pointer;text-transform:uppercase;min-height:48px">📊 RELATÓRIO CONSOLIDADO EM EXCEL (TODOS OS RDOs)</button>
       <div style="border-top:2px dashed var(--border);margin:4px 0"></div>
       <div id="usuario-logado-info" style="font-size:11.5px;color:var(--text3);text-align:center"></div>
@@ -2401,7 +2401,7 @@ body.dark #workers-body tr:hover{background-color:rgba(58,110,232,.08)}
 
 <!-- WPP GUIDE MODAL -->
 <script>
-const LOGO_SRC = 'data:image/jpeg;base64,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';
+const LOGO_SRC = 'esf-logo-sidebar.svg';
 const NUM_OSE = 6;
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -2670,7 +2670,7 @@ async function sincronizarManualUsuario(){
     showToast('✓ Dados sincronizados!','#16a34a');
   }catch(e){
     console.error('sincronizarManualUsuario error:',e);
-    showToast('⚠️ Não deu pra sincronizar tudo — confira sua internet e tente de novo.','#d97706');
+    showToast('⚠️ Não deu pra sincronizar tudo — confira sua internet e tente de novo.','#fd8a14');
   }
 }
 
@@ -2861,7 +2861,7 @@ function onMudarClienteSelecionado(){
     const nome=prompt('Nome do cliente novo (digite exatamente como deve aparecer nos relatórios):');
     if(nome&&nome.trim()){
       setObraSelecionada(nome.trim().toUpperCase());
-      showToast('⚠️ Cliente usado sem estar cadastrado — avise o admin mestre pra adicionar oficialmente na lista.','#d97706');
+      showToast('⚠️ Cliente usado sem estar cadastrado — avise o admin mestre pra adicionar oficialmente na lista.','#fd8a14');
     }else{
       sel.value='';
     }
@@ -3007,9 +3007,9 @@ async function abrirDashboardAoVivo(){
       .dash-empty{color:#6688aa;font-size:11.5px;text-align:center;padding:14px}
     </style>
     <div class="dash-header">
-      <img class="dash-logo" src="${LOGO_SRC}" alt="Master Energy">
+      <img class="dash-logo" src="${LOGO_SRC}" alt="ESF">
       <div>
-        <div class="dash-title">Dashboard Ao Vivo — Master Energy</div>
+        <div class="dash-title">Dashboard Ao Vivo — ESF</div>
         <div class="dash-subtitle"><span class="dash-live-dot"></span><span id="dash-status-sync">Atualiza sozinho a cada 90 segundos</span> · <span id="dash-ultima-att">agora</span></div>
       </div>
       <button class="dash-btn-fechar" id="dash-btn-atualizar" style="background:#1457c8;border-color:#0a3c8a" onclick="forcarAtualizacaoPainel('dashboard',this)">🔄 Atualizar</button>
@@ -3541,7 +3541,7 @@ async function carregarListaClientesAdmin(){
 async function adicionarClienteAdmin(){
   const input=document.getElementById('novo-cliente-input');
   const nome=input.value.trim().toUpperCase();
-  if(!nome){ showToast('Digite o nome do cliente.','#d97706'); return; }
+  if(!nome){ showToast('Digite o nome do cliente.','#fd8a14'); return; }
 
   // Avisa se já existe um cliente MUITO parecido (só diferença de acento/pontuação/espaço)
   // — evita cadastrar "SYENSQO/PAULINIA" e depois "SYENSQO/PAULÍNIA" como se fossem dois
@@ -3642,7 +3642,7 @@ async function _syncSalvarSupabaseReal(d,rdoKey){
       if(!usuarioAtual){
         return{sucesso:false,erro:'Sua sessão expirou. Saia (🚪 Sair) e entre de novo com sua conta antes de tentar enviar.'};
       }
-      showToast(`⚠️ Este aparelho estava com outro login ativo — ajustado de "${nomeAntigo}" pra "${usuarioAtual.nome}". Confira se é você antes de continuar!`,'#d97706');
+      showToast(`⚠️ Este aparelho estava com outro login ativo — ajustado de "${nomeAntigo}" pra "${usuarioAtual.nome}". Confira se é você antes de continuar!`,'#fd8a14');
     }
     const idAtualConfirmado=usuarioAtual.id;
     const h=d.header||{};
@@ -3905,7 +3905,7 @@ async function restaurarDoSupabase(){
   showToast('☁️ Buscando RDOs na nuvem...','#1457c8');
   const{sucesso,falha,erro,vazio}=await buscarERestaurarDaNuvem(null,null);
   if(erro){ showToast('❌ '+erro,'#dc2626'); return; }
-  if(vazio){ showToast('Nenhum RDO encontrado na nuvem ainda.','#d97706'); return; }
+  if(vazio){ showToast('Nenhum RDO encontrado na nuvem ainda.','#fd8a14'); return; }
   document.getElementById('backup-modal')?.classList.remove('show');
   showToast(`✓ ${sucesso} RDO(s) restaurado(s) da nuvem${falha?` — ${falha} falharam`:''}. Recarregando...`,'#158038');
   setTimeout(()=>location.reload(),1200);
@@ -3917,11 +3917,11 @@ async function restaurarDoSupabase(){
 async function buscarPeriodoNaNuvem(){
   const de=document.getElementById('mpdf-de').value;
   const ate=document.getElementById('mpdf-ate').value;
-  if(!de&&!ate){ showToast('Escolha ao menos uma data (De ou Até) antes de buscar na nuvem.','#d97706'); return; }
+  if(!de&&!ate){ showToast('Escolha ao menos uma data (De ou Até) antes de buscar na nuvem.','#fd8a14'); return; }
   showToast('☁️ Buscando na nuvem...','#7c3aed');
   const{sucesso,falha,erro,vazio}=await buscarERestaurarDaNuvem(de||null,ate||null);
   if(erro){ showToast('❌ '+erro,'#dc2626'); return; }
-  if(vazio){ showToast('Nenhum RDO encontrado na nuvem para esse período.','#d97706'); return; }
+  if(vazio){ showToast('Nenhum RDO encontrado na nuvem para esse período.','#fd8a14'); return; }
   popularListaMultiPDF(); // atualiza a lista na tela com o que veio da nuvem
   showToast(`✓ ${sucesso} RDO(s) da nuvem incluído(s) na lista${falha?` — ${falha} falharam`:''}.`,'#158038');
 }
@@ -4386,7 +4386,7 @@ function renderizarListaPendentes(){
 
       const linha=document.createElement('div');
       linha.className='rdo-result-item';
-      linha.style.borderColor=possivelMatch?(possivelMatch.forte?'#0ea5e9':'#a855f7'):(completo?'#d97706':'#6b7280');
+      linha.style.borderColor=possivelMatch?(possivelMatch.forte?'#0ea5e9':'#a855f7'):(completo?'#fd8a14':'#6b7280');
 
       const main=document.createElement('div');
       main.className='rdo-result-main';
@@ -4433,7 +4433,7 @@ function renderizarListaPendentes(){
 
 function abrirRdoPendente(key,todasChaves){
   const raw=key?localStorage.getItem(key):null;
-  if(!raw){ showToast('Esse RDO não existe mais neste aparelho.','#d97706'); document.getElementById('pendentes-modal').classList.remove('show'); atualizarAvisoRDOsPendentes(true); return; }
+  if(!raw){ showToast('Esse RDO não existe mais neste aparelho.','#fd8a14'); document.getElementById('pendentes-modal').classList.remove('show'); atualizarAvisoRDOsPendentes(true); return; }
   try{
     autoSilentSave(); // salva o que estava na tela antes de trocar
     localStorage.setItem('rdo-last-key',key);
@@ -4458,7 +4458,7 @@ function abrirRdoPendente(key,todasChaves){
 
 function descartarRdoPendente(todasChaves){
   const grupo=todasChaves||[];
-  if(!grupo.length){ showToast('Nada pra descartar.','#d97706'); return; }
+  if(!grupo.length){ showToast('Nada pra descartar.','#fd8a14'); return; }
   // Descobre se algum desses é o RDO que está ABERTO NA TELA agora — se for, só apagar
   // do armazenamento não resolve: o autosave (que roda sozinho a cada poucos segundos)
   // vai recriar ele de novo, porque os dados ainda estão preenchidos nos campos visíveis.
@@ -4527,7 +4527,7 @@ function exigirAdmin(){
 // reenvio, pra nunca reviver sem querer algo que o admin apagou de propósito.
 async function verificarEReenviarPendentes(){
   const supabaseClient=getSupabaseClient();
-  if(!supabaseClient||!usuarioAtual){ showToast('Sem login/internet — não dá pra conferir agora.','#d97706'); return; }
+  if(!supabaseClient||!usuarioAtual){ showToast('Sem login/internet — não dá pra conferir agora.','#fd8a14'); return; }
   showToast('🔍 Conferindo RDOs enviados...','#7c3aed');
   try{
     let enviados=[];
@@ -4582,7 +4582,7 @@ async function verificarEReenviarPendentes(){
         else falha++;
       }catch(e){ falha++; }
     }
-    showToast(`✓ ${sucesso} RDO(s) reenviado(s) com sucesso${falha?` — ${falha} ainda falharam, tente de novo`:''}.`,falha?'#d97706':'#16a34a');
+    showToast(`✓ ${sucesso} RDO(s) reenviado(s) com sucesso${falha?` — ${falha} ainda falharam, tente de novo`:''}.`,falha?'#fd8a14':'#16a34a');
     atualizarAvisoRDOsPendentes(true);
   }catch(e){
     console.error('verificarEReenviarPendentes error:',e);
@@ -4655,7 +4655,7 @@ async function reconciliarRDOsApagadosPeloAdmin(){
     });
     localStorage.setItem(CHAVE_SUSPEITOS_ADMIN,JSON.stringify(suspeitosDeAgora));
     if(removidos>0){
-      showToast(`🔄 ${removidos} RDO(s) removido(s) deste aparelho — foram excluídos pelo admin.`,'#d97706');
+      showToast(`🔄 ${removidos} RDO(s) removido(s) deste aparelho — foram excluídos pelo admin.`,'#fd8a14');
       renderizarObrasParadas();
     }
   }catch(e){ console.error('reconciliarRDOsApagadosPeloAdmin error:',e); }
@@ -5827,7 +5827,7 @@ async function buscarVeiculoAutomatico(nome,i){
   const supabaseClient=getSupabaseClient();
   if(!supabaseClient){ showToast('❌ Sistema não conectado ao banco — não deu pra buscar o veículo na Escala.','#dc2626'); return; }
   const data=document.getElementById('h-data')?.value;
-  if(!data){ showToast('⚠️ Preencha a data do RDO primeiro, pra conseguir buscar o veículo na Escala.','#d97706'); return; }
+  if(!data){ showToast('⚠️ Preencha a data do RDO primeiro, pra conseguir buscar o veículo na Escala.','#fd8a14'); return; }
   const r=await buscarVeiculoAutomaticoSilencioso(nome,i);
   if(r.erro){
     showToast(`❌ Erro ao buscar veículo na Escala pra "${nome}": ${r.motivo}`,'#dc2626');
@@ -5835,7 +5835,7 @@ async function buscarVeiculoAutomatico(nome,i){
   }
   if(r.tipo==='ausencia'){
     const dataEscalaFmt=r.dataEscala?formatarDataBR(r.dataEscala):'';
-    showToast(`⚠️ ${nome} está marcado como ${r.rotulo} na escala de ${dataEscalaFmt} — confira se ele deveria estar no RDO hoje.`,'#d97706');
+    showToast(`⚠️ ${nome} está marcado como ${r.rotulo} na escala de ${dataEscalaFmt} — confira se ele deveria estar no RDO hoje.`,'#fd8a14');
   }else if(r.tipo==='veiculo'){
     const dataEscalaFmt=r.dataEscala?formatarDataBR(r.dataEscala):'';
     showToast(`🚚 Veículo preenchido: ${r.veiculo} (escala de ${dataEscalaFmt})`,'#1457c8');
@@ -6764,14 +6764,14 @@ function mostrarModalHoraExtra(excedentes){
         </div>`;
     });
     box.innerHTML=`
-      <div style="background:linear-gradient(135deg,#d97706,#b45309);color:#fff;padding:14px 18px;font-weight:900;font-size:14px">⏱️ Horas acima de 9h detectadas</div>
+      <div style="background:linear-gradient(135deg,#fd8a14,#b45309);color:#fff;padding:14px 18px;font-weight:900;font-size:14px">⏱️ Horas acima de 9h detectadas</div>
       <div style="padding:16px">
         <p style="font-size:12.5px;color:var(--text2);margin:0 0 14px">Antes de enviar, corrija as horas se foi engano de digitação, ou explique o motivo de cada excedente e informe se é hora extra de Projeto ou de Extra Escopo (a soma tem que fechar certinho).</p>
         ${camposHtml}
       </div>
       <div style="display:flex;gap:8px;padding:12px 16px;border-top:2px solid #000">
         <button id="btn-cancelar-he" style="flex:1;padding:10px;font-weight:900;background:#fff;border:2px solid #000;cursor:pointer">✏️ Vou corrigir as horas</button>
-        <button id="btn-confirmar-he" style="flex:1;padding:10px;font-weight:900;background:#d97706;color:#fff;border:2px solid #b45309;cursor:pointer">✔️ Confirmar e enviar</button>
+        <button id="btn-confirmar-he" style="flex:1;padding:10px;font-weight:900;background:#fd8a14;color:#fff;border:2px solid #b45309;cursor:pointer">✔️ Confirmar e enviar</button>
       </div>`;
     overlay.appendChild(box);
     document.body.appendChild(overlay);
@@ -6805,7 +6805,7 @@ function mostrarModalHoraExtra(excedentes){
         if(!motivo||Math.abs((p+e)-horasExc)>=0.05) faltando=true;
         justificativas[normalizarObra(ex.nome)]={motivo,projeto:p,extraescopo:e};
       });
-      if(faltando){ showToast('Preencha o motivo e confirme que a soma Projeto + Extra Escopo bate certinho, pra todos os funcionários listados.','#d97706'); return; }
+      if(faltando){ showToast('Preencha o motivo e confirme que a soma Projeto + Extra Escopo bate certinho, pra todos os funcionários listados.','#fd8a14'); return; }
       overlay.remove();
       resolve(justificativas);
     };
@@ -7056,7 +7056,7 @@ async function salvarRDO(){
     localStorage.setItem('rdo-last-key',key);
 
     if(!getSupabaseClient()||!usuarioAtual){
-      showToast('✓ RDO salvo neste aparelho. Sem login/internet no momento — envie assim que possível.','#d97706');
+      showToast('✓ RDO salvo neste aparelho. Sem login/internet no momento — envie assim que possível.','#fd8a14');
       setTimeout(atualizarDatalistNomesProjetos,0);
       return;
     }
@@ -7139,7 +7139,7 @@ async function salvarRDO(){
         await exportarXLSX();
       }catch(erroExcel){
         console.error('[RDO] Falha ao gerar o Excel automático pós-envio:',erroExcel);
-        showToast('⚠️ RDO enviado, mas o Excel automático falhou — use o botão "Excel" pra baixar manualmente.','#d97706');
+        showToast('⚠️ RDO enviado, mas o Excel automático falhou — use o botão "Excel" pra baixar manualmente.','#fd8a14');
       }
       showToast(`✓ RDO salvo e enviado ao admin!${avisoRenumeracao}`,'#16a34a');
       // RESET DA TELA APÓS ENVIO CONFIRMADO: assim que chega na nuvem de verdade — não
@@ -7535,7 +7535,7 @@ function salvarSnapshotDesfazer(){
 }
 
 function desfazerUltimaAcao(){
-  if(!ultimoSnapshotDesfazer){ showToast('↩️ Nada para desfazer ainda — fica disponível depois de excluir um funcionário ou criar um novo RDO.','#d97706'); return; }
+  if(!ultimoSnapshotDesfazer){ showToast('↩️ Nada para desfazer ainda — fica disponível depois de excluir um funcionário ou criar um novo RDO.','#fd8a14'); return; }
   const ok=confirm('Desfazer a última ação? Isso volta o RDO exatamente pro estado de antes dela.');
   if(!ok) return;
   try{
@@ -7630,7 +7630,7 @@ async function aplicarModeloNovoDia(d,proximoNRDO,manterStatus=true,dataAlvo=nul
       if(qtdAusencia) partes.push(`${qtdAusencia} com status de ausência na escala`);
       if(qtdLivre) partes.push(`${qtdLivre} sem escala hoje (livre pra preencher)`);
       if(partes.length) showToast(`🚚 Equipe carregada — ${partes.join(', ')}.`,'#1457c8');
-      if(qtdErro) showToast(`⚠️ Não deu pra consultar a escala de ${qtdErro} funcionário(s) — confira o veículo deles manualmente.`,'#d97706');
+      if(qtdErro) showToast(`⚠️ Não deu pra consultar a escala de ${qtdErro} funcionário(s) — confira o veículo deles manualmente.`,'#fd8a14');
       // Aviso amarelo persistente, além do toast rápido acima — quando ninguém
       // souber olhar o toast a tempo, pelo menos esse fica na tela. O motivo
       // mais comum de "sem escala" em lote é a data do RDO não bater com a
@@ -7760,7 +7760,7 @@ async function novoRDOComNomes(){
       }
     }
     if(!d){
-      showToast('Nenhum RDO anterior encontrado — criando em branco.','#d97706');
+      showToast('Nenhum RDO anterior encontrado — criando em branco.','#fd8a14');
       criandoNovoRDO=false;
       novoRDOZerado();
       return;
@@ -8174,7 +8174,7 @@ function gerarPdfComJsPDF(){
   const HDR_H=22;
   box(M,y,CW,HDR_H,C.hdr,false);
 
-  // Logo Master Energy (retângulo branco com a logo)
+  // Logo ESF (retângulo branco com a logo)
   const logoSrc=typeof LOGO_SRC!=='undefined'? LOGO_SRC: null;
   const LOGO_BOX_W=22, LOGO_BOX_H=11;
   // A logo em si é quadrada — desenhar esticada dentro de uma caixa 2:1 deixava ela
@@ -8721,7 +8721,7 @@ function pdfParaWhatsApp(){
   // Mensagem padrão de identificação — vai JUNTO com o arquivo (como legenda, quando o
   // aparelho suporta compartilhar arquivo real) ou sozinha só no método antigo de reserva.
   const msg=
-    `📋 *RDO — Master Energy*\n`+
+    `📋 *RDO — ESF*\n`+
     `📅 *Data:* ${formatarDataBR(h.data)||'-'} — ${dia}\n`+
     `🏭 *Cliente/Obra:* ${(h.obra||'-').toUpperCase()}\n`+
     `👷 *Encarregado:* ${(h.enc||'-').toUpperCase()}`;
@@ -8765,7 +8765,7 @@ function pdfParaWhatsApp(){
       const blob=doc.output('blob');
       const file=new File([blob],filename,{type:'application/pdf'});
       if(navigator.canShare && navigator.canShare({files:[file]})){
-        await navigator.share({files:[file],text:msg,title:'RDO — Master Energy'});
+        await navigator.share({files:[file],text:msg,title:'RDO — ESF'});
         showToast('📎 PDF enviado!','#25d366');
         return true;
       }
@@ -8795,7 +8795,7 @@ function pdfParaWhatsApp(){
         window.open('https://api.whatsapp.com/send?text='+encodeURIComponent(msg),'_blank');
         sincronizarCamposParaImpressao();
         setTimeout(()=>window.print(),400);
-        showToast('🖨️ Salve como PDF e anexe no WhatsApp.','#d97706');
+        showToast('🖨️ Salve como PDF e anexe no WhatsApp.','#fd8a14');
       }
     },80);
     return;
@@ -8852,7 +8852,7 @@ function getNomeArquivoXLSXPadronizado(){
 
 async function exportarXLSX(){
   if(!travarAcao('exportarXLSX')) return;
-  if(typeof ExcelJS==='undefined'){ showToast('Biblioteca de Excel ainda carregando — espera 2 segundos e tenta de novo.','#d97706'); return; }
+  if(typeof ExcelJS==='undefined'){ showToast('Biblioteca de Excel ainda carregando — espera 2 segundos e tenta de novo.','#fd8a14'); return; }
   const d=getFormData(); const h=d.header;
   // Mesma validação unificada dos outros pontos de entrada.
   if(!bloquearSeFormularioInvalido(d)) return;
@@ -8866,7 +8866,7 @@ async function exportarXLSX(){
   const corFillVeiculo={'FALTA':'FFB91C1C','SAIU MAIS CEDO':'FF8A5A12','TRANSFERIDO':'FF1F3A7A'};
 
   const wb=new ExcelJS.Workbook();
-  wb.creator='Master Energy — Sistema de RDO';
+  wb.creator='ESF — Sistema de RDO';
   wb.created=new Date();
 
   // ── ABA 1: RDO PRINCIPAL ──
@@ -9408,7 +9408,7 @@ window.addEventListener('beforeprint',()=>{
   }
   // O nome sugerido pelo navegador na tela de "Salvar como PDF" (Ctrl+P) vem do título da
   // aba — sem isso, salvar por esse caminho (em vez do botão PDF+WhatsApp) sempre sugeria
-  // o título fixo "RDO — Master Energy", ignorando obra/data/dia preenchidos.
+  // o título fixo "RDO — ESF", ignorando obra/data/dia preenchidos.
   try{ document.title=getPdfFilename().replace(/\.pdf$/i,''); }catch(e){}
 });
 window.addEventListener('afterprint',()=>{
@@ -9711,8 +9711,8 @@ function renderizarPaginaBuscaRDOs(){
     const isCurrent=localStorage.getItem('rdo-last-key')===r.key;
     const chave=`${(r.obra||'').trim().toUpperCase()}|${(r.nrdo||'').trim().toUpperCase()}|${r.data}`;
     const possivelDuplicado=r.nrdo&&contagem[chave]>1;
-    return `<div class="rdo-result-item" style="${isCurrent?'border-color:#16a34a;':''}${possivelDuplicado?'border-color:#d97706;background:rgba(217,119,6,.08);':''}">
-      ${possivelDuplicado?'<div style="font-size:10px;font-weight:900;color:#d97706;margin-bottom:2px">⚠️ POSSÍVEL DUPLICADO — mesma obra, número e data de outro RDO</div>':''}
+    return `<div class="rdo-result-item" style="${isCurrent?'border-color:#16a34a;':''}${possivelDuplicado?'border-color:#fd8a14;background:rgba(217,119,6,.08);':''}">
+      ${possivelDuplicado?'<div style="font-size:10px;font-weight:900;color:#fd8a14;margin-bottom:2px">⚠️ POSSÍVEL DUPLICADO — mesma obra, número e data de outro RDO</div>':''}
       <div class="rdo-result-main">
         <span class="rdo-result-date">📅 ${dataFmt}${diaStr} ${isCurrent?'<span style="background:#16a34a;color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;margin-left:4px">ABERTO</span>':''}</span>
         <span class="rdo-result-info">${r.obra||'—'} ${r.nrdo?'| '+r.nrdo:''} ${r.disc?'<b style="color:var(--accent,#1457c8)">| '+r.disc+'</b>':''} ${r.enc?'| '+r.enc:''}</span>
@@ -9893,7 +9893,7 @@ function renderFrases(){
 
 function inserirFrase(idx){
   const oseNum=document.getElementById('frases-ose-target').value;
-  if(!oseNum){showToast('Selecione a OSE de destino primeiro!','#d97706');return;}
+  if(!oseNum){showToast('Selecione a OSE de destino primeiro!','#fd8a14');return;}
   const lista=carregarFrases();
   const frase=lista[idx];
   const desc=document.getElementById(`ose-desc-${oseNum}`);
@@ -10123,7 +10123,7 @@ async function exportarRelatorioAbsenteismo(){
       };
     });
 
-    // ---- Identidade visual Master Energy ----
+    // ---- Identidade visual ESF ----
     const AZUL_MARINHO='FF0D1B3E',AZUL_CIANO='FF0EA5E9',BRANCO='FFFFFFFF',
           CINZA_CLARO='FFF1F5F9',CINZA_BORDA='FFCBD5E1',CINZA_TEXTO='FF1E293B';
     const CORES_STATUS={FALTA:'FFFECACA','SAIU MAIS CEDO':'FFFED7AA',TRANSFERIDO:'FFBFDBFE',PRESENTE:'FFDCFCE7'};
@@ -10133,7 +10133,7 @@ async function exportarRelatorioAbsenteismo(){
     const larguras=[13,28,28,17,17,24,19,16,17];
 
     const wb=new ExcelJS.Workbook();
-    wb.creator='Master Energy';
+    wb.creator='ESF';
     wb.created=new Date();
     const ws=wb.addWorksheet('Absenteísmo',{
       pageSetup:{orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0,paperSize:9}
@@ -10263,7 +10263,7 @@ async function exportarRelatorioAbsenteismo(){
 
 function gerarRelatorioMultiplo(){
   const checks=[...document.querySelectorAll('#multipdf-lista input[type=checkbox]:checked')];
-  if(!checks.length){showToast('Selecione ao menos um RDO.','#d97706');return;}
+  if(!checks.length){showToast('Selecione ao menos um RDO.','#fd8a14');return;}
   const sL={sem:'SEM ATIVIDADE',and:'EM ANDAMENTO',ext:'EXTRA ESCOPO / ADICIONAL',par:'PARALISADO',blq:'ABSENTEÍSMO',conc:'CONCLUÍDO'};
   const wb=XLSX.utils.book_new();
   // ABA RESUMO
@@ -10414,7 +10414,7 @@ async function sincronizarSeAdmin(forcar=false){
   const resultado=await buscarERestaurarDaNuvem(null,null);
   const{erro}=resultado;
   if(erro){
-    showToast('⚠️ Não foi possível atualizar da nuvem agora — mostrando os dados que já estão neste aparelho.','#d97706');
+    showToast('⚠️ Não foi possível atualizar da nuvem agora — mostrando os dados que já estão neste aparelho.','#fd8a14');
   }else{
     _ultimaSincronizacaoAdmin=agora;
     ultimoSyncInfo=resultado;
@@ -10613,7 +10613,7 @@ function renderizarListaHorasExtras(registros){
     const[y,m,dd]=(r.data||'').split('-');
     const dataFmt=y?`${dd}/${m}/${y}`:'—';
     const ehPrincipalmente100=(r.extra100||0)>=(r.extra70||0);
-    const corTipo=ehPrincipalmente100?'#b45309':'#d97706';
+    const corTipo=ehPrincipalmente100?'#b45309':'#fd8a14';
     const diaSemanaReg=y?new Date(r.data+'T12:00:00').getDay():null;
     const motivoTexto=r.extra100>0
       ?(r.feriadoNome?`Feriado: ${r.feriadoNome.toUpperCase()}`:'Domingo')
@@ -10654,11 +10654,11 @@ function classificarOrigemHoraExtra(r){
 }
 
 async function exportarHorasExtrasExcel(){
-  if(!horasExtrasRegistrosAtuais.length){ showToast('Filtre um período com dados antes de exportar.','#d97706'); return; }
-  if(typeof ExcelJS==='undefined'){ showToast('Biblioteca de Excel ainda carregando — espera 2 segundos e tenta de novo.','#d97706'); return; }
+  if(!horasExtrasRegistrosAtuais.length){ showToast('Filtre um período com dados antes de exportar.','#fd8a14'); return; }
+  if(typeof ExcelJS==='undefined'){ showToast('Biblioteca de Excel ainda carregando — espera 2 segundos e tenta de novo.','#fd8a14'); return; }
 
   const wb=new ExcelJS.Workbook();
-  wb.creator='Master Energy — Sistema de RDO';
+  wb.creator='ESF — Sistema de RDO';
   wb.created=new Date();
   const ws=wb.addWorksheet('Horas Extras',{properties:{tabColor:{argb:'FFD97706'}}});
   const LARG=15;
@@ -10813,7 +10813,7 @@ async function exportarHorasExtrasExcel(){
   const a=document.createElement('a');
   a.href=url; a.download=`HORAS_EXTRAS_MASTERENERGY_PERIODO_${dataBRArquivo(de)}_A_${dataBRArquivo(ate)}.xlsx`; a.click();
   setTimeout(()=>URL.revokeObjectURL(url),3000);
-  showToast('📥 Controle de Horas Extras exportado!','#d97706');
+  showToast('📥 Controle de Horas Extras exportado!','#fd8a14');
 }
 
 async function abrirExtraEscopo(){
@@ -10985,7 +10985,7 @@ function toggleTodosExtraEscopo(abrir){
 
 function compartilharExtraEscopoProjeto(nomeProjeto){
   const p=extraEscopoProjetosAtuais[nomeProjeto];
-  if(!p){ showToast('Registro não encontrado — filtre de novo e tente outra vez.','#d97706'); return; }
+  if(!p){ showToast('Registro não encontrado — filtre de novo e tente outra vez.','#fd8a14'); return; }
   if(typeof window.jspdf==='undefined'){ showToast('PDF não disponível — verifique sua internet.','#dc2626'); return; }
   const doc=gerarPdfExtraEscopo(p.dias, `Extra Escopo: ${p.nome}`);
   const nomeArquivo=p.nome.replace(/[^A-Z0-9]+/gi,'_').slice(0,40);
@@ -10999,7 +10999,7 @@ function compartilharExtraEscopoProjeto(nomeProjeto){
 // então o Excel SEMPRE bate com o que está sendo mostrado na tela.
 async function construirWorkbookExtraEscopo(grupos,subtitulo){
   const wb=new ExcelJS.Workbook();
-  wb.creator='Master Energy — Sistema de RDO';
+  wb.creator='ESF — Sistema de RDO';
   wb.created=new Date();
   const ws=wb.addWorksheet('Extra Escopo',{properties:{tabColor:{argb:'FF158038'}}});
   const LARG=12;
@@ -11131,8 +11131,8 @@ async function exportarExtraEscopoExcel(){
   const grupos=Object.values(extraEscopoGruposAtuais).sort((a,b)=>
     a.data===b.data ? String(a.nrdo).localeCompare(String(b.nrdo)) : a.data.localeCompare(b.data)
   );
-  if(!grupos.length){ showToast('Nenhum Extra Escopo encontrado pra exportar.','#d97706'); return; }
-  if(typeof ExcelJS==='undefined'){ showToast('Biblioteca de Excel ainda carregando — espera 2 segundos e tenta de novo.','#d97706'); return; }
+  if(!grupos.length){ showToast('Nenhum Extra Escopo encontrado pra exportar.','#fd8a14'); return; }
+  if(typeof ExcelJS==='undefined'){ showToast('Biblioteca de Excel ainda carregando — espera 2 segundos e tenta de novo.','#fd8a14'); return; }
 
   // Período SEMPRE em dia/mês/ano (padrão brasileiro), mesmo quando o filtro está em
   // branco (nesse caso mostra a primeira e a última data que realmente aparecem na
@@ -11165,8 +11165,8 @@ async function exportarExtraEscopoExcel(){
 // lado do "📤" (PDF) de cada card de dia no painel.
 async function exportarExtraEscopoExcelIndividual(chave){
   const g=extraEscopoGruposAtuais[chave];
-  if(!g){ showToast('Registro não encontrado — filtre de novo e tente outra vez.','#d97706'); return; }
-  if(typeof ExcelJS==='undefined'){ showToast('Biblioteca de Excel ainda carregando — espera 2 segundos e tenta de novo.','#d97706'); return; }
+  if(!g){ showToast('Registro não encontrado — filtre de novo e tente outra vez.','#fd8a14'); return; }
+  if(typeof ExcelJS==='undefined'){ showToast('Biblioteca de Excel ainda carregando — espera 2 segundos e tenta de novo.','#fd8a14'); return; }
   const subtitulo=`EXTRA ESCOPO — REGISTRO INDIVIDUAL — DATA: ${formatarDataBR(g.data)} — OBRA: ${(g.obra||'—').toUpperCase()} — DISCIPLINA: ${g.disc||'—'} — ENCARREGADO: ${g.encarregado} — ${g.ose}`;
   const {wb}=await construirWorkbookExtraEscopo([g],subtitulo);
   const nomeArquivo=`${sanitizarNomeArquivo(g.nrdo)} - EXTRA ESCOPO - ${dataBRArquivo(g.data)} - OBRA ${sanitizarNomeArquivo(g.obra).toUpperCase()} - DISCIPLINA ${sanitizarNomeArquivo(g.disc||'—').toUpperCase()} - ENCARREGADO ${sanitizarNomeArquivo(g.encarregado).toUpperCase()}.xlsx`;
@@ -11179,8 +11179,8 @@ async function exportarExtraEscopoExcelIndividual(chave){
 // Escopo", no cabeçalho de cada projeto do painel.
 async function exportarExtraEscopoExcelProjeto(nomeProjeto){
   const p=extraEscopoProjetosAtuais[nomeProjeto];
-  if(!p){ showToast('Registro não encontrado — filtre de novo e tente outra vez.','#d97706'); return; }
-  if(typeof ExcelJS==='undefined'){ showToast('Biblioteca de Excel ainda carregando — espera 2 segundos e tenta de novo.','#d97706'); return; }
+  if(!p){ showToast('Registro não encontrado — filtre de novo e tente outra vez.','#fd8a14'); return; }
+  if(typeof ExcelJS==='undefined'){ showToast('Biblioteca de Excel ainda carregando — espera 2 segundos e tenta de novo.','#fd8a14'); return; }
   const grupos=[...p.dias].sort((a,b)=>a.data.localeCompare(b.data));
   const primeiraData=grupos[0].data, ultimaData=grupos[grupos.length-1].data;
   const subtitulo=`EXTRA ESCOPO — SERVIÇO: ${p.nome.toUpperCase()} — PERÍODO: ${formatarDataBR(primeiraData)} A ${formatarDataBR(ultimaData)}`;
@@ -11207,7 +11207,7 @@ function salvarSnapshotPainel(descricao,chavesLS){
 }
 
 function desfazerAcaoPainel(){
-  if(!ultimoSnapshotPainel){ showToast('↩️ Nada para desfazer neste painel ainda.','#d97706'); return; }
+  if(!ultimoSnapshotPainel){ showToast('↩️ Nada para desfazer neste painel ainda.','#fd8a14'); return; }
   const ok=confirm(`Desfazer "${ultimoSnapshotPainel.descricao}"?\n\nOs RDOs afetados voltam exatamente pro estado de antes dessa ação.`);
   if(!ok) return;
   Object.entries(ultimoSnapshotPainel.entradas).forEach(([k,v])=>{
@@ -11328,7 +11328,7 @@ function deletarTrabalhadorExtraEscopo(chave,nomeFuncionario){
 
 function deletarExtraEscopoTodos(){
   const chaves=Object.keys(extraEscopoGruposAtuais);
-  if(!chaves.length){ showToast('Nada pra deletar.','#d97706'); return; }
+  if(!chaves.length){ showToast('Nada pra deletar.','#fd8a14'); return; }
   const de=document.getElementById('ee-de').value, ate=document.getElementById('ee-ate').value;
   const escopoTxto=(de||ate)?'do período filtrado':'de TODO o histórico';
   const ok=confirm(`Remover TODOS os ${chaves.length} registro(s) de Extra Escopo ${escopoTxto}?\n\nCada OSE volta pra "Sem Atividade" no dia correspondente. As horas continuam nos RDOs. Um backup automático de segurança será baixado antes, e dá pra usar "↩️ Desfazer" logo em seguida se for engano.`);
@@ -11460,7 +11460,7 @@ function compartilharExtraEscopoIndividual(chave){
 
 function compartilharExtraEscopoTodos(){
   const chaves=Object.keys(extraEscopoGruposAtuais);
-  if(!chaves.length){ showToast('Nada pra compartilhar.','#d97706'); return; }
+  if(!chaves.length){ showToast('Nada pra compartilhar.','#fd8a14'); return; }
   if(typeof window.jspdf==='undefined'){ showToast('PDF não disponível — verifique sua internet.','#dc2626'); return; }
   const de=document.getElementById('ee-de').value||null, ate=document.getElementById('ee-ate').value||null;
   const grupos=chaves.map(k=>extraEscopoGruposAtuais[k]).sort((a,b)=> a.data===b.data ? a.ose.localeCompare(b.ose) : a.data.localeCompare(b.data));
@@ -11728,7 +11728,7 @@ function deletarAndamentoTrabalhador(chave,nomeFuncionario){
 
 function deletarAndamentoTodos(){
   const chaves=Object.keys(andamentoGruposAtuais);
-  if(!chaves.length){ showToast('Nada pra deletar.','#d97706'); return; }
+  if(!chaves.length){ showToast('Nada pra deletar.','#fd8a14'); return; }
   const de=document.getElementById('an-de').value, ate=document.getElementById('an-ate').value;
   const escopoTxto=(de||ate)?'do período filtrado':'de TODO o histórico';
   const ok=confirm(`Remover TODOS os ${chaves.length} registro(s) de Andamento ${escopoTxto}?\n\nCada OSE volta pra "Sem Atividade" no dia correspondente. As horas continuam nos RDOs. Um backup automático de segurança será baixado antes, e dá pra usar "↩️ Desfazer" logo em seguida se for engano.`);
@@ -11763,7 +11763,7 @@ function compartilharAndamentoDia(chave){
 
 function compartilharAndamentoProjeto(nomeProjeto){
   const p=andamentoProjetosAtuais[nomeProjeto];
-  if(!p){ showToast('Projeto não encontrado — filtre de novo e tente outra vez.','#d97706'); return; }
+  if(!p){ showToast('Projeto não encontrado — filtre de novo e tente outra vez.','#fd8a14'); return; }
   if(typeof window.jspdf==='undefined'){ showToast('PDF não disponível — verifique sua internet.','#dc2626'); return; }
   const doc=gerarPdfExtraEscopo(p.dias, `Projeto: ${p.nome}`, 'CONTROLE DE ANDAMENTO POR PROJETO', [26,82,200]);
   const nomeArquivo=p.nome.replace(/[^A-Z0-9]+/gi,'_').slice(0,40);
@@ -11772,7 +11772,7 @@ function compartilharAndamentoProjeto(nomeProjeto){
 
 function compartilharAndamentoTodos(){
   const chaves=Object.keys(andamentoGruposAtuais);
-  if(!chaves.length){ showToast('Nada pra compartilhar.','#d97706'); return; }
+  if(!chaves.length){ showToast('Nada pra compartilhar.','#fd8a14'); return; }
   if(typeof window.jspdf==='undefined'){ showToast('PDF não disponível — verifique sua internet.','#dc2626'); return; }
   const de=document.getElementById('an-de').value||null, ate=document.getElementById('an-ate').value||null;
   const grupos=chaves.map(k=>andamentoGruposAtuais[k]).sort((a,b)=> a.servico===b.servico ? a.data.localeCompare(b.data) : a.servico.localeCompare(b.servico));
@@ -11790,7 +11790,7 @@ function compartilharAndamentoTodos(){
 // dois (fora o gerador de PDF, que já era compartilhado antes desta mudança).
 async function construirWorkbookAndamento(grupos,subtitulo){
   const wb=new ExcelJS.Workbook();
-  wb.creator='Master Energy — Sistema de RDO';
+  wb.creator='ESF — Sistema de RDO';
   wb.created=new Date();
   const ws=wb.addWorksheet('Andamento',{properties:{tabColor:{argb:'FF1A52C8'}}});
   const LARG=12;
@@ -11902,8 +11902,8 @@ async function exportarAndamentoExcel(){
   const grupos=Object.values(andamentoGruposAtuais).sort((a,b)=>
     a.data===b.data ? String(a.nrdo).localeCompare(String(b.nrdo)) : a.data.localeCompare(b.data)
   );
-  if(!grupos.length){ showToast('Nenhum Andamento encontrado pra exportar.','#d97706'); return; }
-  if(typeof ExcelJS==='undefined'){ showToast('Biblioteca de Excel ainda carregando — espera 2 segundos e tenta de novo.','#d97706'); return; }
+  if(!grupos.length){ showToast('Nenhum Andamento encontrado pra exportar.','#fd8a14'); return; }
+  if(typeof ExcelJS==='undefined'){ showToast('Biblioteca de Excel ainda carregando — espera 2 segundos e tenta de novo.','#fd8a14'); return; }
 
   const primeiraData=grupos[0].data, ultimaData=grupos[grupos.length-1].data;
   const deTxt=formatarDataBR(de||primeiraData), ateTxt=formatarDataBR(ate||ultimaData);
@@ -11932,8 +11932,8 @@ async function exportarAndamentoExcel(){
 // NOVO: Excel de um único registro (um RDO + uma OSE, um dia específico) do Andamento.
 async function exportarAndamentoExcelIndividual(chave){
   const g=andamentoGruposAtuais[chave];
-  if(!g){ showToast('Registro não encontrado — filtre de novo e tente outra vez.','#d97706'); return; }
-  if(typeof ExcelJS==='undefined'){ showToast('Biblioteca de Excel ainda carregando — espera 2 segundos e tenta de novo.','#d97706'); return; }
+  if(!g){ showToast('Registro não encontrado — filtre de novo e tente outra vez.','#fd8a14'); return; }
+  if(typeof ExcelJS==='undefined'){ showToast('Biblioteca de Excel ainda carregando — espera 2 segundos e tenta de novo.','#fd8a14'); return; }
   const subtitulo=`ANDAMENTO — REGISTRO INDIVIDUAL — DATA: ${formatarDataBR(g.data)} — OBRA: ${(g.obra||'—').toUpperCase()} — DISCIPLINA: ${g.disc||'—'} — ENCARREGADO: ${g.encarregado} — ${g.ose}`;
   const {wb}=await construirWorkbookAndamento([g],subtitulo);
   const nomeArquivo=`${sanitizarNomeArquivo(g.nrdo)} - ANDAMENTO - ${dataBRArquivo(g.data)} - OBRA ${sanitizarNomeArquivo(g.obra).toUpperCase()} - DISCIPLINA ${sanitizarNomeArquivo(g.disc||'—').toUpperCase()} - ENCARREGADO ${sanitizarNomeArquivo(g.encarregado).toUpperCase()}.xlsx`;
@@ -11944,8 +11944,8 @@ async function exportarAndamentoExcelIndividual(chave){
 // NOVO: Excel de um projeto inteiro (todos os dias/RDOs daquele serviço) do Andamento.
 async function exportarAndamentoExcelProjeto(nomeProjeto){
   const p=andamentoProjetosAtuais[nomeProjeto];
-  if(!p){ showToast('Registro não encontrado — filtre de novo e tente outra vez.','#d97706'); return; }
-  if(typeof ExcelJS==='undefined'){ showToast('Biblioteca de Excel ainda carregando — espera 2 segundos e tenta de novo.','#d97706'); return; }
+  if(!p){ showToast('Registro não encontrado — filtre de novo e tente outra vez.','#fd8a14'); return; }
+  if(typeof ExcelJS==='undefined'){ showToast('Biblioteca de Excel ainda carregando — espera 2 segundos e tenta de novo.','#fd8a14'); return; }
   const grupos=[...p.dias].sort((a,b)=>a.data.localeCompare(b.data));
   const primeiraData=grupos[0].data, ultimaData=grupos[grupos.length-1].data;
   const subtitulo=`ANDAMENTO — PROJETO: ${p.nome.toUpperCase()} — PERÍODO: ${formatarDataBR(primeiraData)} A ${formatarDataBR(ultimaData)}`;
@@ -12121,7 +12121,7 @@ function renderizarProjetos(){
       <div style="width:100%">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
           <div>
-            <div class="pj-nome">📁 ${p.nome}${p.temGrafiasDiferentes?` <span title="Grafias diferentes juntadas nesta soma: ${Object.keys(p.variantes).join(' | ')}" style="font-size:9.5px;font-weight:800;color:#d97706;background:#fef3c7;border:1px solid #d97706;border-radius:4px;padding:1px 5px;cursor:help">🔗 nomes parecidos juntados</span>`:''}</div>
+            <div class="pj-nome">📁 ${p.nome}${p.temGrafiasDiferentes?` <span title="Grafias diferentes juntadas nesta soma: ${Object.keys(p.variantes).join(' | ')}" style="font-size:9.5px;font-weight:800;color:#fd8a14;background:#fef3c7;border:1px solid #fd8a14;border-radius:4px;padding:1px 5px;cursor:help">🔗 nomes parecidos juntados</span>`:''}</div>
             <div class="pj-meta" style="font-weight:800">🏭 ${p.obra} · de ${id}/${im}/${iy} até ${ud}/${um}/${uy} ${statusHtml}</div>
             <div class="pj-meta" style="margin-top:2px">${encarregadosHtml}</div>
           </div>
@@ -12429,10 +12429,10 @@ function diasDoMesFolhaPonto(ano,mes){ // mes 1-12
 // Só LEITURA: busca, organiza e apresenta; nunca escreve nada no banco, nunca
 // recalcula hora extra (usa exatamente o que o RDO já calculou e gravou).
 async function exportarFolhaPontoExcel(){
-  if(typeof ExcelJS==='undefined'){ showToast('Biblioteca de Excel ainda carregando — espera 2 segundos e tenta de novo.','#d97706'); return; }
+  if(typeof ExcelJS==='undefined'){ showToast('Biblioteca de Excel ainda carregando — espera 2 segundos e tenta de novo.','#fd8a14'); return; }
   const dataDe=document.getElementById('folha-ponto-de')?.value;
   const dataAte=document.getElementById('folha-ponto-ate')?.value;
-  if(!dataDe||!dataAte){ showToast('Escolha o período (De / Até).','#d97706'); return; }
+  if(!dataDe||!dataAte){ showToast('Escolha o período (De / Até).','#fd8a14'); return; }
   if(dataDe>dataAte){ showToast('A Data "De" não pode ser depois da Data "Até".','#dc2626'); return; }
   showToast('🔎 Buscando dados da Folha de Ponto...','#6b7280');
 
@@ -12798,18 +12798,18 @@ async function exportarFolhaPontoExcel(){
 
 async function exportarBackupCompletoExcel(btn){
   if(!exigirAdmin()) return;
-  if(typeof ExcelJS==='undefined'){ showToast('Biblioteca de Excel ainda carregando — espera 2 segundos e tenta de novo.','#d97706'); return; }
+  if(typeof ExcelJS==='undefined'){ showToast('Biblioteca de Excel ainda carregando — espera 2 segundos e tenta de novo.','#fd8a14'); return; }
   const textoOriginal=btn?btn.textContent:'';
   if(btn){ btn.disabled=true; btn.textContent='⏳ Gerando...'; }
   try{
     await sincronizarSeAdmin(true);
     autoSilentSave();
     const registros=coletarTodosOsRegistrosFlat();
-    if(!registros.length){ showToast('Nenhum RDO com atividade lançada encontrado.','#d97706'); return; }
+    if(!registros.length){ showToast('Nenhum RDO com atividade lançada encontrado.','#fd8a14'); return; }
     const dadosHoraExtra=await buscarHorasExtrasParaBackup(); // null se não conseguir — tratado mais abaixo
 
     const wb=new ExcelJS.Workbook();
-    wb.creator='Master Energy — Sistema de RDO';
+    wb.creator='ESF — Sistema de RDO';
     wb.created=new Date();
 
     const totalHorasGeral=registros.reduce((s,r)=>s+r.horas,0);
@@ -13290,8 +13290,8 @@ async function exportarProjetosExcel(){
   const de=document.getElementById('pj-de').value||null;
   const ate=document.getElementById('pj-ate').value||null;
   const dados=coletarDadosProjeto(de,ate);
-  if(!dados.length){ showToast('Nenhum projeto encontrado pra exportar.','#d97706'); return; }
-  if(typeof ExcelJS==='undefined'){ showToast('Biblioteca de Excel ainda carregando — espera 2 segundos e tenta de novo.','#d97706'); return; }
+  if(!dados.length){ showToast('Nenhum projeto encontrado pra exportar.','#fd8a14'); return; }
+  if(typeof ExcelJS==='undefined'){ showToast('Biblioteca de Excel ainda carregando — espera 2 segundos e tenta de novo.','#fd8a14'); return; }
 
   // Uma linha por Projeto + Disciplina — nunca soma horas de disciplinas diferentes
   // juntas: se o mesmo projeto teve Mecânica e Elétrica trabalhando nele, cada uma vira
@@ -13330,7 +13330,7 @@ async function exportarProjetosExcel(){
   const lista=Object.values(projetos).sort((a,b)=>a.nome.localeCompare(b.nome)||b.totalHoras-a.totalHoras);
 
   const wb=new ExcelJS.Workbook();
-  wb.creator='Master Energy — Sistema de RDO';
+  wb.creator='ESF — Sistema de RDO';
   wb.created=new Date();
   const ws=wb.addWorksheet('Horas por Projeto',{properties:{tabColor:{argb:'FFC2410C'}}});
   const LARG=8;
@@ -13508,10 +13508,10 @@ function executarCheckIntegridade(provisorio){
   const avisos=problemas.length-graves;
 
   document.getElementById('check-resumo').innerHTML=`
-    ${provisorio?'<div style="grid-column:1/-1;text-align:center;font-size:11px;font-weight:900;color:#d97706;padding:4px">🔄 Resultado provisório (só com dados deste aparelho) — confirmando com a nuvem...</div>':''}
+    ${provisorio?'<div style="grid-column:1/-1;text-align:center;font-size:11px;font-weight:900;color:#fd8a14;padding:4px">🔄 Resultado provisório (só com dados deste aparelho) — confirmando com a nuvem...</div>':''}
     <div class="ee-card"><div class="v" style="color:${problemas.length?'#dc2626':'#158038'}">${problemas.length}</div><div class="l">Total encontrado</div></div>
     <div class="ee-card"><div class="v" style="color:#dc2626">${graves}</div><div class="l">Graves</div></div>
-    <div class="ee-card"><div class="v" style="color:#d97706">${avisos}</div><div class="l">Avisos</div></div>
+    <div class="ee-card"><div class="v" style="color:#fd8a14">${avisos}</div><div class="l">Avisos</div></div>
   `;
 
   const wrap=document.getElementById('check-lista-wrap');
@@ -13544,7 +13544,7 @@ function resolverDuplicataNRDO(obra){
   const campoObra=document.getElementById('search-obra');
   if(campoObra) campoObra.value=obra||'';
   abrirBuscaRDO();
-  showToast('🔍 Compare as datas/números e exclua a cópia errada.','#d97706');
+  showToast('🔍 Compare as datas/números e exclua a cópia errada.','#fd8a14');
 }
 
 // Atalho direto a partir do Check de Integridade pra qualquer pendência ligada a UM RDO
@@ -13653,7 +13653,7 @@ function abrirBackup(){
 function exportarBackupCompleto(){
   const dados=coletarTodosOsDadosParaBackup();
   const qtd=Object.keys(dados.rdos).length;
-  if(qtd===0){ showToast('Nenhum RDO salvo ainda pra fazer backup.','#d97706'); return; }
+  if(qtd===0){ showToast('Nenhum RDO salvo ainda pra fazer backup.','#fd8a14'); return; }
   const json=JSON.stringify(dados,null,2);
   const filename=nomeArquivoBackup();
   const blob=new Blob([json],{type:'application/json'});
@@ -13668,20 +13668,20 @@ function exportarBackupCompleto(){
 function compartilharBackup(){
   const dados=coletarTodosOsDadosParaBackup();
   const qtd=Object.keys(dados.rdos).length;
-  if(qtd===0){ showToast('Nenhum RDO salvo ainda pra fazer backup.','#d97706'); return; }
+  if(qtd===0){ showToast('Nenhum RDO salvo ainda pra fazer backup.','#fd8a14'); return; }
   const json=JSON.stringify(dados,null,2);
   const filename=nomeArquivoBackup();
   const blob=new Blob([json],{type:'application/json'});
   const file=new File([blob],filename,{type:'application/json'});
 
   if(navigator.canShare&&navigator.canShare({files:[file]})){
-    navigator.share({files:[file],title:'Backup RDO Master Energy',text:`Backup com ${qtd} RDO(s) salvos — ${new Date().toLocaleString('pt-BR')}.`})
+    navigator.share({files:[file],title:'Backup RDO ESF',text:`Backup com ${qtd} RDO(s) salvos — ${new Date().toLocaleString('pt-BR')}.`})
       .then(()=>{ registrarUltimoBackup('compartilhado'); showToast('✓ Backup compartilhado!','#158038'); })
       .catch(err=>{
         if(err.name!=='AbortError'){
           baixarArquivoBlob(blob,filename);
           registrarUltimoBackup('exportado');
-          showToast('📎 Não deu pra compartilhar direto — o arquivo foi baixado, anexe manualmente.','#d97706');
+          showToast('📎 Não deu pra compartilhar direto — o arquivo foi baixado, anexe manualmente.','#fd8a14');
         }
       });
     return;
@@ -13691,7 +13691,7 @@ function compartilharBackup(){
   baixarArquivoBlob(blob,filename);
   registrarUltimoBackup('exportado');
   setTimeout(()=>{
-    window.open('https://api.whatsapp.com/send?text='+encodeURIComponent(`📦 Backup RDO Master Energy (${qtd} RDOs) — o arquivo "${filename}" acabou de baixar, é só anexar aqui.`),'_blank');
+    window.open('https://api.whatsapp.com/send?text='+encodeURIComponent(`📦 Backup RDO ESF (${qtd} RDOs) — o arquivo "${filename}" acabou de baixar, é só anexar aqui.`),'_blank');
     showToast('📥 Backup baixado! Anexe o arquivo no WhatsApp que abriu.','#158038');
   },400);
 }
@@ -13719,7 +13719,7 @@ function atualizarAvisoUltimoBackup(){
   try{ raw=JSON.parse(localStorage.getItem('rdo-ultimo-backup')||'null'); }catch(e){}
   if(!raw||!raw.quando){
     el.innerHTML='⚠️ <b>Você ainda não fez nenhum backup neste aparelho.</b> Recomendado exportar pelo menos uma vez por semana.';
-    el.style.color='#d97706';
+    el.style.color='#fd8a14';
     return;
   }
   const dt=new Date(raw.quando);
@@ -13729,7 +13729,7 @@ function atualizarAvisoUltimoBackup(){
   const tipoTxt=raw.tipo==='restaurado'?'restaurado':raw.tipo==='compartilhado'?'compartilhado':'exportado';
   const ha=diffDias===0?'hoje':diffDias===1?'há 1 dia':`há ${diffDias} dias`;
   el.innerHTML=`📅 Último backup <b>${tipoTxt}</b>: ${dataFmt} (${ha})`;
-  el.style.color=diffDias>=7?'#d97706':'var(--text3)';
+  el.style.color=diffDias>=7?'#fd8a14':'var(--text3)';
 }
 
 function baixarArquivoBlob(blob,filename){

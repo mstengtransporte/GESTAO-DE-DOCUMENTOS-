@@ -1069,7 +1069,7 @@ document.getElementById('btnExportarPdf').addEventListener('click', () => {
 
   document.getElementById('printArea').innerHTML = `
     <div style="padding:24px;font-family:sans-serif;">
-      <h2 style="color:#1B3F91;margin-bottom:2px;">Master Energy — Relatório de Abastecimentos</h2>
+      <h2 style="color:#1B3F91;margin-bottom:2px;">ESF — Relatório de Abastecimentos</h2>
       <p style="color:#555;font-size:12px;margin-top:0;">Gerado em ${new Date().toLocaleString('pt-BR')} · ${abastecimentosCache.length} registro(s)</p>
       <table style="width:100%;border-collapse:collapse;font-size:11px;margin-top:14px;">
         <thead>

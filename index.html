@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ESF ERP · Gestão Documental — Master Energy</title>
+<title>ESF ERP · Gestão Documental — ESF</title>
 <link rel="icon" type="image/svg+xml" sizes="16x16" href="esf-favicon-16.svg">
 <link rel="icon" type="image/svg+xml" sizes="32x32" href="esf-favicon-32.svg">
 <link rel="apple-touch-icon" href="esf-apple-touch-icon.svg">
@@ -17,13 +17,13 @@
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4/dist/exceljs.min.js"></script>
 <style>
 :root{
-  /* ---- Paleta: azul industrial/segurança, refinado a partir da identidade da Master Energy ---- */
+  /* ---- Paleta: azul industrial/segurança, refinado a partir da identidade da ESF ---- */
   --navy-950:#03101f; --navy-900:#00477f; --navy-800:#0f3258; --navy-700:#154070;
   --blue-500:#00b5fe; --blue-400:#3ab4f2; --blue-300:#7dd0fb;
-  --amber-500:#e8a33d; --amber-400:#f0b75f;
+  --amber-500:#fd8a14; --amber-400:#feab5c;
   --white:#ffffff;
   --success:#1fa97a; --success-bg:rgba(31,169,122,.15);
-  --warning:#e8a33d; --warning-bg:rgba(232,163,61,.15);
+  --warning:#fd8a14; --warning-bg:rgba(253,138,20,.15);
   --danger:#e5484d; --danger-bg:rgba(229,72,77,.15);
   --surface-1: rgba(255,255,255,.045); --surface-2: rgba(255,255,255,.07); --surface-border: rgba(255,255,255,.1);
   --ink-50:#f3f6fb; --ink-300:#a9b4c4; --ink-500:#6d7889;
@@ -331,7 +331,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
   <div class="card auth-card">
     <div class="brand" style="padding-bottom:22px">
       <div class="brand-mark"><img src="esf-logo-sidebar.svg" alt="ESF ERP" loading="lazy" style="width:100%;height:100%;object-fit:contain;padding:4px"></div>
-      <div><div class="brand-name">ESF <span style="color:var(--blue-400)">ERP</span></div><div class="brand-sub">Master Energy · Gestão Documental</div></div>
+      <div><div class="brand-name">ESF <span style="color:var(--blue-400)">ERP</span></div><div class="brand-sub">ESF · Gestão Documental</div></div>
     </div>
     <h1 id="authTitle">Entrar no sistema</h1>
     <div class="sub">Sistema de Gestão SST — conectado ao Supabase</div>
@@ -380,7 +380,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
     <aside class="sidebar">
       <div class="brand">
         <div class="brand-mark"><img src="esf-logo-sidebar.svg" alt="ESF ERP" loading="lazy" style="width:100%;height:100%;object-fit:contain;padding:4px"></div>
-        <div><div class="brand-name">ESF <span style="color:var(--blue-400)">ERP</span></div><div class="brand-sub">Master Energy · Gestão Documental</div></div>
+        <div><div class="brand-name">ESF <span style="color:var(--blue-400)">ERP</span></div><div class="brand-sub">ESF · Gestão Documental</div></div>
       </div>
 
       <div class="sidebar-nav">
@@ -2276,7 +2276,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
 </svg>`,
   };
 
-  // Renderiza um ícone de marca própria da Master Energy (SVG com gradiente/brilho embutido).
+  // Renderiza um ícone de marca própria da ESF (SVG com gradiente/brilho embutido).
   // Cada instância recebe IDs únicos internamente — os SVGs originais reaproveitam os mesmos
   // nomes de id (ex: "g", "glow", ou no caso do logo "bg", "m", "p"), e como vários ícones vão
   // pra mesma página, preciso trocar TODO id interno por um exclusivo pra cada renderização,
@@ -2324,7 +2324,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
   }
   // Avatar com as iniciais da pessoa — cada nome sempre cai na mesma cor (calculada a partir do
   // próprio nome), então a mesma pessoa aparece sempre com a mesma "cara" em qualquer tela.
-  const CORES_AVATAR = ['#0092d6', '#1fa97a', '#e8a33d', '#a78bfa', '#f472b6', '#3ab4f2', '#f97316'];
+  const CORES_AVATAR = ['#0092d6', '#1fa97a', '#fd8a14', '#a78bfa', '#f472b6', '#3ab4f2', '#f97316'];
   function avatarIniciais(nome, tamanho) {
     if (!nome) return '';
     const partes = nome.trim().split(/\s+/);
@@ -2701,7 +2701,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
 
       const backup = {
         gerado_em: new Date().toISOString(),
-        sistema: 'Master Energy — Gestão de SST',
+        sistema: 'ESF — Gestão de SST',
         funcionarios: (funcs.data || []).slice().sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),
         treinamentos_nrs: treinos.data || [],
         asos: asos.data || [],
@@ -3035,7 +3035,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
   // ================= DOSSIÊ — planilha Excel profissional, pronta pra fiscalização =================
   let ultimoResultadoFicha = null;
 
-  const COR_CABECALHO = 'FF00477F';       // navy da Master Energy
+  const COR_CABECALHO = 'FF00477F';       // navy da ESF
   const COR_CABECALHO_TXT = 'FFFFFFFF';
   const COR_EM_DIA = 'FF1FA97A';   const COR_EM_DIA_TXT = 'FFFFFFFF';
   const COR_A_VENCER = 'FFE8A33D'; const COR_A_VENCER_TXT = 'FF3A2A00';
@@ -3132,7 +3132,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
     ]);
 
     const wb = new ExcelJS.Workbook();
-    wb.creator = 'Master Energy — Sistema de Gestão SST';
+    wb.creator = 'ESF — Sistema de Gestão SST';
     wb.created = new Date();
     const sheet = wb.addWorksheet('Dossiê', {
       pageSetup: {
@@ -3553,7 +3553,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
       { nome: 'Funcionários', dados: funcs.data || [], icone: 'users', tab: 'func', semVencimento: true, cor: '#0092d6' },
       { nome: 'ASOs', dados: asos.data || [], icone: 'stethoscope', tab: 'aso', campoValidade: 'validade_data', cor: '#3ab4f2' },
       { nome: 'Treinamentos / NRs', dados: treinos.data || [], icone: 'graduation-cap', tab: 'treino', campoValidade: 'validade_data', cor: '#7dd0fb' },
-      { nome: 'EPIs', dados: epis.data || [], icone: 'shield', tab: 'epi', campoValidade: 'troca', cor: '#e8a33d' },
+      { nome: 'EPIs', dados: epis.data || [], icone: 'shield', tab: 'epi', campoValidade: 'troca', cor: '#fd8a14' },
       { nome: 'Integrações', dados: integs.data || [], icone: 'building-2', tab: 'integ', campoValidade: 'validade_data', cor: '#1fa97a' },
       { nome: 'Folha de Ponto', dados: pontos.data || [], icone: 'clock', tab: 'ponto', semVencimento: true, cor: '#a78bfa' },
       { nome: 'Férias', dados: ferias.data || [], icone: 'palmtree', tab: 'ferias', campoValidade: 'limite_gozo', cor: '#f472b6' },
@@ -3615,13 +3615,13 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
       if (window.__chartConformidade) window.__chartConformidade.destroy();
       window.__chartConformidade = new Chart(document.getElementById('chartConformidade'), {
         type: 'doughnut',
-        data: { datasets: [{ data: dadosRosca, backgroundColor: ['#1fa97a', '#e8a33d', '#e5484d'], borderWidth: 0, hoverOffset: 6 }] },
+        data: { datasets: [{ data: dadosRosca, backgroundColor: ['#1fa97a', '#fd8a14', '#e5484d'], borderWidth: 0, hoverOffset: 6 }] },
         options: { cutout: '72%', plugins: { legend: { display: false }, tooltip: { enabled: true } }, animation: { duration: 500 } },
       });
 
       // ---- Gráfico de barras: quantidade de registros vigentes por categoria ----
       if (window.__chartCategorias) window.__chartCategorias.destroy();
-      const coresCategorias = ['#0092d6', '#3ab4f2', '#7dd0fb', '#e8a33d', '#1fa97a', '#a78bfa', '#f472b6'];
+      const coresCategorias = ['#0092d6', '#3ab4f2', '#7dd0fb', '#fd8a14', '#1fa97a', '#a78bfa', '#f472b6'];
       window.__chartCategorias = new Chart(document.getElementById('chartCategorias'), {
         type: 'bar',
         data: {
@@ -3655,7 +3655,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
           labels: modulosComVencimento.map(m => m.nome),
           datasets: [
             { label: 'Em dia', data: contagemPorCategoria.map(c => c.apto), backgroundColor: '#1fa97a', borderRadius: 4 },
-            { label: 'Vencendo', data: contagemPorCategoria.map(c => c.pendente), backgroundColor: '#e8a33d', borderRadius: 4 },
+            { label: 'Vencendo', data: contagemPorCategoria.map(c => c.pendente), backgroundColor: '#fd8a14', borderRadius: 4 },
             { label: 'Vencido', data: contagemPorCategoria.map(c => c.vencido), backgroundColor: '#e5484d', borderRadius: 4 },
           ],
         },
