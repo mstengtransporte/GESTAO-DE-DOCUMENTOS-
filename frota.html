@@ -28,7 +28,7 @@
           brand: { DEFAULT: '#00B5FE', dim: '#0E4B57' },
           brand2: '#0EA5E9',
           yellow: { DEFAULT: '#FD8A14', dim: '#5C4200' },
-          green: { DEFAULT: '#22D3EE', dim: '#0E4B57' }, // verde removido do sistema — segue o azul neon da marca
+          green: { DEFAULT: '#00B5FE', dim: '#0E4B57' }, // verde removido do sistema — segue o azul neon da marca
           red: { DEFAULT: '#FF3B5C', dim: '#4A0F1C' },
           ink: '#EAF3FF',
           muted: '#7C93B8'
@@ -60,7 +60,7 @@
     box-shadow: inset 0 2px 6px rgba(0,0,0,.6);
   }
   .scan-mask {
-    border: 3px solid #22D3EE;
+    border: 3px solid #00B5FE;
     box-shadow: 0 0 0 9999px rgba(10,18,32,0.78);
     border-radius: 12px;
   }
@@ -69,7 +69,7 @@
   @keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(47,155,255,.5);} 100% { box-shadow: 0 0 0 14px rgba(47,155,255,0);} }
   .pulse { animation: pulse-ring 1.6s ease-out infinite; }
   input:focus, select:focus, textarea:focus, button:focus-visible {
-    outline: 2px solid #22D3EE; outline-offset: 2px;
+    outline: 2px solid #00B5FE; outline-offset: 2px;
   }
   /* fundo sutil de skyline industrial, ecoando a identidade ESF */
   .industrial-bg {
@@ -78,7 +78,7 @@
       linear-gradient(#0B132B, #0B132B);
   }
   .brand-logo-m {
-    background: linear-gradient(135deg, #5EEAFF 0%, #22D3EE 45%, #0877E8 100%);
+    background: linear-gradient(135deg, #8DEBFF 0%, #00B5FE 45%, #0090CC 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -138,7 +138,7 @@
 
       <div class="mt-4 rounded-2xl bg-surface border border-line p-6 flex flex-col items-center text-center gap-3">
         <div class="w-16 h-16 rounded-full bg-brand/15 border border-brand/40 flex items-center justify-center pulse">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#22D3EE" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM19 14h2v2h-2zM14 19h2v2h-2zM19 19h2v2h-2z"/></svg>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00B5FE" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM19 14h2v2h-2zM14 19h2v2h-2zM19 19h2v2h-2z"/></svg>
         </div>
         <p class="text-muted text-sm">Aponte a câmera para o QR Code colado no painel do veículo.</p>
         <button id="btnScan" class="w-full mt-2 bg-brand hover:brightness-110 active:scale-[.98] transition font-display font-700 uppercase tracking-wide text-lg py-4 rounded-xl">
@@ -369,7 +369,7 @@
   <div id="modalQrOk" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
     <div class="bg-surface border border-green/40 rounded-2xl p-6 max-w-sm w-full text-center">
       <div class="w-14 h-14 mx-auto rounded-full bg-green-dim flex items-center justify-center mb-3">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#22D3EE" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#00B5FE" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
       </div>
       <h3 class="font-display text-2xl uppercase font-700">Veículo identificado!</h3>
       <p id="modalQrPlaca" class="text-brand font-mono text-xl mt-1">—</p>
