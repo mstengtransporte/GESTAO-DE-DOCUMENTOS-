@@ -159,11 +159,11 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
   background:var(--surface-1);border:1px solid var(--surface-border);border-radius:12px;
   text-decoration:none;color:var(--ink-500);opacity:.55;position:relative;
 }
-.modulo-erp-tile img{width:34px;height:34px;object-fit:contain;filter:grayscale(1);opacity:.7;}
+.modulo-erp-tile [data-icone-marca] svg{width:34px !important;height:34px !important;filter:grayscale(1);opacity:.7;}
 .modulo-erp-tile span{font-size:10.5px;font-weight:700;line-height:1.25;}
 .modulo-erp-tile em{font-style:normal;font-size:8.5px;font-weight:800;text-transform:uppercase;color:var(--ink-500);background:var(--surface-2);padding:1px 6px;border-radius:20px;position:absolute;top:6px;right:6px;}
 .modulo-erp-tile.ativo{opacity:1;color:var(--ink-50);border-color:rgba(0,159,227,.4);cursor:pointer;transition:transform .12s,border-color .15s;}
-.modulo-erp-tile.ativo img{filter:none;opacity:1;}
+.modulo-erp-tile.ativo [data-icone-marca] svg{filter:none;opacity:1;}
 .modulo-erp-tile.ativo:hover{transform:translateY(-2px);border-color:var(--blue-500);}
 .toggle-senha{
   position:absolute;right:4px;top:0;height:38px;width:34px;display:flex;align-items:center;justify-content:center;
@@ -325,7 +325,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
   <div id="authScreen" class="auth-page">
   <div class="card auth-card">
     <div class="brand" style="padding-bottom:22px">
-      <div class="brand-mark"><img src="icons/esf-erp-logo.png" alt="ESF ERP" loading="lazy" style="width:100%;height:100%;object-fit:contain;padding:4px"></div>
+      <div class="brand-mark" data-icone-marca="logo-esf-temp" data-icone-tamanho="44"></div>
       <div><div class="brand-name">ESF <span style="color:var(--blue-400)">ERP</span></div><div class="brand-sub">Master Energy · Gestão Documental</div></div>
     </div>
     <h1 id="authTitle">Entrar no sistema</h1>
@@ -374,7 +374,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
   <div id="appScreen" class="hidden app-shell">
     <aside class="sidebar">
       <div class="brand">
-        <div class="brand-mark"><img src="icons/esf-erp-logo.png" alt="ESF ERP" loading="lazy" style="width:100%;height:100%;object-fit:contain;padding:4px"></div>
+        <div class="brand-mark" data-icone-marca="logo-esf-temp" data-icone-tamanho="44"></div>
         <div><div class="brand-name">ESF <span style="color:var(--blue-400)">ERP</span></div><div class="brand-sub">Master Energy · Gestão Documental</div></div>
       </div>
 
@@ -397,7 +397,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
       <div class="nav-group-label">Operacional</div>
       <a class="nav-item btn-ghost" href="rdo.html" target="_blank" rel="noopener"><svg data-lucide="clipboard-list"></svg>RDO <svg data-lucide="external-link" style="width:12px;height:12px;margin-left:auto;opacity:.6"></svg></a>
       <a class="nav-item btn-ghost" href="escala.html" target="_blank" rel="noopener"><svg data-lucide="calendar-days"></svg>Escala de Funcionários <svg data-lucide="external-link" style="width:12px;height:12px;margin-left:auto;opacity:.6"></svg></a>
-      <div class="nav-item nav-item-em-breve"><svg data-lucide="truck"></svg>Frota / Controle de KM <span class="badge-em-breve">em breve</span></div>
+      <a class="nav-item btn-ghost" href="frota-admin.html" target="_blank" rel="noopener"><svg data-lucide="truck"></svg>Frota / Controle de KM <svg data-lucide="external-link" style="width:12px;height:12px;margin-left:auto;opacity:.6"></svg></a>
       <div class="nav-item nav-item-em-breve"><svg data-lucide="shopping-cart"></svg>Requisição de Materiais <span class="badge-em-breve">em breve</span></div>
       </div>
 
@@ -929,27 +929,27 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
       <div class="card">
         <div class="topbar" style="margin-bottom:2px">
           <h1 style="font-size:15px">🗺️ Mapa completo do ESF ERP</h1>
-          <span class="small">3 de 17 módulos ativos</span>
+          <span class="small">4 de 17 módulos ativos</span>
         </div>
         <div class="small" style="margin-bottom:14px">Todos os processos da empresa, pensados pra um sistema só — o que já está pronto é clicável, o resto entra conforme for sendo construído.</div>
         <div class="grade-modulos-erp">
-          <div class="modulo-erp-tile ativo" data-tab="func"><img src="icons/esf-erp-logo.png" loading="lazy" alt=""><span>Documental / SST</span></div>
-          <a class="modulo-erp-tile ativo" href="rdo.html" target="_blank" rel="noopener"><img src="icons/mod-projetos.png" loading="lazy" alt=""><span>RDO</span></a>
-          <a class="modulo-erp-tile ativo" href="escala.html" target="_blank" rel="noopener"><img src="icons/mod-rh.png" loading="lazy" alt=""><span>Escala / RH</span></a>
-          <div class="modulo-erp-tile"><img src="icons/mod-logistica.png" loading="lazy" alt=""><span>Frota / KM</span><em>em breve</em></div>
-          <div class="modulo-erp-tile"><img src="icons/mod-compras.png" loading="lazy" alt=""><span>Compras</span><em>em breve</em></div>
-          <div class="modulo-erp-tile"><img src="icons/mod-estoque.png" loading="lazy" alt=""><span>Estoque</span><em>em breve</em></div>
-          <div class="modulo-erp-tile"><img src="icons/mod-financeiro.png" loading="lazy" alt=""><span>Financeiro</span><em>em breve</em></div>
-          <div class="modulo-erp-tile"><img src="icons/mod-vendas.png" loading="lazy" alt=""><span>Vendas / CRM</span><em>em breve</em></div>
-          <div class="modulo-erp-tile"><img src="icons/mod-producao.png" loading="lazy" alt=""><span>Produção</span><em>em breve</em></div>
-          <div class="modulo-erp-tile"><img src="icons/mod-fiscal.png" loading="lazy" alt=""><span>Fiscal</span><em>em breve</em></div>
-          <div class="modulo-erp-tile"><img src="icons/mod-projetos.png" loading="lazy" alt=""><span>Projetos</span><em>em breve</em></div>
-          <div class="modulo-erp-tile"><img src="icons/mod-documentos.png" loading="lazy" alt=""><span>Documentos (GED)</span><em>em breve</em></div>
-          <div class="modulo-erp-tile"><img src="icons/mod-manutencao.png" loading="lazy" alt=""><span>Manutenção</span><em>em breve</em></div>
-          <div class="modulo-erp-tile"><img src="icons/mod-patrimonio.png" loading="lazy" alt=""><span>Patrimônio</span><em>em breve</em></div>
-          <div class="modulo-erp-tile"><img src="icons/mod-planejamento.png" loading="lazy" alt=""><span>Planejamento</span><em>em breve</em></div>
-          <div class="modulo-erp-tile"><img src="icons/mod-usuarios.png" loading="lazy" alt=""><span>Usuários / Segurança</span><em>em breve</em></div>
-          <div class="modulo-erp-tile"><img src="icons/mod-configuracoes.png" loading="lazy" alt=""><span>Configurações</span><em>em breve</em></div>
+          <div class="modulo-erp-tile ativo" data-tab="func"><span data-icone-marca="financeiro" data-icone-tamanho="34" style="display:inline-flex"></span><span>Documental / SST</span></div>
+          <a class="modulo-erp-tile ativo" href="rdo.html" target="_blank" rel="noopener"><span data-icone-marca="rdo-icone" data-icone-tamanho="34" style="display:inline-flex"></span><span>RDO</span></a>
+          <a class="modulo-erp-tile ativo" href="escala.html" target="_blank" rel="noopener"><span data-icone-marca="escala-icone" data-icone-tamanho="34" style="display:inline-flex"></span><span>Escala / RH</span></a>
+          <a class="modulo-erp-tile ativo" href="frota-admin.html" target="_blank" rel="noopener"><span data-icone-marca="logistica" data-icone-tamanho="34" style="display:inline-flex"></span><span>Frota / KM</span></a>
+          <div class="modulo-erp-tile"><span data-icone-marca="compras" data-icone-tamanho="34" style="display:inline-flex"></span><span>Compras</span><em>em breve</em></div>
+          <div class="modulo-erp-tile"><span data-icone-marca="estoque" data-icone-tamanho="34" style="display:inline-flex"></span><span>Estoque</span><em>em breve</em></div>
+          <div class="modulo-erp-tile"><span data-icone-marca="financeiro" data-icone-tamanho="34" style="display:inline-flex"></span><span>Financeiro</span><em>em breve</em></div>
+          <div class="modulo-erp-tile"><span data-icone-marca="vendas" data-icone-tamanho="34" style="display:inline-flex"></span><span>Vendas / CRM</span><em>em breve</em></div>
+          <div class="modulo-erp-tile"><span data-icone-marca="producao" data-icone-tamanho="34" style="display:inline-flex"></span><span>Produção</span><em>em breve</em></div>
+          <div class="modulo-erp-tile"><span data-icone-marca="fiscal" data-icone-tamanho="34" style="display:inline-flex"></span><span>Fiscal</span><em>em breve</em></div>
+          <div class="modulo-erp-tile"><span data-icone-marca="projetos" data-icone-tamanho="34" style="display:inline-flex"></span><span>Projetos</span><em>em breve</em></div>
+          <div class="modulo-erp-tile"><span data-icone-marca="documentos" data-icone-tamanho="34" style="display:inline-flex"></span><span>Documentos (GED)</span><em>em breve</em></div>
+          <div class="modulo-erp-tile"><span data-icone-marca="manutencao" data-icone-tamanho="34" style="display:inline-flex"></span><span>Manutenção</span><em>em breve</em></div>
+          <div class="modulo-erp-tile"><span data-icone-marca="patrimonio" data-icone-tamanho="34" style="display:inline-flex"></span><span>Patrimônio</span><em>em breve</em></div>
+          <div class="modulo-erp-tile"><span data-icone-marca="planejamento" data-icone-tamanho="34" style="display:inline-flex"></span><span>Planejamento</span><em>em breve</em></div>
+          <div class="modulo-erp-tile"><span data-icone-marca="usuarios" data-icone-tamanho="34" style="display:inline-flex"></span><span>Usuários / Segurança</span><em>em breve</em></div>
+          <div class="modulo-erp-tile"><span data-icone-marca="configuracoes" data-icone-tamanho="34" style="display:inline-flex"></span><span>Configurações</span><em>em breve</em></div>
         </div>
       </div>
 
@@ -1031,6 +1031,12 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <script>
   // ================= CONFIGURAÇÃO — já preenchido com o seu projeto =================
+  // ================================================================
+  // FASE DE TESTES: login desligado por enquanto (Edson pediu pra tirar
+  // até o sistema estar pronto). Pra reativar depois, troque pra "true"
+  // aqui E rode o SQL "supabase_reativar_login.sql" no Supabase.
+  // ================================================================
+  const EXIGIR_LOGIN = false;
   const SUPABASE_URL = 'https://bddjdpyfypsiwnirbyhv.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkZGpkcHlmeXBzaXduaXJieWh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NDk1MjgsImV4cCI6MjEwMDQyNTUyOH0.0HnH7caYH6sLp5n68izQXqbCJ-cLqTyxELl1EqoHHww';
 
@@ -1075,6 +1081,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
 
   // ---------- Sessão / Login / Cadastro ----------
   async function checkSession() {
+    if (!EXIGIR_LOGIN) { showApp({ email: 'Acesso sem login (fase de testes)' }); return; }
     const { data: { session } } = await sb.auth.getSession();
     if (session) {
       showApp(session.user);
@@ -1856,7 +1863,276 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
     }
   }
   const ICONES_MARCA_RAW = {
-    'status-em-dia': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" fill="none">
+
+    'financeiro': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+<title id="title">ESF ERP — contas a pagar</title>
+<defs>
+  <linearGradient id="g_contas_a_pagar" x1="16" y1="112" x2="112" y2="16" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#1677FF"/><stop offset=".55" stop-color="#00D9FF"/><stop offset="1" stop-color="#8AF3FF"/>
+  </linearGradient>
+  <filter id="f_contas_a_pagar" x="-40%" y="-40%" width="180%" height="180%">
+    <feGaussianBlur stdDeviation="2.4" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs>
+<circle cx="52" cy="64" r="31" fill="none" stroke="url(#g_contas_a_pagar)" stroke-width="7"/>
+<path d="M52 39v50M62 47c-3-4-7-6-12-6-7 0-12 4-12 10 0 6 5 9 13 11 8 2 13 5 13 11 0 7-6 11-14 11-7 0-12-2-16-7" fill="none" stroke="#DCE8F5" stroke-width="5" stroke-linecap="round"/>
+<path d="M75 91h38M78 87V70h10v17M94 87V56h10v31M110 87V43" fill="none" stroke="url(#g_contas_a_pagar)" stroke-width="5" stroke-linecap="round"/>
+<path d="M96 49l14-12 10 8" fill="none" stroke="#FF9D18" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`,
+    'logo-esf-temp': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+<title id="title">ESF ERP</title>
+<defs>
+  <linearGradient id="g_logo_esf" x1="16" y1="112" x2="112" y2="16" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#1677FF"/><stop offset=".55" stop-color="#00D9FF"/><stop offset="1" stop-color="#8AF3FF"/>
+  </linearGradient>
+</defs>
+<rect x="8" y="8" width="112" height="112" rx="26" fill="none" stroke="url(#g_logo_esf)" stroke-width="7"/>
+<text x="64" y="80" font-family="Arial, sans-serif" font-weight="800" font-size="44" fill="url(#g_logo_esf)" text-anchor="middle">ESF</text>
+</svg>`,
+    'vendas': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+<title id="title">ESF ERP — clientes</title>
+<defs>
+  <linearGradient id="g_clientes" x1="16" y1="112" x2="112" y2="16" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#1677FF"/><stop offset=".55" stop-color="#00D9FF"/><stop offset="1" stop-color="#8AF3FF"/>
+  </linearGradient>
+  <filter id="f_clientes" x="-40%" y="-40%" width="180%" height="180%">
+    <feGaussianBlur stdDeviation="2.4" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs>
+<circle cx="64" cy="39" r="14" fill="none" stroke="url(#g_clientes)" stroke-width="6"/>
+<path d="M36 92c1-20 13-31 28-31s27 11 28 31" fill="none" stroke="url(#g_clientes)" stroke-width="7" stroke-linecap="round"/>
+<circle cx="28" cy="50" r="9" fill="none" stroke="#DCE8F5" stroke-width="5"/>
+<circle cx="100" cy="50" r="9" fill="none" stroke="#DCE8F5" stroke-width="5"/>
+<path d="M15 87c2-14 8-21 17-21 6 0 11 3 14 9M113 87c-2-14-8-21-17-21-6 0-11 3-14 9" fill="none" stroke="#DCE8F5" stroke-width="5" stroke-linecap="round"/>
+</svg>`,
+    'compras': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+<title id="title">ESF ERP — pedidos</title>
+<defs>
+  <linearGradient id="g_pedidos" x1="16" y1="112" x2="112" y2="16" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#1677FF"/><stop offset=".55" stop-color="#00D9FF"/><stop offset="1" stop-color="#8AF3FF"/>
+  </linearGradient>
+  <filter id="f_pedidos" x="-40%" y="-40%" width="180%" height="180%">
+    <feGaussianBlur stdDeviation="2.4" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs>
+<path d="M17 25h13l9 45h57l13-31H35" fill="none" stroke="url(#g_pedidos)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="49" cy="96" r="7" fill="none" stroke="#DCE8F5" stroke-width="5"/><circle cx="93" cy="96" r="7" fill="none" stroke="#DCE8F5" stroke-width="5"/>
+<path d="M48 48h37M48 60h29" stroke="#FF9D18" stroke-width="4" stroke-linecap="round"/>
+</svg>`,
+    'estoque': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+<title id="title">ESF ERP — produtos</title>
+<defs>
+  <linearGradient id="g_produtos" x1="16" y1="112" x2="112" y2="16" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#1677FF"/><stop offset=".55" stop-color="#00D9FF"/><stop offset="1" stop-color="#8AF3FF"/>
+  </linearGradient>
+  <filter id="f_produtos" x="-40%" y="-40%" width="180%" height="180%">
+    <feGaussianBlur stdDeviation="2.4" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs>
+<path d="M20 39l44-22 44 22-44 23z" fill="none" stroke="url(#g_produtos)" stroke-width="6" stroke-linejoin="round"/>
+<path d="M20 39v48l44 24 44-24V39M64 62v49" fill="none" stroke="url(#g_produtos)" stroke-width="6" stroke-linejoin="round"/>
+<path d="M42 28l44 23M64 17v24" fill="none" stroke="#DCE8F5" stroke-width="4" stroke-linecap="round"/>
+<path d="M91 79l10 5" stroke="#FF9D18" stroke-width="5" stroke-linecap="round"/>
+</svg>`,
+    'producao': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+<title id="title">ESF ERP — pcp</title>
+<defs>
+  <linearGradient id="g_pcp" x1="16" y1="112" x2="112" y2="16" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#1677FF"/><stop offset=".55" stop-color="#00D9FF"/><stop offset="1" stop-color="#8AF3FF"/>
+  </linearGradient>
+  <filter id="f_pcp" x="-40%" y="-40%" width="180%" height="180%">
+    <feGaussianBlur stdDeviation="2.4" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs>
+<path d="M17 105V58l23 13V55l23 13V49l28 16v40H17z" fill="none" stroke="url(#g_pcp)" stroke-width="6" stroke-linejoin="round"/>
+<path d="M30 105V88h12v17M52 105V84h12v21M77 105V82h12v23" fill="none" stroke="#DCE8F5" stroke-width="5"/>
+<path d="M91 39v-22h15v28M98 17l7 0" stroke="#FF9D18" stroke-width="5" stroke-linecap="round"/>
+</svg>`,
+    'fiscal': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+<title id="title">ESF ERP — documentos</title>
+<defs>
+  <linearGradient id="g_documentos" x1="16" y1="112" x2="112" y2="16" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#1677FF"/><stop offset=".55" stop-color="#00D9FF"/><stop offset="1" stop-color="#8AF3FF"/>
+  </linearGradient>
+  <filter id="f_documentos" x="-40%" y="-40%" width="180%" height="180%">
+    <feGaussianBlur stdDeviation="2.4" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs>
+<path d="M13 35h38l10 11h54v63H13z" fill="none" stroke="url(#g_documentos)" stroke-width="6" stroke-linejoin="round"/>
+<path d="M17 50h98" stroke="#DCE8F5" stroke-width="5"/><path d="M42 71h42M42 87h32" stroke="#FF9D18" stroke-width="4" stroke-linecap="round"/>
+</svg>`,
+    'rh': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+<title id="title">ESF ERP — colaboradores</title>
+<defs>
+  <linearGradient id="g_colaboradores" x1="16" y1="112" x2="112" y2="16" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#1677FF"/><stop offset=".55" stop-color="#00D9FF"/><stop offset="1" stop-color="#8AF3FF"/>
+  </linearGradient>
+  <filter id="f_colaboradores" x="-40%" y="-40%" width="180%" height="180%">
+    <feGaussianBlur stdDeviation="2.4" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs>
+<circle cx="64" cy="39" r="14" fill="none" stroke="url(#g_colaboradores)" stroke-width="6"/>
+<path d="M36 92c1-20 13-31 28-31s27 11 28 31" fill="none" stroke="url(#g_colaboradores)" stroke-width="7" stroke-linecap="round"/>
+<circle cx="28" cy="50" r="9" fill="none" stroke="#DCE8F5" stroke-width="5"/>
+<circle cx="100" cy="50" r="9" fill="none" stroke="#DCE8F5" stroke-width="5"/>
+<path d="M15 87c2-14 8-21 17-21 6 0 11 3 14 9M113 87c-2-14-8-21-17-21-6 0-11 3-14 9" fill="none" stroke="#DCE8F5" stroke-width="5" stroke-linecap="round"/>
+</svg>`,
+    'escala-icone': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+<title id="title">ESF ERP — ponto</title>
+<defs>
+  <linearGradient id="g_ponto" x1="16" y1="112" x2="112" y2="16" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#1677FF"/><stop offset=".55" stop-color="#00D9FF"/><stop offset="1" stop-color="#8AF3FF"/>
+  </linearGradient>
+  <filter id="f_ponto" x="-40%" y="-40%" width="180%" height="180%">
+    <feGaussianBlur stdDeviation="2.4" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs>
+<circle cx="64" cy="64" r="45" fill="none" stroke="url(#g_ponto)" stroke-width="7"/>
+<path d="M64 38v28l19 12" fill="none" stroke="#DCE8F5" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="64" cy="64" r="5" fill="#FF9D18"/>
+</svg>`,
+    'logistica': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+<title id="title">ESF ERP — entrega</title>
+<defs>
+  <linearGradient id="g_entrega" x1="16" y1="112" x2="112" y2="16" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#1677FF"/><stop offset=".55" stop-color="#00D9FF"/><stop offset="1" stop-color="#8AF3FF"/>
+  </linearGradient>
+  <filter id="f_entrega" x="-40%" y="-40%" width="180%" height="180%">
+    <feGaussianBlur stdDeviation="2.4" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs>
+<path d="M15 39h61v45H15zM76 54h18l20 19v11H76z" fill="none" stroke="url(#g_entrega)" stroke-width="6"/>
+<circle cx="37" cy="96" r="9" fill="none" stroke="#DCE8F5" stroke-width="6"/><circle cx="94" cy="96" r="9" fill="none" stroke="#DCE8F5" stroke-width="6"/>
+<path d="M83 74h25" stroke="#FF9D18" stroke-width="4" stroke-linecap="round"/>
+</svg>`,
+    'projetos': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+<title id="title">ESF ERP — projetos</title>
+<defs>
+  <linearGradient id="g_projetos" x1="16" y1="112" x2="112" y2="16" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#1677FF"/><stop offset=".55" stop-color="#00D9FF"/><stop offset="1" stop-color="#8AF3FF"/>
+  </linearGradient>
+  <filter id="f_projetos" x="-40%" y="-40%" width="180%" height="180%">
+    <feGaussianBlur stdDeviation="2.4" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs>
+<rect x="28" y="23" width="72" height="91" rx="7" fill="none" stroke="url(#g_projetos)" stroke-width="6"/>
+<path d="M48 23v-7h32v7M45 53h34M45 71h25" stroke="#DCE8F5" stroke-width="5" stroke-linecap="round"/>
+<path d="M45 91l7 7 16-18" fill="none" stroke="#FF9D18" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`,
+    'rdo-icone': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+<title id="title">ESF ERP — cronograma</title>
+<defs>
+  <linearGradient id="g_cronograma" x1="16" y1="112" x2="112" y2="16" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#1677FF"/><stop offset=".55" stop-color="#00D9FF"/><stop offset="1" stop-color="#8AF3FF"/>
+  </linearGradient>
+  <filter id="f_cronograma" x="-40%" y="-40%" width="180%" height="180%">
+    <feGaussianBlur stdDeviation="2.4" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs>
+<rect x="20" y="25" width="88" height="83" rx="7" fill="none" stroke="url(#g_cronograma)" stroke-width="6"/>
+<path d="M20 48h88M41 15v21M87 15v21M39 66h10M59 66h10M79 66h10M39 84h10M59 84h10" stroke="#DCE8F5" stroke-width="5" stroke-linecap="round"/>
+<circle cx="88" cy="86" r="7" fill="none" stroke="#FF9D18" stroke-width="4"/>
+</svg>`,
+    'documentos': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+<title id="title">ESF ERP — ged</title>
+<defs>
+  <linearGradient id="g_ged" x1="16" y1="112" x2="112" y2="16" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#1677FF"/><stop offset=".55" stop-color="#00D9FF"/><stop offset="1" stop-color="#8AF3FF"/>
+  </linearGradient>
+  <filter id="f_ged" x="-40%" y="-40%" width="180%" height="180%">
+    <feGaussianBlur stdDeviation="2.4" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs>
+<path d="M29 15h49l21 21v77H29z" fill="none" stroke="url(#g_ged)" stroke-width="6" stroke-linejoin="round"/>
+<path d="M78 15v23h21M45 58h38M45 74h38M45 90h26" stroke="#DCE8F5" stroke-width="5" stroke-linecap="round"/>
+<path d="M84 72l7 7 13-15" fill="none" stroke="#FF9D18" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`,
+    'manutencao': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+<title id="title">ESF ERP — corretiva</title>
+<defs>
+  <linearGradient id="g_corretiva" x1="16" y1="112" x2="112" y2="16" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#1677FF"/><stop offset=".55" stop-color="#00D9FF"/><stop offset="1" stop-color="#8AF3FF"/>
+  </linearGradient>
+  <filter id="f_corretiva" x="-40%" y="-40%" width="180%" height="180%">
+    <feGaussianBlur stdDeviation="2.4" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs>
+<path d="M80 26a22 22 0 0 0-28 27L23 82a12 12 0 1 0 17 17l29-29a22 22 0 0 0 27-28L80 55 69 44z" fill="none" stroke="url(#g_corretiva)" stroke-width="7" stroke-linejoin="round"/>
+<circle cx="30" cy="91" r="5" fill="#FF9D18"/>
+</svg>`,
+    'patrimonio': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+<title id="title">ESF ERP — bens</title>
+<defs>
+  <linearGradient id="g_bens" x1="16" y1="112" x2="112" y2="16" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#1677FF"/><stop offset=".55" stop-color="#00D9FF"/><stop offset="1" stop-color="#8AF3FF"/>
+  </linearGradient>
+  <filter id="f_bens" x="-40%" y="-40%" width="180%" height="180%">
+    <feGaussianBlur stdDeviation="2.4" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs>
+<path d="M23 108V29l41-15 41 15v79M15 108h98M38 43h10M38 61h10M38 79h10M70 43h10M70 61h10M70 79h10" fill="none" stroke="url(#g_bens)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M58 108V87h12v21" fill="none" stroke="#DCE8F5" stroke-width="5"/><path d="M64 14v-8" stroke="#FF9D18" stroke-width="4" stroke-linecap="round"/>
+</svg>`,
+    'planejamento': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+<title id="title">ESF ERP — aprovacoes</title>
+<defs>
+  <linearGradient id="g_aprovacoes" x1="16" y1="112" x2="112" y2="16" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#1677FF"/><stop offset=".55" stop-color="#00D9FF"/><stop offset="1" stop-color="#8AF3FF"/>
+  </linearGradient>
+  <filter id="f_aprovacoes" x="-40%" y="-40%" width="180%" height="180%">
+    <feGaussianBlur stdDeviation="2.4" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs>
+<path d="M25 17h64l14 15v79H25zM89 17v18h14" fill="none" stroke="url(#g_aprovacoes)" stroke-width="6"/>
+<path d="M42 55h34M42 72h25" stroke="#DCE8F5" stroke-width="5" stroke-linecap="round"/>
+<path d="M42 92l9 9 19-21" fill="none" stroke="#FF9D18" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`,
+    'usuarios': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+<title id="title">ESF ERP — auditoria</title>
+<defs>
+  <linearGradient id="g_auditoria" x1="16" y1="112" x2="112" y2="16" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#1677FF"/><stop offset=".55" stop-color="#00D9FF"/><stop offset="1" stop-color="#8AF3FF"/>
+  </linearGradient>
+  <filter id="f_auditoria" x="-40%" y="-40%" width="180%" height="180%">
+    <feGaussianBlur stdDeviation="2.4" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs>
+<circle cx="57" cy="57" r="31" fill="none" stroke="url(#g_auditoria)" stroke-width="7"/>
+<path d="M80 80l29 29" stroke="#DCE8F5" stroke-width="8" stroke-linecap="round"/>
+<path d="M44 57l9 9 18-20" fill="none" stroke="#FF9D18" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`,
+    'configuracoes': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+<title id="title">ESF ERP — parametros</title>
+<defs>
+  <linearGradient id="g_parametros" x1="16" y1="112" x2="112" y2="16" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#1677FF"/><stop offset=".55" stop-color="#00D9FF"/><stop offset="1" stop-color="#8AF3FF"/>
+  </linearGradient>
+  <filter id="f_parametros" x="-40%" y="-40%" width="180%" height="180%">
+    <feGaussianBlur stdDeviation="2.4" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs>
+<circle cx="64" cy="64" r="23" fill="none" stroke="url(#g_parametros)" stroke-width="7"/>
+<path d="M64 15v16M64 97v16M15 64h16M97 64h16M29 29l11 11M88 88l11 11M99 29L88 40M40 88L29 99" stroke="url(#g_parametros)" stroke-width="7" stroke-linecap="round"/>
+<circle cx="64" cy="64" r="7" fill="#FF9D18"/>
+</svg>`,
+      'status-em-dia': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" fill="none">
 <defs>
  <radialGradient id="g" cx="30%" cy="25%" r="78%"><stop offset="0" stop-color="#43EF79" stop-opacity=".42"/><stop offset=".55" stop-color="#079447" stop-opacity=".18"/><stop offset="1" stop-color="#061A2D" stop-opacity=".03"/></radialGradient>
  <filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="12" result="b"/><feFlood flood-color="#43EF79" flood-opacity=".34"/><feComposite in2="b" operator="in"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
