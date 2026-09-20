@@ -377,7 +377,7 @@ html.fundo-tela-auth{ overflow: hidden; }
      por isso a primeira correção não bastou, o "min-height:100vh" daqui
      continuava valendo e sobrepondo a de lá. Corrigindo aqui também.
   */
-  background: #0b1220 url('login-fundo-escala.jpg') center center / cover no-repeat;
+  background: #0b1220 url('esf-fundo-login-escala.svg') center center / cover no-repeat;
   height: 100vh;
   height: 100dvh;
   overflow-y: auto;

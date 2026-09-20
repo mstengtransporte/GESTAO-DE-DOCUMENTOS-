@@ -173,7 +173,7 @@ textarea.hrs.falta,textarea.hrs.cedo,textarea.hrs.integracao,textarea.hrs.aguard
    em lugar nenhum — nem no celular, nem no computador. A caixa de login
    fica com fundo escuro sólido + desfoque, então continua legível não
    importa qual parte da imagem esteja atrás dela. */
-#login-overlay{background:#0b1220 url('login-fundo-rdo.jpg') center center / cover no-repeat!important;}
+#login-overlay{background:#0b1220 url('esf-fundo-login-rdo.svg') center center / cover no-repeat!important;}
 #login-overlay button:active{transform:scale(.96);filter:brightness(.8)}
 #login-overlay button:disabled{opacity:.6;transform:none}
 .btn:active{transform:translate(0,0) scale(.97);box-shadow:1px 1px 0 rgba(0,0,0,.85);filter:brightness(.9)}
@@ -1691,14 +1691,14 @@ body.dark #workers-body tr:hover{background-color:rgba(58,110,232,.08)}
 <body>
 
 <!-- TELA DE LOGIN — fica por cima de tudo até a pessoa entrar. O fundo
-     (login-fundo-rdo.jpg) é só decoração/identidade visual da Master
+     (esf-fundo-login-rdo.svg) é só decoração/identidade visual do ESF
      Energy — o formulário continua sendo os mesmos campos reais de
      sempre (mesmos ids, mesmas funções), só reposicionado por cima.
      A CAIXA em si usa exatamente o mesmo tamanho/construção da caixa
      de login da Escala de Trabalho (380px, mesmo padding, mesmas
      fontes) — os dois sistemas usam a mesma "moldura" de login, só
      o papel de parede muda entre eles. -->
-<div id="login-overlay" style="position:fixed;inset:0;z-index:99999;background:#0b1220 url('login-fundo-rdo.jpg') center center / cover no-repeat;color-scheme:dark">
+<div id="login-overlay" style="position:fixed;inset:0;z-index:99999;background:#0b1220 url('esf-fundo-login-rdo.svg') center center / cover no-repeat;color-scheme:dark">
   <div style="position:absolute;bottom:6px;right:8px;font-size:9px;color:rgba(255,255,255,.35);font-family:monospace;pointer-events:none">v2026.08.23-3-paineis-abertura-instantanea</div>
   <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:calc(100% - 32px);max-width:380px;background:rgb(10,17,32);border:1px solid rgba(255,255,255,.14);border-radius:18px;padding:32px 28px;box-shadow:0 20px 60px rgba(0,0,0,.6);text-transform:none;font-weight:400">
     <h1 style="font-size:20px;margin:0 0 4px;color:#fff;text-align:center;font-weight:700">RDO <span style="color:#3ea6ff">Master Energy</span></h1>
