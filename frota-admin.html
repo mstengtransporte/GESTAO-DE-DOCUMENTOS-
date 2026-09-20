@@ -108,8 +108,7 @@
 </head>
 <body class="font-body bg-navy text-ink min-h-screen industrial-bg">
 
-<!-- Degradê "neon" compartilhado por todos os ícones da biblioteca Master
-     Energy — definido UMA vez só (evita ids de gradiente duplicados na
+<!-- Degradê "neon" compartilhado por todos os ícones da biblioteca ESF — definido UMA vez só (evita ids de gradiente duplicados na
      página, que travariam o SVG quando vários ícones aparecem juntos) -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
@@ -119,10 +118,10 @@
   </defs>
 </svg>
 
-<!-- ============ HERO — banner institucional ESF ============ -->
+<!-- ============ HERO — banner institucional ESF (mesmo banner de todo o ERP) ============ -->
 <div class="relative h-40 sm:h-52 overflow-hidden">
-  <img src="/esf-topo-frota-admin.svg" alt="ESF ERP — Controle de KM por QR Code"
-    class="absolute inset-0 w-full h-full object-cover object-top">
+  <img src="/esf-banner-panoramico.png" alt="ESF ERP — Sistema de Gestão"
+    class="absolute inset-0 w-full h-full object-cover object-center">
   <div class="absolute inset-0 bg-gradient-to-t from-navy via-navy/15 to-transparent"></div>
 </div>
 
@@ -169,7 +168,7 @@
         <label class="block text-sm">
           <span class="text-muted">E-mail</span>
           <input required id="loginEmail" type="email" autocomplete="username"
-            class="w-full mt-1 bg-surface2 border border-line rounded-lg px-3 py-3" placeholder="voce@masterenergy.com.br">
+            class="w-full mt-1 bg-surface2 border border-line rounded-lg px-3 py-3" placeholder="voce@esf.com.br">
         </label>
         <label class="block text-sm">
           <span class="text-muted">Senha</span>
