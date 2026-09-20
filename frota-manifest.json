@@ -1,0 +1,15 @@
+{
+  "name": "Master Energy — Controle de Frota",
+  "short_name": "M. Energy Frota",
+  "description": "Master Energy — Controle de frota, motoristas, obras e quilometragem",
+  "start_url": "/frota.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0A1220",
+  "theme_color": "#0A1220",
+  "icons": [
+    { "src": "/esf-icon-192.svg", "sizes": "192x192", "type": "image/svg+xml", "purpose": "any maskable" },
+    { "src": "/esf-icon-512.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
