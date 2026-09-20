@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Master Energy — Painel Administrativo</title>
+<meta name="theme-color" content="#0B132B">
+<link rel="icon" type="image/webp" sizes="32x32" href="/favicon-32.webp">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          navy: '#0B132B',
+          surface: '#172A45',
+          surface2: '#1E293B',
+          line: '#2D3F5C99',
+          brand: { DEFAULT: '#22D3EE', dim: '#0E4B57' },
+          brand2: '#0EA5E9',
+          yellow: { DEFAULT: '#FFB020', dim: '#5C4200' },
+          green: { DEFAULT: '#22D3EE', dim: '#0E4B57' }, // verde removido do sistema — segue o azul neon da marca
+          red: { DEFAULT: '#FF3B5C', dim: '#4A0F1C' },
+          ink: '#EAF3FF',
+          muted: '#7C93B8'
+        },
+        fontFamily: {
+          display: ['"Barlow Condensed"', 'sans-serif'],
+          body: ['Inter', 'sans-serif'],
+          mono: ['"JetBrains Mono"', 'monospace']
+        }
+      }
+    }
+  }
+</script>
+
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+  html, body { background: #0A1220; }
+  .tab-btn.active { background: #22D3EE; color: #0B132B; }
+  .subtab-btn.active { background: #22D3EE; color: #0B132B; border-color: #22D3EE; }
+  .subtab-panel { display: none; }
+  .subtab-panel.active { display: block; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  table { border-collapse: collapse; }
+  th, td { border-bottom: 1px solid #2A3B5C55; }
+  .row-alerta { background: rgba(255, 71, 87, 0.08); border-left: 3px solid #FF4757; }
+  @media print {
+    body * { visibility: hidden; }
+    #printArea, #printArea * { visibility: visible; }
+    #printArea { position: absolute; left: 0; top: 0; width: 100%; display: block !important; }
+  }
+  .industrial-bg {
+    background:
+      radial-gradient(ellipse at top, rgba(34,211,238,0.08), transparent 55%),
+      linear-gradient(#0B132B, #0B132B);
+  }
+  /* brilho sutil nos cards de destaque (Dark Industrial Premium) */
+  .glow-card { box-shadow: 0 0 24px -10px rgba(34,211,238,0.35), inset 0 1px 0 rgba(255,255,255,0.03); }
+  .glow-card-green { box-shadow: 0 0 20px -8px rgba(34,255,136,0.35); }
+  .glow-card-yellow { box-shadow: 0 0 20px -8px rgba(255,176,32,0.35); }
+  .glow-card-red { box-shadow: 0 0 22px -6px rgba(255,59,92,0.45); }
+  .icon-circle {
+    width: 54px; height: 54px; border-radius: 9999px;
+    display: flex; align-items: center; justify-content: center;
+    background: #1E293B; border: 1px solid #2D3F5C99;
+    transition: all .15s ease;
+  }
+  .icon-circle:hover { border-color: #22D3EE; box-shadow: 0 0 18px -4px rgba(34,211,238,0.6); transform: translateY(-1px); }
+  .mini-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    background: #1E293B; border: 1px solid #2D3F5C99;
+    transition: all .15s ease;
+  }
+  .mini-icon:hover { border-color: #22D3EE; box-shadow: 0 0 12px -3px rgba(34,211,238,0.5); }
+  .radial-track { stroke: #2D3F5C55; }
+  .radial-progress { stroke: #22D3EE; stroke-linecap: round; transition: stroke-dashoffset .6s ease; }
+
+  /* Efeito "neon" ao passar o mouse em QUALQUER botão do sistema — leve
+     elevação + brilho ciano, igual ao que já existia só nos botões
+     circulares (.icon-circle/.mini-icon). Exclui .mini-icon aqui porque
+     ele já tem o próprio efeito completo definido acima (evita duplicar
+     brilho em cima de brilho nos botões pequenos). Só transform +
+     box-shadow — não muda tamanho, posição real de layout nem hitbox de
+     clique, então a funcionalidade continua 100% intacta. Botões
+     desabilitados (ex: "Salvando...") não recebem o efeito. */
+  button:not(.mini-icon) {
+    transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
+  }
+  button:not(.mini-icon):hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 0 14px -3px rgba(34,211,238,.55);
+  }
+  button:not(.mini-icon):active:not(:disabled) {
+    transform: translateY(0);
+    filter: brightness(1.05);
+  }
+</style>
+</head>
+<body class="font-body bg-navy text-ink min-h-screen industrial-bg">
+
+<!-- Degradê "neon" compartilhado por todos os ícones da biblioteca Master
+     Energy — definido UMA vez só (evita ids de gradiente duplicados na
+     página, que travariam o SVG quando vários ícones aparecem juntos) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="icon-neon" x1="15" y1="115" x2="112" y2="13" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0877E8"/><stop offset=".55" stop-color="#18B8FF"/><stop offset="1" stop-color="#8DEBFF"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<!-- ============ HERO — banner institucional Master Energy ============ -->
+<div class="relative h-40 sm:h-52 overflow-hidden">
+  <img src="/banner-desktop.webp" alt="Master Energy — Controle de KM por QR Code"
+    width="1920" height="790" class="absolute inset-0 w-full h-full object-cover object-top">
+  <div class="absolute inset-0 bg-gradient-to-t from-navy via-navy/15 to-transparent"></div>
+</div>
+
+<div class="max-w-6xl mx-auto px-5 py-6">
+
+  <!-- HEADER -->
+  <header class="flex items-center justify-between mb-6">
+    <div class="flex items-center gap-3">
+      <img src="/logo-m.webp" alt="Master Energy" width="68" height="36" class="h-9 w-auto hidden sm:block">
+      <div>
+        <p class="text-xs uppercase tracking-widest text-muted font-display">Painel do Gestor</p>
+        <h1 class="font-display font-800 text-3xl sm:text-4xl uppercase leading-none tracking-tight">Controle de Frota</h1>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="frota.html" title="Voltar ao app do motorista"
+        class="w-10 h-10 rounded-full bg-surface border border-line flex items-center justify-center text-muted hover:text-brand hover:border-brand/50 transition">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </a>
+      <a href="index.html" title="Sistema de Gestão" class="text-[10px] font-bold uppercase tracking-wide text-muted hover:text-brand border border-line rounded-full px-3 py-1.5 whitespace-nowrap">← Sistema de Gestão</a>
+      <div id="userBox" class="hidden items-center gap-2">
+        <span id="userEmail" class="text-xs text-muted font-mono hidden sm:inline"></span>
+        <button id="btnLogout" title="Sair"
+          class="w-10 h-10 rounded-full bg-surface border border-line flex items-center justify-center text-muted hover:text-red hover:border-red/50 transition">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+        </button>
+      </div>
+      <p id="clockNow" class="font-mono text-sm text-muted"></p>
+    </div>
+  </header>
+
+  <!-- ============================================================ -->
+  <!-- TELA DE LOGIN — bloqueia o painel até autenticar               -->
+  <!-- ============================================================ -->
+  <section id="loginGate" class="max-w-sm mx-auto mt-8 mb-16 rounded-2xl overflow-hidden relative border border-brand/20"
+    style="background-image:url('/fundo-tecnologico.webp'); background-size:cover; background-position:center;">
+    <div class="absolute inset-0 bg-navy/55"></div>
+    <div class="relative bg-surface/90 m-3 rounded-xl p-7" style="backdrop-filter: blur(2px);">
+      <img src="/logo-m.webp" alt="Master Energy" width="75" height="40" class="h-10 w-auto mx-auto mb-4">
+      <h2 class="font-display text-2xl uppercase font-700 text-center">Acesso restrito</h2>
+      <p class="text-muted text-sm text-center mt-1 mb-6">Entre com sua conta de gestor para acessar o painel.</p>
+
+      <form id="formLogin" class="space-y-3">
+        <label class="block text-sm">
+          <span class="text-muted">E-mail</span>
+          <input required id="loginEmail" type="email" autocomplete="username"
+            class="w-full mt-1 bg-surface2 border border-line rounded-lg px-3 py-3" placeholder="voce@masterenergy.com.br">
+        </label>
+        <label class="block text-sm">
+          <span class="text-muted">Senha</span>
+          <input required id="loginSenha" type="password" autocomplete="current-password"
+            class="w-full mt-1 bg-surface2 border border-line rounded-lg px-3 py-3" placeholder="••••••••">
+        </label>
+        <p id="loginErro" class="hidden text-xs text-red bg-red-dim border border-red/40 rounded-lg px-3 py-2"></p>
+        <button id="btnEntrar" class="w-full bg-brand font-display font-700 uppercase tracking-wide py-3 rounded-lg mt-2">Entrar</button>
+      </form>
+
+      <p class="text-[11px] text-muted/70 text-center mt-5">Não tem uma conta? Peça para um administrador criar seu acesso no painel do Supabase.</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- CONTEÚDO DO PAINEL — só aparece depois do login                -->
+  <!-- ============================================================ -->
+  <div id="dashboardContent" class="hidden">
+
+  <!-- TABS -->
+  <nav class="flex flex-wrap gap-2 mb-6">
+    <button data-tab="dashboard" class="tab-btn active px-4 py-2 rounded-lg bg-surface border border-line font-display uppercase tracking-wide text-sm flex items-center gap-2">
+      <svg width="18" height="18" viewBox="0 0 128 128" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M18 76a46 46 0 0 1 92 0"/><path d="M64 76l24-31"/><circle cx="64" cy="76" r="7"/><path d="M30 92h68"/></svg>
+      Dashboard</button>
+    <button data-tab="cadastros" class="tab-btn px-4 py-2 rounded-lg bg-surface border border-line font-display uppercase tracking-wide text-sm flex items-center gap-2">
+      <svg width="18" height="18" viewBox="0 0 128 128" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M15 77l9-24h52l22 24v17H15z"/><path d="M31 53l10-14h26l13 14"/><circle cx="33" cy="94" r="9"/><circle cx="95" cy="94" r="9"/><circle cx="99" cy="31" r="16"/><path d="M99 22v18M90 31h18"/></svg>
+      Cadastros</button>
+    <button data-tab="qrcodes" class="tab-btn px-4 py-2 rounded-lg bg-surface border border-line font-display uppercase tracking-wide text-sm flex items-center gap-2">
+      <svg width="18" height="18" viewBox="0 0 128 128" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M18 18h34v34H18zM76 18h34v34H76zM18 76h34v34H18z"/><path d="M27 27h16v16H27zM85 27h16v16H85zM27 85h16v16H27z"/><path d="M68 68h13v13H68zM87 68h23M68 87h9M85 88h13v13H85zM101 101h9"/></svg>
+      Impressão de QR Codes</button>
+    <button data-tab="monitoramento" class="tab-btn px-4 py-2 rounded-lg bg-surface border border-line font-display uppercase tracking-wide text-sm flex items-center gap-2">
+      <svg width="18" height="18" viewBox="0 0 128 128" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><circle cx="64" cy="64" r="13"/><path d="M64 14v24M64 90v24M14 64h24M90 64h24"/></svg>
+      Monitoramento / Auditoria</button>
+    <button data-tab="abastecimentos" class="tab-btn px-4 py-2 rounded-lg bg-surface border border-line font-display uppercase tracking-wide text-sm flex items-center gap-2">
+      <svg width="18" height="18" viewBox="0 0 128 128" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M32 27h45v75H32z"/><path d="M43 38h23v18H43z"/><path d="M77 42h13l12 12v35h-9V59l-16-16"/><path d="M42 78h25"/></svg>
+      Abastecimentos</button>
+    <button data-tab="alertas" class="tab-btn px-4 py-2 rounded-lg bg-surface border border-line font-display uppercase tracking-wide text-sm flex items-center gap-2">
+      <svg width="18" height="18" viewBox="0 0 128 128" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M64 18 111 102H17z"/><path d="M64 45v27M64 86v2"/></svg>
+      Central de Alertas</button>
+  </nav>
+
+  <!-- ============================================================ -->
+  <!-- ABA 0 — DASHBOARD (visão geral estilo "Dark Industrial Premium") -->
+  <!-- ============================================================ -->
+  <section id="tab-dashboard" class="tab-panel active">
+
+    <!-- Barra de atalhos rápidos + status globais -->
+    <div class="flex flex-wrap items-center justify-between gap-4 mb-6 bg-surface border border-line rounded-2xl px-5 py-4 glow-card">
+      <div class="flex items-center gap-4 flex-wrap">
+        <button onclick="atalhoProntuario('dados')" title="Dados Gerais" class="flex flex-col items-center gap-1.5 group">
+          <span class="icon-circle">
+            <svg width="26" height="26" viewBox="0 0 128 128" fill="none" stroke="url(#icon-neon)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 77l9-24h52l22 24v17H18z"/><path d="M34 53l10-14h26l13 14"/><circle cx="36" cy="94" r="10"/><circle cx="92" cy="94" r="10"/><path d="M28 76h72"/></svg>
+          </span>
+          <span class="text-[10px] uppercase tracking-wide font-display text-muted group-hover:text-brand transition">Dados Gerais</span>
+        </button>
+        <button onclick="atalhoProntuario('documentos')" title="Documentos & Prazos" class="flex flex-col items-center gap-1.5 group">
+          <span class="icon-circle">
+            <svg width="26" height="26" viewBox="0 0 128 128" fill="none" stroke="url(#icon-neon)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M29 18h49l21 21v71H29z"/><path d="M78 18v23h21M43 60h43M43 74h43M43 88h31"/></svg>
+          </span>
+          <span class="text-[10px] uppercase tracking-wide font-display text-muted group-hover:text-brand transition">Documentos</span>
+        </button>
+        <button onclick="atalhoProntuario('manutencao')" title="Manutenção Preventiva" class="flex flex-col items-center gap-1.5 group">
+          <span class="icon-circle">
+            <svg width="26" height="26" viewBox="0 0 128 128" fill="none" stroke="url(#icon-neon)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M91 27a25 25 0 0 0-29 29L27 91a10 10 0 1 0 14 14l35-35a25 25 0 0 0 29-29L88 55 73 40l-2-13z"/></svg>
+          </span>
+          <span class="text-[10px] uppercase tracking-wide font-display text-muted group-hover:text-brand transition">Manutenção</span>
+        </button>
+        <button onclick="atalhoProntuario('historico')" title="Histórico de Incidentes" class="flex flex-col items-center gap-1.5 group">
+          <span class="icon-circle">
+            <svg width="26" height="26" viewBox="0 0 128 128" fill="none" stroke="url(#icon-neon)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M28 48a39 39 0 1 1-1 27"/><path d="M28 48V30M28 48h18"/><path d="M64 45v20l14 9"/></svg>
+          </span>
+          <span class="text-[10px] uppercase tracking-wide font-display text-muted group-hover:text-brand transition">Histórico</span>
+        </button>
+      </div>
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-green-dim text-green font-display uppercase tracking-wide">
+          <span class="w-2 h-2 rounded-full bg-green"></span> Tudo em Dia: <span id="statusGlobalEmDia">0</span>
+        </span>
+        <span class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-yellow-dim text-yellow font-display uppercase tracking-wide">
+          <span class="w-2 h-2 rounded-full bg-yellow"></span> Próximo: <span id="statusGlobalAtencao">0</span>
+        </span>
+        <span class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-red-dim text-red font-display uppercase tracking-wide animate-pulse" id="statusGlobalAtrasadoWrap">
+          <span class="w-2 h-2 rounded-full bg-red"></span> Em Atraso: <span id="statusGlobalAtrasado">0</span>
+        </span>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-6">
+      <!-- ===== COLUNA CENTRAL: módulos do dashboard ===== -->
+      <div class="space-y-6 min-w-0">
+
+        <!-- Módulo 1: Prontuário de Veículos (frota ativa) -->
+        <div id="modProntuarioFrota" class="bg-surface border border-line rounded-2xl p-5 glow-card">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-display text-lg uppercase font-700">Prontuário de Veículos</h3>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+            <div class="rounded-xl bg-surface2 border border-line p-3 text-center">
+              <p class="text-2xl font-display font-800" id="dashTotalVeiculos">0</p>
+              <p class="text-[10px] uppercase tracking-wide text-muted font-display">Total</p>
+            </div>
+            <div class="rounded-xl bg-surface2 border border-green/40 p-3 text-center">
+              <p class="text-2xl font-display font-800 text-green" id="dashEmDia">0</p>
+              <p class="text-[10px] uppercase tracking-wide text-muted font-display">Em Dia</p>
+            </div>
+            <div class="rounded-xl bg-surface2 border border-yellow/40 p-3 text-center">
+              <p class="text-2xl font-display font-800 text-yellow" id="dashAtencao">0</p>
+              <p class="text-[10px] uppercase tracking-wide text-muted font-display">Atenção</p>
+            </div>
+            <div class="rounded-xl bg-surface2 border border-red/40 p-3 text-center">
+              <p class="text-2xl font-display font-800 text-red" id="dashAtrasado">0</p>
+              <p class="text-[10px] uppercase tracking-wide text-muted font-display">Atrasado</p>
+            </div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm min-w-[640px]">
+              <thead>
+                <tr class="text-left text-muted uppercase text-xs font-display tracking-wide">
+                  <th class="py-2">Foto</th><th>Modelo</th><th>Placa</th><th>KM</th><th>Posse</th><th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyFrotaDashboard"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Módulo 2: Documentos & Prazos -->
+        <div class="bg-surface border border-line rounded-2xl p-5 glow-card">
+          <h3 class="font-display text-lg uppercase font-700 mb-3">Documentos &amp; Prazos</h3>
+          <div id="listaDocumentosDashboard" class="space-y-2"></div>
+        </div>
+
+        <!-- Módulo 3: Manutenção Preventiva (tabela + barra) -->
+        <div class="bg-surface border border-line rounded-2xl p-5 glow-card">
+          <h3 class="font-display text-lg uppercase font-700 mb-3">Manutenção Preventiva</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm min-w-[520px]">
+              <thead>
+                <tr class="text-left text-muted uppercase text-xs font-display tracking-wide">
+                  <th class="py-2">Veículo</th><th>Componente</th><th>Última troca</th><th>Alvo</th><th class="w-32">Progresso</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyManutencaoDashboard"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Módulo 4: Histórico de Incidentes -->
+        <div class="bg-surface border border-line rounded-2xl p-5 glow-card">
+          <h3 class="font-display text-lg uppercase font-700 mb-3">Histórico de Incidentes</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm min-w-[520px]">
+              <thead>
+                <tr class="text-left text-muted uppercase text-xs font-display tracking-wide">
+                  <th class="py-2">Data</th><th>Veículo</th><th>Tipo</th><th>Oficina</th><th>Custo</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyIncidentesDashboard"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Área inferior: calendário + gráfico de custo + etiqueta QR -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="bg-surface border border-line rounded-2xl p-5 glow-card">
+            <h3 class="font-display text-base uppercase font-700 mb-3">Calendário de Manutenções</h3>
+            <div id="calendarioManutencao"></div>
+          </div>
+          <div class="bg-surface border border-line rounded-2xl p-5 glow-card">
+            <h3 class="font-display text-base uppercase font-700 mb-3">Custo com Combustível (6 meses)</h3>
+            <div id="graficoCustoCombustivel" class="flex items-end gap-2 h-40"></div>
+          </div>
+          <div class="bg-surface border border-line rounded-2xl p-5 glow-card flex flex-col">
+            <div class="flex items-center gap-2 mb-3">
+              <img src="/qr-reference.webp" alt="" width="28" height="28" class="w-7 h-7 rounded object-cover">
+              <h3 class="font-display text-base uppercase font-700">Etiqueta QR Code</h3>
+            </div>
+            <p class="text-muted text-xs mb-3">Gere e imprima a etiqueta de um veículo rapidamente.</p>
+            <select id="selectQrRapido" class="w-full bg-surface2 border border-line rounded-lg px-3 py-2 text-sm mb-3"></select>
+            <button id="btnQrRapido" class="mt-auto w-full bg-brand text-navy font-display font-700 uppercase tracking-wide py-2.5 rounded-lg">Gerar QR Code</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ===== BARRA LATERAL DIREITA: cards por veículo + gauge de saúde ===== -->
+      <div class="space-y-4 min-w-0">
+        <div class="bg-surface border border-line rounded-2xl p-5 glow-card text-center">
+          <h3 class="font-display text-sm uppercase font-700 mb-2">Saúde da Frota</h3>
+          <div class="relative w-32 h-32 mx-auto">
+            <svg viewBox="0 0 120 120" class="w-32 h-32 -rotate-90">
+              <circle cx="60" cy="60" r="52" fill="none" stroke-width="10" class="radial-track"/>
+              <circle id="gaugeSaudeFrota" cx="60" cy="60" r="52" fill="none" stroke-width="10"
+                stroke-dasharray="326.7" stroke-dashoffset="326.7" class="radial-progress"/>
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center">
+              <span id="gaugeSaudeFrotaTexto" class="font-display text-2xl font-800">0%</span>
+              <span class="text-[10px] uppercase text-muted font-display">Em dia</span>
+            </div>
+          </div>
+        </div>
+
+        <h3 class="font-display text-sm uppercase font-700 text-muted px-1">Veículos da Frota</h3>
+        <div id="cardsVeiculosSidebar" class="space-y-3"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- ABA 1 — CADASTROS (Veículos, Obras, Motoristas)               -->
+  <!-- ============================================================ -->
+  <section id="tab-cadastros" class="tab-panel space-y-8">
+
+    <!-- Veículos -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <form id="formVeiculo" class="rounded-xl bg-surface border border-line p-5 space-y-3 h-fit">
+        <h2 class="font-display text-xl uppercase font-700">Cadastrar veículo</h2>
+        <label class="block text-sm">
+          <span class="text-muted">Placa</span>
+          <input required id="vPlaca" class="w-full mt-1 bg-surface2 border border-line rounded-lg px-3 py-2 uppercase font-mono" placeholder="ABC1D23">
+        </label>
+        <label class="block text-sm">
+          <span class="text-muted">Modelo</span>
+          <input required id="vModelo" class="w-full mt-1 bg-surface2 border border-line rounded-lg px-3 py-2" placeholder="Fiat Strada 2022">
+        </label>
+        <label class="block text-sm">
+          <span class="text-muted">KM inicial (cadastro)</span>
+          <input required id="vKmInicial" type="number" class="w-full mt-1 bg-surface2 border border-line rounded-lg px-3 py-2 font-mono" placeholder="0">
+        </label>
+        <label class="block text-sm">
+          <span class="text-muted">Foto do veículo (opcional)</span>
+          <input id="vFoto" type="file" accept="image/*" capture="environment"
+            class="w-full mt-1 bg-surface2 border border-line rounded-lg px-3 py-2 text-xs file:mr-3 file:py-1 file:px-2 file:rounded-md file:border-0 file:bg-brand file:text-navy file:text-xs file:font-display file:uppercase file:cursor-pointer">
+          <img id="vFotoPreview" class="hidden mt-2 rounded-lg border border-line" style="width:100%;height:8rem;object-fit:cover;">
+        </label>
+        <button class="w-full bg-brand font-display font-700 uppercase tracking-wide py-3 rounded-lg mt-2">Salvar veículo</button>
+      </form>
+      <div class="lg:col-span-2">
+        <p class="text-muted text-xs mb-2">
+          Cadastro rápido aqui do lado (placa, modelo, KM, foto). Clique em
+          <span class="inline-flex items-center justify-center w-5 h-5 rounded bg-surface2 border border-line align-middle mx-0.5">📋</span>
+          na coluna Ações pra abrir o <strong class="text-ink">Prontuário completo</strong> do veículo — é lá que ficam
+          Renavam, chassi, posse/locação, documentos com prazo (licenciamento, IPVA, seguro...), manutenção preventiva
+          e o histórico de incidentes.
+        </p>
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left text-muted uppercase text-xs font-display tracking-wide">
+              <th class="py-2">Foto</th><th>Placa</th><th>Modelo</th><th>Status</th><th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyVeiculos"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Obras -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <form id="formObra" class="rounded-xl bg-surface border border-line p-5 space-y-3 h-fit">
+        <h2 class="font-display text-xl uppercase font-700">Cadastrar obra</h2>
+        <label class="block text-sm">
+          <span class="text-muted">Nome da obra</span>
+          <input required id="oNome" class="w-full mt-1 bg-surface2 border border-line rounded-lg px-3 py-2" placeholder="Obra Centro - Edifício Aurora">
+        </label>
+        <label class="block text-sm">
+          <span class="text-muted">Limite de KM diário</span>
+          <input required id="oLimite" type="number" class="w-full mt-1 bg-surface2 border border-line rounded-lg px-3 py-2 font-mono" placeholder="180">
+        </label>
+        <button class="w-full bg-brand font-display font-700 uppercase tracking-wide py-3 rounded-lg mt-2">Salvar obra</button>
+      </form>
+      <div class="lg:col-span-2">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left text-muted uppercase text-xs font-display tracking-wide">
+              <th class="py-2">Nome</th><th>Limite/dia</th><th>Status</th><th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyObras"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Motoristas -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <form id="formMotorista" class="rounded-xl bg-surface border border-line p-5 space-y-3 h-fit">
+        <h2 class="font-display text-xl uppercase font-700">Cadastrar motorista</h2>
+        <label class="block text-sm">
+          <span class="text-muted">Nome completo</span>
+          <input required id="mNome" class="w-full mt-1 bg-surface2 border border-line rounded-lg px-3 py-2" placeholder="João da Silva">
+        </label>
+        <label class="block text-sm">
+          <span class="text-muted">CPF</span>
+          <input required id="mCpf" class="w-full mt-1 bg-surface2 border border-line rounded-lg px-3 py-2 font-mono" placeholder="000.000.000-00">
+        </label>
+        <button class="w-full bg-brand font-display font-700 uppercase tracking-wide py-3 rounded-lg mt-2">Salvar motorista</button>
+      </form>
+      <div class="lg:col-span-2">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left text-muted uppercase text-xs font-display tracking-wide">
+              <th class="py-2">Nome</th><th>CPF</th><th>Status</th><th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyMotoristas"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- ABA 2 — IMPRESSÃO DE QR CODES                                  -->
+  <!-- ============================================================ -->
+  <section id="tab-qrcodes" class="tab-panel">
+    <p class="text-muted text-sm mb-4">Gere e imprima a etiqueta de QR Code de cada veículo para colar no painel. Cada folha impressa sai com 8 etiquetas.</p>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-left text-muted uppercase text-xs font-display tracking-wide">
+            <th class="py-2">Foto</th><th>Placa</th><th>Modelo</th><th>Status</th><th>QR Code</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyQrCodes"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- ABA 3 — MONITORAMENTO / AUDITORIA                              -->
+  <!-- ============================================================ -->
+  <section id="tab-monitoramento" class="tab-panel">
+
+    <!-- resumo em tempo real da frota -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      <div class="rounded-xl bg-surface border border-line p-4">
+        <p class="text-xs uppercase tracking-widest text-muted font-display">Em uso</p>
+        <p id="statEmUso" class="font-display text-4xl font-800 text-brand mt-1">0</p>
+      </div>
+      <div class="rounded-xl bg-surface border border-line p-4">
+        <p class="text-xs uppercase tracking-widest text-muted font-display">Livres</p>
+        <p id="statLivre" class="font-display text-4xl font-800 text-green mt-1">0</p>
+      </div>
+      <div class="rounded-xl bg-surface border border-line p-4">
+        <p class="text-xs uppercase tracking-widest text-muted font-display">Manutenção</p>
+        <p id="statManutencao" class="font-display text-4xl font-800 text-yellow mt-1">0</p>
+      </div>
+    </div>
+
+    <p class="text-muted text-sm mb-1">Todas as escalas registradas pelos motoristas. Linhas em <span class="text-red">vermelho</span> tiveram KM alterado manualmente ou ultrapassaram o limite diário da obra.</p>
+    <div class="overflow-x-auto mt-3">
+      <table class="w-full text-sm min-w-[960px]">
+        <thead>
+          <tr class="text-left text-muted uppercase text-xs font-display tracking-wide">
+            <th class="py-2">Início</th><th>Veículo</th><th>Obra</th><th>Motorista</th><th>KM inicial</th><th>KM final</th><th>KM rodado</th><th>Status</th><th>Alertas</th><th>Foto</th><th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyMonitoramento"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- ABA 4 — ABASTECIMENTOS (reembolsos + consumo)                  -->
+  <!-- ============================================================ -->
+  <section id="tab-abastecimentos" class="tab-panel">
+
+    <!-- resumo -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      <div class="rounded-xl bg-surface border border-line p-4">
+        <p class="text-xs uppercase tracking-widest text-muted font-display">Reembolsos pendentes</p>
+        <p id="statReembolsosPendentes" class="font-display text-4xl font-800 text-yellow mt-1">0</p>
+      </div>
+      <div class="rounded-xl bg-surface border border-line p-4">
+        <p class="text-xs uppercase tracking-widest text-muted font-display">Gasto no mês</p>
+        <p id="statGastoMes" class="font-display text-3xl font-800 text-brand mt-1">R$ 0,00</p>
+      </div>
+      <div class="rounded-xl bg-surface border border-line p-4">
+        <p class="text-xs uppercase tracking-widest text-muted font-display">Consumo médio da frota</p>
+        <p id="statConsumoMedio" class="font-display text-3xl font-800 text-green mt-1">— km/l</p>
+      </div>
+    </div>
+
+    <!-- aprovação de reembolsos -->
+    <h3 class="font-display text-lg uppercase font-700 mb-2">Aprovação de Reembolsos</h3>
+    <p class="text-muted text-sm mb-3">Confira o cupom fiscal e aprove ou recuse o pagamento ao motorista.</p>
+    <div id="listaReembolsosPendentes" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8"></div>
+
+    <!-- histórico completo + exportação -->
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+      <h3 class="font-display text-lg uppercase font-700">Histórico de Abastecimentos</h3>
+      <div class="flex gap-2">
+        <button id="btnExportarExcel" class="px-3 py-2 rounded-lg bg-green-dim text-xs font-display uppercase tracking-wide">Exportar Excel</button>
+        <button id="btnExportarPdf" class="px-3 py-2 rounded-lg bg-brand-dim text-xs font-display uppercase tracking-wide">Exportar PDF</button>
+      </div>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm min-w-[980px]" id="tabelaAbastecimentos">
+        <thead>
+          <tr class="text-left text-muted uppercase text-xs font-display tracking-wide">
+            <th class="py-2">Data</th><th>Veículo</th><th>Motorista</th><th>Combustível</th><th>Litros</th><th>Valor</th><th>R$/L</th><th>Km/L</th><th>Reembolso</th><th>Comprovante</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyAbastecimentos"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- ABA 5 — CENTRAL DE ALERTAS (CNH, documentos, manutenção)       -->
+  <!-- ============================================================ -->
+  <section id="tab-alertas" class="tab-panel">
+    <!-- resumo rápido -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      <div class="rounded-xl bg-surface border border-red/40 p-4">
+        <p class="text-xs uppercase tracking-widest text-muted font-display">🚨 Críticos</p>
+        <p id="statAlertasCriticos" class="font-display text-4xl font-800 text-red mt-1">0</p>
+      </div>
+      <div class="rounded-xl bg-surface border border-yellow/40 p-4">
+        <p class="text-xs uppercase tracking-widest text-muted font-display">⚠️ Preventivos</p>
+        <p id="statAlertasPreventivos" class="font-display text-4xl font-800 text-yellow mt-1">0</p>
+      </div>
+      <div class="rounded-xl bg-surface border border-green/40 p-4">
+        <p class="text-xs uppercase tracking-widest text-muted font-display">✅ Em dia</p>
+        <p id="statAlertasRegulares" class="font-display text-4xl font-800 text-green mt-1">0</p>
+      </div>
+    </div>
+
+    <h3 class="font-display text-lg uppercase font-700 mb-1">Central de Alertas — Prontuário da Frota</h3>
+    <p class="text-muted text-sm mb-4">
+      Documentos, prazos legais e manutenção preventiva de toda a frota. Vencido ou a menos de 15 dias/1.000 km =
+      crítico (pisca). Configure cada item no botão 📋 (Prontuário) da tabela de veículos, na aba Cadastros.
+    </p>
+    <div id="feedAlertasProntuario" class="space-y-2 mb-8"></div>
+
+    <h3 class="font-display text-lg uppercase font-700 mb-1">Manutenção Preventiva — Medidores</h3>
+    <p class="text-muted text-sm mb-4">KM faltante para cada item, por veículo.</p>
+    <div id="listaManutencaoGauges" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8"></div>
+
+    <h3 class="font-display text-lg uppercase font-700 mb-1">CNH dos Motoristas</h3>
+    <p class="text-muted text-sm mb-4">
+      Edite o cadastro do motorista pra preencher a validade da CNH.
+    </p>
+    <div id="listaAlertas" class="space-y-3"></div>
+  </section>
+
+  </div><!-- fim de #dashboardContent -->
+
+  <div class="text-center mt-10 pb-6 border-t border-line pt-6">
+    <p class="font-display uppercase tracking-widest text-sm font-700">Master Energy <span class="text-brand">•</span> Gestão Inteligente de Frota</p>
+    <p class="text-[10px] uppercase tracking-[0.3em] text-muted mt-1">Controle &bull; Segurança &bull; Eficiência</p>
+    <p class="text-[11px] text-muted/70 mt-3">© 2026 Master Energy. Todos os direitos reservados.</p>
+  </div>
+</div>
+
+<!-- ============ MODAL QR CODE ============ -->
+<div id="modalQr" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+  <div class="bg-surface border border-line rounded-2xl p-6 max-w-xs w-full text-center">
+    <h3 class="font-display text-xl uppercase font-700 mb-1" id="modalQrTitulo">Veículo</h3>
+    <p class="text-muted text-sm mb-4">Cole esta etiqueta no painel do veículo</p>
+    <div id="qrCanvasWrap" class="bg-white p-3 rounded-lg inline-block"></div>
+    <div class="flex gap-2 mt-4">
+      <button id="btnImprimirEtiqueta" class="flex-1 bg-brand font-display font-700 uppercase tracking-wide py-2 rounded-lg">Imprimir QR Code</button>
+      <button id="btnFecharModalQr" class="flex-1 bg-surface2 border border-line font-display uppercase tracking-wide py-2 rounded-lg">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL FOTO ============ -->
+<div id="modalFoto" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onclick="this.classList.add('hidden')">
+  <img id="modalFotoImg" src="" class="max-w-full max-h-full rounded-lg">
+</div>
+
+<!-- ============ MODAL EDITAR (genérico p/ veículo/obra/motorista) ============ -->
+<div id="modalEditar" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+  <div class="bg-surface border border-line rounded-2xl p-6 max-w-sm w-full">
+    <h3 id="modalEditarTitulo" class="font-display text-xl uppercase font-700 mb-4">Editar</h3>
+    <form id="formEditar" class="space-y-3"></form>
+  </div>
+</div>
+
+<!-- ============ MODAL PRONTUÁRIO DO VEÍCULO ============ -->
+<div id="modalProntuario" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+  <div class="bg-surface border border-line rounded-2xl w-full max-w-3xl max-h-[92vh] overflow-y-auto">
+    <div class="p-5 sm:p-6">
+      <div class="flex items-start justify-between gap-3 mb-1">
+        <div>
+          <p class="text-xs uppercase tracking-widest text-muted font-display">Prontuário do Veículo</p>
+          <h3 id="prontuarioTitulo" class="font-display text-2xl uppercase font-700 leading-none">—</h3>
+          <p class="text-muted text-xs mt-1">KM atual: <span id="prontuarioKmAtual" class="font-mono text-brand">—</span></p>
+        </div>
+        <button id="btnFecharProntuario" title="Fechar"
+          class="w-9 h-9 shrink-0 rounded-lg bg-surface2 border border-line flex items-center justify-center hover:border-red hover:text-red transition">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <!-- alertas deste veículo (crítico/preventivo), sempre visíveis no topo -->
+      <div id="prontuarioAlertas" class="space-y-2 my-4"></div>
+
+      <!-- sub-navegação interna do prontuário -->
+      <nav class="flex flex-wrap gap-2 mb-5 border-b border-line pb-4">
+        <button data-subtab="dados" class="subtab-btn active px-3 py-1.5 rounded-lg bg-surface2 border border-line font-display uppercase tracking-wide text-xs">Dados Gerais</button>
+        <button data-subtab="documentos" class="subtab-btn px-3 py-1.5 rounded-lg bg-surface2 border border-line font-display uppercase tracking-wide text-xs">Documentos &amp; Prazos</button>
+        <button data-subtab="manutencao" class="subtab-btn px-3 py-1.5 rounded-lg bg-surface2 border border-line font-display uppercase tracking-wide text-xs">Manutenção Preventiva</button>
+        <button data-subtab="historico" class="subtab-btn px-3 py-1.5 rounded-lg bg-surface2 border border-line font-display uppercase tracking-wide text-xs">Histórico de Incidentes</button>
+      </nav>
+
+      <!-- A) DADOS GERAIS -->
+      <div id="subtab-dados" class="subtab-panel active"></div>
+
+      <!-- B) DOCUMENTOS & PRAZOS -->
+      <div id="subtab-documentos" class="subtab-panel hidden">
+        <div id="listaDocumentosVeiculo" class="space-y-2 mb-5"></div>
+        <h4 class="font-display uppercase text-sm font-700 mb-2">Adicionar documento/prazo</h4>
+        <form id="formDocumentoVeiculo" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <label class="block text-sm sm:col-span-2">
+            <span class="text-muted">Tipo</span>
+            <select id="docTipo" class="w-full mt-1 bg-surface2 border border-line rounded-lg px-3 py-2">
+              <option value="licenciamento">Licenciamento</option>
+              <option value="ipva">IPVA</option>
+              <option value="seguro">Seguro</option>
+              <option value="licenca_especial">Licença Especial (EMTU/ANTT/ARTESP/Usina/Cliente)</option>
+              <option value="extintor">Extintor de Incêndio (carga/recarga)</option>
+              <option value="tacografo">Tacógrafo (aferição)</option>
+              <option value="inspecao_cautelar">Inspeção/Laudo Cautelar</option>
+            </select>
+          </label>
+          <label class="block text-sm sm:col-span-2">
+            <span class="text-muted">Descrição (ex: nome da licença) / observações</span>
+            <input id="docDescricao" class="w-full mt-1 bg-surface2 border border-line rounded-lg px-3 py-2" placeholder="Opcional">
+          </label>
+          <label class="block text-sm">
+            <span class="text-muted">Seguradora / órgão emissor</span>
+            <input id="docEmissor" class="w-full mt-1 bg-surface2 border border-line rounded-lg px-3 py-2" placeholder="Opcional">
+          </label>
+          <label class="block text-sm">
+            <span class="text-muted">Nº apólice / documento</span>
+            <input id="docNumero" class="w-full mt-1 bg-surface2 border border-line rounded-lg px-3 py-2" placeholder="Opcional">
+          </label>
+          <label class="block text-sm">
+            <span class="text-muted" id="docEmissaoLabel">Data de emissão</span>
+            <input id="docDataEmissao" type="date" class="w-full mt-1 bg-surface2 border border-line rounded-lg px-3 py-2">
+          </label>
+          <label class="block text-sm">
+            <span class="text-muted" id="docVencimentoLabel">Data de vencimento</span>
+            <input id="docDataVencimento" type="date" class="w-full mt-1 bg-surface2 border border-line rounded-lg px-3 py-2">
+          </label>
+          <button type="submit" class="sm:col-span-2 bg-brand font-display font-700 uppercase tracking-wide py-2.5 rounded-lg mt-1">Salvar documento</button>
+        </form>
+      </div>
+
+      <!-- C) MANUTENÇÃO PREVENTIVA -->
+      <div id="subtab-manutencao" class="subtab-panel hidden">
+        <div id="manutencaoItens" class="space-y-4"></div>
+      </div>
+
+      <!-- D) HISTÓRICO DE INCIDENTES -->
+      <div id="subtab-historico" class="subtab-panel hidden">
+        <div id="listaIncidentes" class="space-y-3 mb-5"></div>
+        <h4 class="font-display uppercase text-sm font-700 mb-2">Registrar ocorrência</h4>
+        <form id="formIncidente" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <label class="block text-sm">
+            <span class="text-muted">Data do ocorrido</span>
+            <input required id="incData" type="date" class="w-full mt-1 bg-surface2 border border-line rounded-lg px-3 py-2">
+          </label>
+          <label class="block text-sm">
+            <span class="text-muted">Tipo</span>
+            <select id="incTipo" class="w-full mt-1 bg-surface2 border border-line rounded-lg px-3 py-2">
+              <option value="acidente">Acidente</option>
+              <option value="colisao">Colisão</option>
+              <option value="quebra">Quebra severa</option>
+              <option value="funilaria">Reparo de funilaria</option>
+              <option value="manutencao_corretiva">Manutenção corretiva</option>
+              <option value="outro">Outro</option>
+            </select>
+          </label>
+          <label class="block text-sm sm:col-span-2">
+            <span class="text-muted">Descrição detalhada</span>
+            <textarea required id="incDescricao" rows="2" class="w-full mt-1 bg-surface2 border border-line rounded-lg px-3 py-2" placeholder="O que aconteceu, extensão da avaria..."></textarea>
+          </label>
+          <label class="block text-sm">
+            <span class="text-muted">Valor do conserto (R$)</span>
+            <input id="incValor" type="number" step="0.01" class="w-full mt-1 bg-surface2 border border-line rounded-lg px-3 py-2 font-mono" placeholder="Opcional">
+          </label>
+          <label class="block text-sm">
+            <span class="text-muted">Oficina / fornecedor</span>
+            <input id="incOficina" class="w-full mt-1 bg-surface2 border border-line rounded-lg px-3 py-2" placeholder="Opcional">
+          </label>
+          <label class="block text-sm sm:col-span-2">
+            <span class="text-muted">Fotos da avaria / comprovante</span>
+            <input id="incFotos" type="file" accept="image/*" multiple
+              class="w-full mt-1 bg-surface2 border border-line rounded-lg px-3 py-2 text-xs file:mr-3 file:py-1 file:px-2 file:rounded-md file:border-0 file:bg-brand file:text-navy file:text-xs file:font-display file:uppercase file:cursor-pointer">
+          </label>
+          <button type="submit" class="sm:col-span-2 bg-brand font-display font-700 uppercase tracking-wide py-2.5 rounded-lg mt-1">Registrar ocorrência</button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL CONFIRMAR EXCLUSÃO ============ -->
+<div id="modalConfirmarExclusao" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+  <div class="bg-surface border border-red/40 rounded-2xl p-6 max-w-sm w-full text-center">
+    <div class="w-12 h-12 rounded-full bg-red-dim flex items-center justify-center mb-3 mx-auto">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF4757" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z"/></svg>
+    </div>
+    <h3 class="font-display text-xl uppercase font-700">Excluir?</h3>
+    <p id="msgConfirmarExclusao" class="text-muted text-sm mt-2 mb-5"></p>
+    <div class="flex gap-2">
+      <button id="btnConfirmarExclusao" class="flex-1 bg-red font-display font-700 uppercase tracking-wide py-2 rounded-lg">Excluir</button>
+      <button id="btnCancelarExclusao" class="flex-1 bg-surface2 border border-line font-display uppercase tracking-wide py-2 rounded-lg">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ÁREA DE IMPRESSÃO (folha A4 com etiquetas) ============ -->
+<div id="printArea" class="hidden"></div>
+
+<script src="frota-admin.js"></script>
+</body>
+</html>
