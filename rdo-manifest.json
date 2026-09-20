@@ -1,0 +1,21 @@
+{
+  "name": "RDO Master Energy",
+  "short_name": "RDO Master",
+  "description": "Relatório Diário de Obra — Master Energy Montagem e Manutenção Industrial",
+  "start_url": "./rdo.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#010d24",
+  "theme_color": "#010d24",
+  "lang": "pt-BR",
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  },
+  "icons": [
+    { "src": "./esf-icon-192.svg", "sizes": "192x192", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "./esf-icon-512.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "./esf-icon-192.svg", "sizes": "192x192", "type": "image/svg+xml", "purpose": "maskable" },
+    { "src": "./esf-icon-512.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}
