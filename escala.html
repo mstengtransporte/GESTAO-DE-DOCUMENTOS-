@@ -183,7 +183,7 @@
   .dash-legenda-destaque{display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-size:11.5px;font-weight:700;color:var(--text-muted);margin:2px 0 10px;}
   .dash-legenda-item{display:flex;align-items:center;gap:6px;}
   .dash-legenda-dot{width:13px;height:13px;border-radius:50%;flex-shrink:0;}
-  .dash-legenda-dot.ativo{background:linear-gradient(135deg,#2CA6FF,#22D3A6);box-shadow:0 0 5px rgba(44,166,255,.7);}
+  .dash-legenda-dot.ativo{background:linear-gradient(135deg,#00B5FE,#22D3A6);box-shadow:0 0 5px rgba(44,166,255,.7);}
   .dash-legenda-dot.inativo{background:var(--card-border);opacity:.6;border:1.5px dashed var(--text-muted);}
   /* Mapa de Veículos: a linha externa que liga cada veículo até seu
      rótulo/nome (dash-leader — o Mapa de Empresas nem tem essa linha, o
@@ -465,15 +465,15 @@
      dá pra ver de relance quais obras já estão com gente escalada hoje. */
   .obra-linha-ativa{
     border:1.5px solid transparent;
-    background-image: linear-gradient(var(--surface),var(--surface)), linear-gradient(135deg,#2CA6FF,#22D3A6);
+    background-image: linear-gradient(var(--surface),var(--surface)), linear-gradient(135deg,#00B5FE,#22D3A6);
     background-origin: border-box;
     background-clip: padding-box, border-box;
     box-shadow:0 2px 10px rgba(44,166,255,.16);
   }
-  body.tema-escuro .obra-linha-ativa{background-image: linear-gradient(#1A2530,#1A2530), linear-gradient(135deg,#2CA6FF,#22D3A6);}
+  body.tema-escuro .obra-linha-ativa{background-image: linear-gradient(#1A2530,#1A2530), linear-gradient(135deg,#00B5FE,#22D3A6);}
   .selo-obra-ativa{
     font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;
-    background:linear-gradient(135deg,#2CA6FF,#22D3A6);color:#fff;
+    background:linear-gradient(135deg,#00B5FE,#22D3A6);color:#fff;
     padding:2px 9px;border-radius:20px;margin-left:6px;white-space:nowrap;flex-shrink:0;
     display:inline-flex;align-items:center;gap:4px;
     box-shadow:0 1px 4px rgba(44,166,255,.4);
@@ -1721,8 +1721,8 @@ function linhaConexaoDash(x1, y1, x2, y2, ativo){
     return '<line class="dash-link" '+coords+'/>';
   }
   return (
-    '<line '+coords+' stroke="#2CA6FF" stroke-width="14" stroke-linecap="round" opacity="0.16"/>' +
-    '<line '+coords+' stroke="#2CA6FF" stroke-width="7" stroke-linecap="round" opacity="0.38"/>' +
+    '<line '+coords+' stroke="#00B5FE" stroke-width="14" stroke-linecap="round" opacity="0.16"/>' +
+    '<line '+coords+' stroke="#00B5FE" stroke-width="7" stroke-linecap="round" opacity="0.38"/>' +
     '<line '+coords+' stroke="#22D3A6" stroke-width="3" stroke-linecap="round" opacity="1"/>'
   );
 }
@@ -1801,7 +1801,7 @@ function renderDashboardRedeAgora(){
   // referenciados via url(#...) em cada anel/selo) — visual consistente e
   // leve, sem repetir a definição por empresa.
   let defs = '<linearGradient id="dashGradAtivo" x1="0%" y1="0%" x2="100%" y2="100%">' +
-      '<stop offset="0%" stop-color="#2CA6FF"/>' +
+      '<stop offset="0%" stop-color="#00B5FE"/>' +
       '<stop offset="100%" stop-color="#22D3A6"/>' +
     '</linearGradient>' +
     '<linearGradient id="dashGradSelo" x1="0%" y1="0%" x2="100%" y2="100%">' +
@@ -1984,7 +1984,7 @@ function renderMapaVeiculosAgora(){
   // cor válida pra desenhar e não apareciam, mesmo com o círculo destacado normalmente
   // (o círculo não depende do gradiente pra aparecer, só as linhas).
   let defs = '<linearGradient id="dashGradAtivo" x1="0%" y1="0%" x2="100%" y2="100%">' +
-      '<stop offset="0%" stop-color="#2CA6FF"/>' +
+      '<stop offset="0%" stop-color="#00B5FE"/>' +
       '<stop offset="100%" stop-color="#22D3A6"/>' +
     '</linearGradient>' +
     '<linearGradient id="dashGradSelo" x1="0%" y1="0%" x2="100%" y2="100%">' +
