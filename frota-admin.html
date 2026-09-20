@@ -23,7 +23,7 @@
           brand: { DEFAULT: '#00B5FE', dim: '#0E4B57' },
           brand2: '#0EA5E9',
           yellow: { DEFAULT: '#FD8A14', dim: '#5C4200' },
-          green: { DEFAULT: '#22D3EE', dim: '#0E4B57' }, // verde removido do sistema — segue o azul neon da marca
+          green: { DEFAULT: '#00B5FE', dim: '#0E4B57' }, // verde removido do sistema — segue o azul neon da marca
           red: { DEFAULT: '#FF3B5C', dim: '#4A0F1C' },
           ink: '#EAF3FF',
           muted: '#7C93B8'
@@ -44,8 +44,8 @@
 
 <style>
   html, body { background: #0A1220; }
-  .tab-btn.active { background: #22D3EE; color: #0B132B; }
-  .subtab-btn.active { background: #22D3EE; color: #0B132B; border-color: #22D3EE; }
+  .tab-btn.active { background: #00B5FE; color: #0B132B; }
+  .subtab-btn.active { background: #00B5FE; color: #0B132B; border-color: #00B5FE; }
   .subtab-panel { display: none; }
   .subtab-panel.active { display: block; }
   .tab-panel { display: none; }
@@ -74,16 +74,16 @@
     background: #1E293B; border: 1px solid #2D3F5C99;
     transition: all .15s ease;
   }
-  .icon-circle:hover { border-color: #22D3EE; box-shadow: 0 0 18px -4px rgba(34,211,238,0.6); transform: translateY(-1px); }
+  .icon-circle:hover { border-color: #00B5FE; box-shadow: 0 0 18px -4px rgba(34,211,238,0.6); transform: translateY(-1px); }
   .mini-icon {
     width: 32px; height: 32px; border-radius: 8px;
     display: flex; align-items: center; justify-content: center;
     background: #1E293B; border: 1px solid #2D3F5C99;
     transition: all .15s ease;
   }
-  .mini-icon:hover { border-color: #22D3EE; box-shadow: 0 0 12px -3px rgba(34,211,238,0.5); }
+  .mini-icon:hover { border-color: #00B5FE; box-shadow: 0 0 12px -3px rgba(34,211,238,0.5); }
   .radial-track { stroke: #2D3F5C55; }
-  .radial-progress { stroke: #22D3EE; stroke-linecap: round; transition: stroke-dashoffset .6s ease; }
+  .radial-progress { stroke: #00B5FE; stroke-linecap: round; transition: stroke-dashoffset .6s ease; }
 
   /* Efeito "neon" ao passar o mouse em QUALQUER botão do sistema — leve
      elevação + brilho ciano, igual ao que já existia só nos botões
@@ -113,7 +113,7 @@
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
     <linearGradient id="icon-neon" x1="15" y1="115" x2="112" y2="13" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#0877E8"/><stop offset=".55" stop-color="#18B8FF"/><stop offset="1" stop-color="#8DEBFF"/>
+      <stop stop-color="#0090CC"/><stop offset=".55" stop-color="#00B5FE"/><stop offset="1" stop-color="#8DEBFF"/>
     </linearGradient>
   </defs>
 </svg>
