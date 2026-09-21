@@ -32,8 +32,8 @@
   --text:#0a1628;
   --text2:#2c4060;
   --text3:#6b7fa0;
-  --accent:#00b5fe;
-  --accent2:#0090cc;
+  --accent:#102b65;
+  --accent2:#0090cc; --accent-glow:#00b5fe;
   --accent-light:#e4ecff;
   --hbg-solid:#0a1e42;
   --hbg:linear-gradient(135deg,#0a1e42 0%,#00b5fe 100%);
@@ -56,7 +56,7 @@ body.dark{
   --bg:#06090f;--surface:#0d1524;--surface2:#111c30;--surface3:#162038;
   --border:#1e2e48;--border2:#243660;
   --text:#e0eaff;--text2:#7899cc;--text3:#3a5070;
-  --accent:#00b5fe;--accent2:#0090cc;--accent-light:#0a1e42;
+  --accent:#102b65;--accent2:#0090cc; --accent-glow:#00b5fe;--accent-light:#0a1e42;
   --hbg-solid:#06090f;--hbg:linear-gradient(135deg,#06090f 0%,#0a1e42 100%);
   --total-bg:#06090f;
   --shadow-card:0 0 0 2px #000, 2px 2px 0 2px rgba(0,0,0,.5);
@@ -2246,7 +2246,7 @@ body.dark #workers-body tr:hover{background-color:rgba(58,110,232,.08)}
      projeto já recebeu ao longo do tempo -->
 <div id="andamento-modal">
   <div class="multipdf-box" style="max-width:1180px;width:90vw;max-height:92vh">
-    <div class="multipdf-header" style="background:linear-gradient(135deg,#00b5fe,#0090cc)">
+    <div class="multipdf-header" style="background:linear-gradient(135deg,#00b5fe,#102b65)">
       <span>🔵 Controle de Andamento por Projeto</span>
       <button onclick="document.getElementById('andamento-modal').classList.remove('show')" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer">✕</button>
     </div>
@@ -3004,7 +3004,7 @@ async function abrirDashboardAoVivo(){
       .dash-bar-row{margin-bottom:10px}
       .dash-bar-label{display:flex;justify-content:space-between;color:#dbe6f5;font-size:11.5px;font-weight:700;margin-bottom:3px}
       .dash-bar-track{background:#0b1a2c;border-radius:6px;height:10px;overflow:hidden}
-      .dash-bar-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,#0090cc,#00b5fe)}
+      .dash-bar-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,#102b65,#00b5fe)}
       .dash-empty{color:#6688aa;font-size:11.5px;text-align:center;padding:14px}
     </style>
     <div class="dash-header">
@@ -3203,7 +3203,7 @@ function renderizarDashboardAoVivo(){
           ${barrasMes.map(b=>`
             <div style="flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end">
               ${b.variacao!==null?`<div style="font-size:9.5px;font-weight:900;color:${b.variacao>=0?'#22c55e':'#ef4444'};margin-bottom:2px">${b.variacao>=0?'▲':'▼'}${Math.abs(b.variacao).toFixed(0)}%</div>`:'<div style="height:13px"></div>'}
-              <div style="width:100%;max-width:34px;background:linear-gradient(180deg,#00b5fe,#0090cc);border-radius:5px 5px 0 0;height:${b.alturaPerc.toFixed(0)}%;min-height:4px"></div>
+              <div style="width:100%;max-width:34px;background:linear-gradient(180deg,#00b5fe,#102b65);border-radius:5px 5px 0 0;height:${b.alturaPerc.toFixed(0)}%;min-height:4px"></div>
               <div style="font-size:9.5px;color:#dbe6f5;font-weight:800;margin-top:5px">${b.rotulo}</div>
               <div style="font-size:9px;color:#6688aa">${fmt(b.horasMes)}h</div>
             </div>
