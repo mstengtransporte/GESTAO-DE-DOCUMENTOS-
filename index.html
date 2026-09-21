@@ -19,7 +19,7 @@
 :root{
   /* ---- Paleta: azul industrial/segurança, refinado a partir da identidade da ESF ---- */
   --navy-950:#03101f; --navy-900:#00477f; --navy-800:#0f3258; --navy-700:#154070;
-  --blue-500:#00b5fe; --blue-400:#3ab4f2; --blue-300:#7dd0fb;
+  --blue-500:#102b65; --blue-400:#153a82; --blue-300:#1c4ba3; --blue-glow:#00b5fe;
   --amber-500:#fd8a14; --amber-400:#feab5c;
   --white:#ffffff;
   --success:#1fa97a; --success-bg:rgba(31,169,122,.15);
@@ -51,7 +51,7 @@ input[type=date],input[type=month],input[type=number]{font-family:var(--font-mon
 select option{background:#ffffff;color:#0b1220;font-weight:600;padding:6px;}
 button{cursor:pointer;font-weight:600;font-size:13px;border-radius:9px;padding:10px 16px;border:1px solid transparent;font-family:var(--font-body);transition:transform .1s,filter .15s,background .15s;}
 button:active{transform:scale(.98);}
-.btn-primary{background:linear-gradient(135deg,var(--blue-500),#0b6fb0);color:#fff;box-shadow:0 4px 14px rgba(0,146,214,.28);}
+.btn-primary{background:linear-gradient(135deg,var(--blue-glow),var(--blue-500));color:#fff;box-shadow:0 4px 14px rgba(0,146,214,.28);}
 .btn-primary:hover{filter:brightness(1.08);}
 .btn-ghost{background:var(--surface-1);border-color:var(--surface-border);color:var(--ink-50);}
 .btn-ghost:hover{background:var(--surface-2);}
@@ -243,7 +243,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
 .nav-item svg{width:16px;height:16px;stroke-width:2;flex:none;}
 .nav-item [data-icone-marca] svg{width:auto !important;height:auto !important;}
 .nav-item:hover{background:var(--surface-1);color:var(--ink-50);}
-.nav-item.btn-primary{background:linear-gradient(135deg,var(--blue-500),#0b6fb0);color:#fff;box-shadow:0 4px 14px rgba(0,146,214,.28);border-color:transparent;}
+.nav-item.btn-primary{background:linear-gradient(135deg,var(--blue-glow),var(--blue-500));color:#fff;box-shadow:0 4px 14px rgba(0,146,214,.28);border-color:transparent;}
 .nav-item.btn-ghost{background:transparent;border-color:transparent;}
 
 .sidebar-foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--surface-border);}
@@ -943,27 +943,27 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
       <div class="card">
         <div class="topbar" style="margin-bottom:2px">
           <h1 style="font-size:15px">🗺️ Mapa completo do ESF ERP</h1>
-          <span class="small">5 de 17 módulos ativos</span>
+          <span class="small">5 de 17 módulos ativos · v2026-09-21</span>
         </div>
         <div class="small" style="margin-bottom:14px">Todos os processos da empresa, pensados pra um sistema só — o que já está pronto é clicável, o resto entra conforme for sendo construído.</div>
         <div class="grade-modulos-erp">
-          <div class="modulo-erp-tile ativo" data-tab="func"><img src="modulos/documental_sst.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Documental / SST</span></div>
-          <a class="modulo-erp-tile ativo" href="rdo.html" target="_blank" rel="noopener"><img src="modulos/rdo.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>RDO</span></a>
-          <a class="modulo-erp-tile ativo" href="escala.html" target="_blank" rel="noopener"><img src="modulos/escala_rh.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Escala / RH</span></a>
-          <a class="modulo-erp-tile ativo" href="frota-admin.html" target="_blank" rel="noopener"><img src="modulos/frota_km.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Frota / KM</span></a>
-          <a class="modulo-erp-tile ativo" href="requisicao.html" target="_blank" rel="noopener"><img src="modulos/compras.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Compras</span></a>
-          <div class="modulo-erp-tile"><img src="modulos/estoque.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Estoque</span><em>em breve</em></div>
-          <div class="modulo-erp-tile"><img src="modulos/financeiro.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Financeiro</span><em>em breve</em></div>
-          <div class="modulo-erp-tile"><img src="modulos/vendas_crm.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Vendas / CRM</span><em>em breve</em></div>
-          <div class="modulo-erp-tile"><img src="modulos/producao.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Produção</span><em>em breve</em></div>
-          <div class="modulo-erp-tile"><img src="modulos/fiscal.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Fiscal</span><em>em breve</em></div>
-          <div class="modulo-erp-tile"><img src="modulos/projetos.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Projetos</span><em>em breve</em></div>
-          <div class="modulo-erp-tile"><img src="modulos/documentos_ged.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Documentos (GED)</span><em>em breve</em></div>
-          <div class="modulo-erp-tile"><img src="modulos/manutencao.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Manutenção</span><em>em breve</em></div>
-          <div class="modulo-erp-tile"><img src="modulos/patrimonio.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Patrimônio</span><em>em breve</em></div>
-          <div class="modulo-erp-tile"><img src="modulos/planejamento.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Planejamento</span><em>em breve</em></div>
-          <div class="modulo-erp-tile"><img src="modulos/usuarios_seguranca.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Usuários / Segurança</span><em>em breve</em></div>
-          <div class="modulo-erp-tile"><img src="modulos/configuracoes.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Configurações</span><em>em breve</em></div>
+          <div class="modulo-erp-tile ativo" data-tab="func"><img src="mod-documental_sst.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Documental / SST</span></div>
+          <a class="modulo-erp-tile ativo" href="rdo.html" target="_blank" rel="noopener"><img src="mod-rdo.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>RDO</span></a>
+          <a class="modulo-erp-tile ativo" href="escala.html" target="_blank" rel="noopener"><img src="mod-escala_rh.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Escala / RH</span></a>
+          <a class="modulo-erp-tile ativo" href="frota-admin.html" target="_blank" rel="noopener"><img src="mod-frota_km.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Frota / KM</span></a>
+          <a class="modulo-erp-tile ativo" href="requisicao.html" target="_blank" rel="noopener"><img src="mod-compras.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Compras</span></a>
+          <div class="modulo-erp-tile"><img src="mod-estoque.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Estoque</span><em>em breve</em></div>
+          <div class="modulo-erp-tile"><img src="mod-financeiro.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Financeiro</span><em>em breve</em></div>
+          <div class="modulo-erp-tile"><img src="mod-vendas_crm.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Vendas / CRM</span><em>em breve</em></div>
+          <div class="modulo-erp-tile"><img src="mod-producao.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Produção</span><em>em breve</em></div>
+          <div class="modulo-erp-tile"><img src="mod-fiscal.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Fiscal</span><em>em breve</em></div>
+          <div class="modulo-erp-tile"><img src="mod-projetos.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Projetos</span><em>em breve</em></div>
+          <div class="modulo-erp-tile"><img src="mod-documentos_ged.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Documentos (GED)</span><em>em breve</em></div>
+          <div class="modulo-erp-tile"><img src="mod-manutencao.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Manutenção</span><em>em breve</em></div>
+          <div class="modulo-erp-tile"><img src="mod-patrimonio.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Patrimônio</span><em>em breve</em></div>
+          <div class="modulo-erp-tile"><img src="mod-planejamento.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Planejamento</span><em>em breve</em></div>
+          <div class="modulo-erp-tile"><img src="mod-usuarios_seguranca.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Usuários / Segurança</span><em>em breve</em></div>
+          <div class="modulo-erp-tile"><img src="mod-configuracoes.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Configurações</span><em>em breve</em></div>
         </div>
       </div>
 

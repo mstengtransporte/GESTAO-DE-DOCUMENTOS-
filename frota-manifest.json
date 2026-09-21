@@ -9,7 +9,7 @@
   "background_color": "#0A1220",
   "theme_color": "#0A1220",
   "icons": [
-    { "src": "/modulos/frota_km.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "/modulos/frota_km.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "/mod-frota_km.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/mod-frota_km.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ]
 }

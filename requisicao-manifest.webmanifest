@@ -8,8 +8,8 @@
   "background_color": "#031226",
   "theme_color": "#00b5fe",
   "icons": [
-    { "src": "/modulos/compras.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/modulos/compras.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/modulos/compras.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "/mod-compras.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/mod-compras.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/mod-compras.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
