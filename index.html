@@ -171,7 +171,12 @@ textarea{width:100%;background:var(--surface-1);border:1px solid var(--surface-b
 .modulo-erp-tile em{font-style:normal;font-size:8.5px;font-weight:800;text-transform:uppercase;color:var(--ink-500);background:var(--surface-2);padding:1px 6px;border-radius:20px;position:absolute;top:6px;right:6px;}
 .modulo-erp-tile.ativo{opacity:1;color:var(--ink-50);border-color:rgba(0,159,227,.4);cursor:pointer;transition:transform .12s,border-color .15s;}
 .modulo-erp-tile.ativo [data-icone-marca] svg{filter:none;opacity:1;}
-.modulo-erp-tile.ativo:hover{transform:translateY(-2px);border-color:var(--blue-500);}
+.modulo-erp-tile.ativo{transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;}
+.modulo-erp-tile.ativo:hover{
+  transform:translateY(-3px);
+  border-color:#00b5fe;
+  box-shadow:0 0 8px rgba(0,181,254,.9), 0 0 20px rgba(0,181,254,.6), 0 0 36px rgba(0,181,254,.35), 0 6px 16px rgba(0,0,0,.35);
+}
 
 .esf-banner-topo{width:100%;max-width:960px;margin:0 auto 16px;border-radius:16px;overflow:hidden;height:180px;background:#061224;}
 .esf-banner-topo img{width:100%;height:100%;object-fit:cover;object-position:center center;}
