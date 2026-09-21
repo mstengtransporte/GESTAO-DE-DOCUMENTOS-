@@ -1,0 +1,3254 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESF ERP · Controle de Entrega de EPIs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root{
+    --navy-900:#0A1838;
+    --navy-800:#0F2456;
+    --navy-700:#123B74;
+    --navy-600:#1E4899;
+    --cyan:#0EA5E0;
+    --cyan-light:#7BC9EF;
+    --gold:#E3AE3E;
+    --gold-dark:#C9932A;
+    --graphite:#0F2456;
+    --graphite-2:#123B57;
+    --graphite-3:#1E4899;
+    --paper:#F4F6FA;
+    --paper-card:#FFFFFF;
+    --ink:#0F1F33;
+    --muted:#6B7280;
+    --amber:#E3AE3E;
+    --amber-dark:#C9932A;
+    --orange:#E4572E;
+    --green:#1F9D63;
+    --line:#E4E7EC;
+    --shadow: 0 1px 2px rgba(10,24,56,.05), 0 12px 30px rgba(10,24,56,.09);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  .display{font-family:'Space Grotesk',system-ui,sans-serif;}
+
+  /* ---------- Topbar shared controls ---------- */
+  .conn-badge{
+    font-size:10.5px;font-weight:600;color:#CFE0F5;
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.16);
+    padding:3px 9px;border-radius:20px;
+  }
+  .icon-toggle-btn{
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.16);
+    color:#fff;
+    width:26px;height:26px;border-radius:8px;
+    cursor:pointer;font-size:13px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .icon-toggle-btn:hover{background:rgba(255,255,255,.16);}
+  .doc-chip{
+    display:inline-block;
+    padding:5px 12px;
+    border:1.5px dashed rgba(123,201,239,.55);
+    border-radius:8px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    font-weight:600;
+    color:var(--cyan-light);
+    letter-spacing:.4px;
+    white-space:nowrap;
+  }
+
+  /* ---------- App shell (sidebar + main) ---------- */
+  .app-shell{
+    display:flex;
+    align-items:stretch;
+    min-height:100vh;
+  }
+  .sidebar{
+    width:264px;
+    flex:none;
+    background:linear-gradient(180deg, var(--navy-900) 0%, var(--navy-800) 100%);
+    color:#fff;
+    display:flex;
+    flex-direction:column;
+    position:sticky;
+    top:0;
+    align-self:flex-start;
+    height:100vh;
+    transition:width .22s ease;
+    z-index:60;
+  }
+  .sidebar.collapsed{width:78px;}
+  .sidebar-brand{
+    display:flex;align-items:center;gap:12px;
+    padding:20px 18px;
+    border-bottom:1px solid rgba(255,255,255,.1);
+    white-space:nowrap;
+    overflow:hidden;
+  }
+  .sidebar-brand .logo-chip{
+    flex:none;background:#fff;border-radius:10px;padding:5px 8px;
+    display:flex;align-items:center;box-shadow:0 6px 16px rgba(0,0,0,.25);
+  }
+  .sidebar-brand .logo-chip img{display:block;height:26px;width:auto;}
+  .sidebar-brand .brand-text{overflow:hidden;}
+  .sidebar-brand .brand-text .name{
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;color:#fff;white-space:nowrap;
+  }
+  .sidebar-brand .brand-text .name b{color:var(--cyan-light);}
+  .sidebar-brand .brand-text .tagline{
+    font-size:9px;font-weight:700;color:var(--cyan-light);letter-spacing:.8px;margin-top:2px;white-space:nowrap;
+  }
+  .sidebar.collapsed .brand-text{display:none;}
+  .sidebar-nav{
+    flex:1;padding:16px 12px;display:flex;flex-direction:column;gap:4px;overflow-y:auto;overflow-x:hidden;
+  }
+  .sidebar-nav .nav-section-label{
+    font-size:10px;font-weight:700;letter-spacing:1px;color:#6E80A6;
+    padding:14px 12px 6px;text-transform:uppercase;white-space:nowrap;
+  }
+  .sidebar.collapsed .nav-section-label{display:none;}
+  .nav-item{
+    display:flex;align-items:center;gap:12px;
+    padding:10px 13px;border-radius:10px;
+    background:linear-gradient(180deg,#00b5fe 0%,#102b65 30%,#102b65 100%);
+    border:1.5px solid #fd8a14;color:#fff;
+    font-size:13.5px;font-weight:700;font-family:inherit;
+    cursor:pointer;text-align:left;white-space:nowrap;width:100%;
+    margin-bottom:6px;box-shadow:2px 2px 0 rgba(0,0,0,.3);
+    transition:all .16s ease;
+  }
+  .nav-item .nav-icon{font-size:17px;flex:none;width:20px;text-align:center;}
+  .nav-item .nav-label{overflow:hidden;text-overflow:ellipsis;}
+  .sidebar.collapsed .nav-item{justify-content:center;padding:11px;}
+  .sidebar.collapsed .nav-label{display:none;}
+  .nav-item:hover{filter:brightness(1.15);transform:translate(-2px,-2px) scale(1.02);box-shadow:4px 4px 0 rgba(0,0,0,.3),0 0 12px rgba(253,138,20,.5);}
+  .nav-item.active{
+    border-color:#fff;
+    box-shadow:0 0 8px rgba(253,138,20,.7),0 0 16px rgba(253,138,20,.4);
+  }
+  .sidebar-footer{padding:14px 12px;border-top:1px solid rgba(255,255,255,.1);}
+  .sidebar-toggle{
+    width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);
+    color:#C3D0E8;border-radius:10px;padding:10px;cursor:pointer;
+    font-size:12px;font-weight:600;font-family:inherit;
+  }
+  .sidebar-toggle:hover{background:rgba(255,255,255,.13);color:#fff;}
+  .sidebar-toggle .arrow{transition:transform .22s ease;display:inline-block;}
+  .sidebar.collapsed .sidebar-toggle .arrow{transform:rotate(180deg);}
+  .sidebar.collapsed .sidebar-toggle .toggle-label{display:none;}
+
+  .main-wrap{flex:1;min-width:0;display:flex;flex-direction:column;}
+  .topbar{
+    background:linear-gradient(135deg, var(--navy-900) 0%, var(--navy-700) 55%, var(--navy-600) 100%);
+    color:#fff;
+    padding:14px 26px;
+    display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+    position:sticky;top:0;z-index:40;
+  }
+  .topbar-left{display:flex;align-items:center;gap:14px;min-width:0;}
+  .topbar-title{
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;color:#fff;white-space:nowrap;
+  }
+  .topbar-sub{font-size:11.5px;color:#B9C6DE;margin-top:1px;}
+  .mobile-menu-btn{display:none;}
+  .topbar-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap;justify-content:flex-end;}
+  .topbar-session{text-align:right;font-size:11px;color:#B9C6DE;line-height:1.3;}
+  .topbar-session b{display:block;font-family:'IBM Plex Mono',monospace;color:#fff;font-size:15px;font-weight:600;}
+
+  .sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(6,14,32,.55);z-index:55;}
+  .sidebar-backdrop.show{display:block;}
+
+  @media (max-width:980px){
+    .sidebar{
+      position:fixed;left:0;top:0;height:100vh;width:264px;
+      transform:translateX(-100%);
+      transition:transform .22s ease;
+    }
+    .sidebar.collapsed{width:264px;}
+    .sidebar.mobile-open{transform:translateX(0);}
+    .mobile-menu-btn{display:flex;}
+    .topbar-session{display:none;}
+  }
+
+  /* ---------- Layout ---------- */
+  main{
+    max-width:1280px;
+    margin:0 auto;
+    padding:28px;
+    display:grid;
+    grid-template-columns:1.55fr 1fr;
+    gap:24px;
+    align-items:start;
+  }
+  @media (max-width:980px){
+    main{grid-template-columns:1fr;}
+  }
+  .expiry-banner{
+    grid-column:1 / -1;
+    display:flex;align-items:center;gap:12px;
+    background:linear-gradient(135deg,#FFF4E8,#FFEDE3);
+    border:1px solid #F5C99A;
+    border-radius:14px;
+    padding:13px 18px;
+    font-size:13px;color:#7A4A15;
+  }
+  .expiry-banner.critical{background:linear-gradient(135deg,#FDEAE5,#FCE0DA);border-color:#F0AC98;color:#8A2E14;}
+  .expiry-banner .eb-icon{font-size:20px;flex:none;}
+  .expiry-banner b{font-weight:700;}
+  .expiry-banner .eb-list{font-size:12px;opacity:.85;margin-top:2px;}
+  .toggle-row{
+    display:flex;align-items:center;gap:9px;
+    font-size:12.5px;color:var(--graphite-2);font-weight:500;
+    cursor:pointer;margin-bottom:12px;
+  }
+  .toggle-row input{width:16px;height:16px;accent-color:var(--cyan);cursor:pointer;}
+  .period-row{
+    display:flex;align-items:center;gap:10px;
+    font-size:12.5px;color:var(--graphite-2);margin-bottom:4px;
+  }
+  .period-row select{width:auto;padding:6px 10px;font-size:12.5px;}
+  .batch-row{display:flex;gap:8px;margin-bottom:8px;align-items:center;}
+  .batch-row input{flex:1;min-width:0;}
+  .batch-row input.mini{flex:0 0 150px;}
+  .batch-row .item-remove{flex:none;}
+  .card{
+    background:var(--paper-card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    box-shadow:var(--shadow);
+    padding:26px;
+  }
+  .card + .card{margin-top:20px;}
+  .card h2{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:16px;
+    margin:0 0 4px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .card h2 .tag{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    color:var(--amber-dark);
+    background:#FFF6E5;
+    border:1px solid #FBE3AE;
+    padding:2px 7px;
+    border-radius:20px;
+    font-weight:600;
+    letter-spacing:.3px;
+  }
+  .card p.hint{
+    margin:0 0 18px;
+    font-size:12.5px;
+    color:var(--muted);
+  }
+
+  /* ---------- Form ---------- */
+  .grid{display:grid;gap:14px;}
+  .g2{grid-template-columns:1fr 1fr;}
+  .g3{grid-template-columns:1.3fr .8fr .8fr;}
+  @media (max-width:640px){ .g2,.g3{grid-template-columns:1fr;} }
+
+  label{
+    display:block;
+    font-size:12px;
+    font-weight:600;
+    color:var(--graphite-2);
+    margin-bottom:6px;
+    letter-spacing:.2px;
+  }
+  label .req{color:var(--orange);}
+  input[type=text], input[type=date], input[type=number], select, textarea{
+    width:100%;
+    padding:10px 12px;
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    font-size:14px;
+    font-family:'Inter',sans-serif;
+    background:#fcfcfd;
+    color:var(--ink);
+    transition:border-color .15s, box-shadow .15s;
+  }
+  input.mono-field{font-family:'IBM Plex Mono',monospace;}
+  input:focus, select:focus, textarea:focus{
+    outline:none;
+    border-color:var(--cyan);
+    box-shadow:0 0 0 3px rgba(14,165,224,.16);
+    background:#fff;
+  }
+  .field-status{font-size:11.5px;margin-top:5px;min-height:14px;}
+  .field-status.ok{color:var(--green);}
+  .field-status.bad{color:var(--orange);}
+
+  hr.sep{
+    border:none;
+    border-top:1px dashed var(--line);
+    margin:22px 0;
+  }
+
+  /* ---------- Editable letterhead ---------- */
+  .letterhead{
+    display:flex;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+    padding-bottom:16px;
+    border-bottom:1px solid var(--line);
+    margin-bottom:18px;
+  }
+  .letterhead .field-inline{font-size:12px;color:var(--muted);}
+  .letterhead [contenteditable]{
+    display:inline-block;
+    border-bottom:1px dashed transparent;
+    padding:1px 3px;
+    border-radius:4px;
+    color:var(--ink);
+    font-weight:600;
+  }
+  .letterhead [contenteditable]:hover, .letterhead [contenteditable]:focus{
+    border-bottom:1px dashed var(--cyan);
+    outline:none;
+    background:#EFFAFE;
+  }
+
+  /* ---------- Circuit trace item list ---------- */
+  #itemsWrap{position:relative;margin-top:6px;}
+  .items-empty{
+    font-size:13px;color:var(--muted);
+    padding:18px 0 6px 0;
+    text-align:center;
+    border:1.5px dashed var(--line);
+    border-radius:12px;
+  }
+  .item-row{
+    position:relative;
+    display:grid;
+    grid-template-columns:22px 1fr auto;
+    gap:12px;
+    align-items:flex-start;
+    padding:12px 0 12px 4px;
+  }
+  .item-row .node-col{
+    position:relative;
+    display:flex;justify-content:center;
+    align-self:stretch;
+  }
+  .item-row .node-col::before{
+    content:"";
+    position:absolute;
+    top:-14px;bottom:-14px;left:50%;
+    width:2px;
+    background:repeating-linear-gradient(180deg,var(--line) 0 6px, transparent 6px 10px);
+    transform:translateX(-50%);
+  }
+  .item-row:first-child .node-col::before{top:50%;}
+  .item-row:last-child .node-col::before{bottom:50%;}
+  .node-dot{
+    width:11px;height:11px;border-radius:50%;
+    background:var(--cyan);
+    border:2px solid #fff;
+    box-shadow:0 0 0 2px var(--cyan);
+    margin-top:4px;
+    z-index:1;
+  }
+  .item-row.latest .node-dot{
+    animation:pulse 1.6s ease-out infinite;
+  }
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 2px var(--cyan);}
+    70%{box-shadow:0 0 0 8px rgba(14,165,224,0);}
+    100%{box-shadow:0 0 0 2px rgba(14,165,224,0);}
+  }
+  .item-content{
+    background:#fbfbfc;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:12px 14px;
+  }
+  .item-content .top-line{
+    display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;
+    font-size:14px;font-weight:600;
+  }
+  .item-content .meta{
+    margin-top:6px;
+    font-size:12px;color:var(--muted);
+    display:flex;gap:14px;flex-wrap:wrap;
+  }
+  .item-content .meta b{color:var(--graphite-2);font-family:'IBM Plex Mono',monospace;font-weight:600;}
+  .badge{
+    display:inline-flex;align-items:center;gap:4px;
+    font-size:10.5px;font-weight:600;letter-spacing:.3px;
+    padding:2px 8px;border-radius:20px;
+  }
+  .badge.ok{background:#E9F9F0;color:var(--green);}
+  .badge.warn{background:#FFF4E0;color:var(--gold-dark);}
+  .badge.bad{background:#FDEAE5;color:var(--orange);}
+  .badge.neutral{background:#EAF1FB;color:var(--navy-600);}
+  .item-remove{
+    align-self:flex-start;
+    background:none;border:none;color:var(--muted);
+    cursor:pointer;font-size:16px;line-height:1;padding:4px;
+    border-radius:6px;
+  }
+  .item-remove:hover{background:#FFF1EC;color:var(--orange);}
+
+  /* ---------- Buttons ---------- */
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    padding:11px 18px;
+    border-radius:10px;
+    font-size:13.5px;
+    font-weight:600;
+    font-family:'Inter',sans-serif;
+    cursor:pointer;
+    border:1.5px solid transparent;
+    transition:transform .1s, filter .15s;
+    white-space:nowrap;
+  }
+  .btn:active{transform:scale(.97);}
+  .btn-primary{background:linear-gradient(180deg,#00b5fe 0%,#102b65 30%,#102b65 100%);color:#fff;border:1.5px solid #fd8a14;}
+  .btn-primary:hover{filter:brightness(1.15);}
+  .btn-amber{background:var(--amber);color:var(--graphite);}
+  .btn-amber:hover{filter:brightness(1.06);}
+  .btn-ghost{background:#fff;border-color:var(--line);color:var(--graphite-2);}
+  .btn-ghost:hover{border-color:var(--graphite-3);}
+  .btn-danger-ghost{background:#fff;border-color:#FBD9CC;color:var(--orange);}
+  .btn-whatsapp{background:#25D366;color:#0B3B23;}
+  .btn-whatsapp:hover{filter:brightness(1.05);}
+  .btn-whatsapp:disabled{filter:grayscale(.4);}
+  .btn-danger-ghost:hover{background:#FFF1EC;}
+  .btn:disabled{opacity:.45;cursor:not-allowed;}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px;}
+  .btn-full{width:100%;}
+
+  /* ---------- Signature ---------- */
+  .sig-box{
+    border:1.5px dashed var(--line);
+    border-radius:12px;
+    background:#fcfcfd;
+    position:relative;
+  }
+  #sigCanvas, #sigCanvasResp{width:100%;height:130px;display:block;touch-action:none;cursor:crosshair;}
+  .sig-placeholder{
+    position:absolute;inset:0;
+    display:flex;align-items:center;justify-content:center;
+    color:#B7BCC6;font-size:12.5px;pointer-events:none;
+  }
+  .sig-row{display:flex;justify-content:space-between;align-items:center;margin-top:8px;}
+  .sig-row span{font-size:11.5px;color:var(--muted);}
+
+  /* ---------- History ---------- */
+  .tab-row{display:flex;gap:6px;margin-bottom:14px;background:#F0F2F6;border-radius:12px;padding:4px;}
+  .tab-btn{
+    flex:1;border:none;background:transparent;padding:9px 10px;border-radius:9px;
+    font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer;
+    transition:background .15s, color .15s;
+  }
+  .tab-btn.active{background:linear-gradient(180deg,#00b5fe 0%,#102b65 30%,#102b65 100%);color:#fff;border:1.5px solid #fd8a14;box-shadow:0 1px 3px rgba(10,24,56,.12);}
+  body.dark .tab-row{background:#0F1830;}
+  body.dark .tab-btn.active{background:linear-gradient(180deg,#00b5fe 0%,#102b65 30%,#102b65 100%);color:#fff;border:1.5px solid #fd8a14;}
+
+  .search-wrap{position:relative;margin-bottom:14px;}
+  .search-wrap input{padding-left:34px;}
+  .search-wrap svg{
+    position:absolute;left:11px;top:50%;transform:translateY(-50%);
+    width:15px;height:15px;color:var(--muted);
+  }
+  #historyList, #employeeList{display:flex;flex-direction:column;gap:10px;max-height:520px;overflow:auto;padding-right:2px;}
+  #historyList::-webkit-scrollbar, #employeeList::-webkit-scrollbar{width:6px;}
+  #historyList::-webkit-scrollbar-thumb, #employeeList::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px;}
+  .hist-empty{
+    text-align:center;color:var(--muted);font-size:13px;
+    padding:30px 10px;border:1.5px dashed var(--line);border-radius:12px;
+  }
+  .hist-card{
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:13px 14px;
+    background:#fbfbfc;
+  }
+  .hist-card .h-top{display:flex;justify-content:space-between;gap:8px;}
+  .hist-card .h-name{font-weight:700;font-size:14px;}
+  .hist-card .h-date{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--muted);white-space:nowrap;}
+  .hist-card .h-meta{font-size:12px;color:var(--muted);margin-top:3px;}
+  .hist-card .h-actions{display:flex;gap:6px;margin-top:10px;}
+
+  /* ---------- Employee cards ---------- */
+  .emp-card{
+    border:1px solid var(--line);border-radius:12px;padding:13px 14px;
+    background:#fbfbfc;cursor:pointer;transition:border-color .15s, transform .1s;
+  }
+  .emp-card:hover{border-color:var(--cyan);}
+  .emp-card:active{transform:scale(.99);}
+  .emp-card .e-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;}
+  .emp-card .e-name{font-weight:700;font-size:14px;}
+  .emp-card .e-meta{font-size:12px;color:var(--muted);margin-top:3px;}
+  .emp-card .e-count{
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:16px;
+    color:var(--navy-700);white-space:nowrap;flex:none;
+  }
+  .emp-card .e-count small{display:block;font-family:'Inter',sans-serif;font-weight:500;font-size:10px;color:var(--muted);text-align:right;}
+  .emp-card .e-actions{display:flex;gap:8px;margin-top:12px;}
+  .emp-card .e-actions .btn{flex:1;padding:8px 10px;font-size:12px;}
+  body.dark .emp-card{background:#0F1830;border-color:var(--line);}
+
+  /* ---------- Employee modal ---------- */
+  #employeeModal{
+    position:fixed;inset:0;background:rgba(10,20,40,.55);
+    display:none;align-items:flex-start;justify-content:center;
+    padding:24px 14px;overflow:auto;z-index:500;
+  }
+  #employeeModal.open{display:flex;}
+  .emp-modal-box{
+    background:var(--paper-card);border-radius:18px;max-width:760px;width:100%;
+    box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:hidden;
+    animation:modalIn .18s ease-out;
+  }
+  @keyframes modalIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  .emp-modal-head{
+    background:linear-gradient(135deg,var(--navy-900),var(--navy-700) 60%,var(--navy-600));
+    color:#fff;padding:20px 24px;position:relative;
+  }
+  .emp-modal-head .close-btn{
+    position:absolute;top:14px;right:16px;background:rgba(255,255,255,.12);
+    border:none;color:#fff;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px;
+  }
+  .emp-modal-head .em-name{font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:700;}
+  .emp-modal-head .em-meta{font-size:12.5px;color:#C7D6EE;margin-top:4px;}
+  .emp-modal-body{padding:22px 24px;max-height:70vh;overflow:auto;}
+  .emp-modal-body h3{font-size:13px;margin:22px 0 10px;color:var(--graphite-2);}
+  .emp-modal-body h3:first-child{margin-top:0;}
+
+  .cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;}
+  .cat-chip{
+    border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fbfbfc;text-align:center;
+  }
+  .cat-chip .cat-num{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;color:var(--navy-700);}
+  .cat-chip .cat-lbl{font-size:10.5px;color:var(--muted);margin-top:2px;}
+  body.dark .cat-chip{background:#0F1830;}
+
+  .emp-ficha-row{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+    border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:8px;background:#fbfbfc;
+  }
+  .emp-ficha-row .ef-info{font-size:12.5px;}
+  .emp-ficha-row .ef-info b{color:var(--cyan);font-family:'IBM Plex Mono',monospace;}
+  .emp-ficha-row .ef-meta{font-size:11px;color:var(--muted);margin-top:1px;}
+  body.dark .emp-ficha-row{background:#0F1830;}
+
+  .emp-item-row{
+    display:flex;justify-content:space-between;gap:10px;align-items:center;
+    padding:9px 0;border-bottom:1px solid var(--line);font-size:12.5px;
+  }
+  .emp-item-row:last-child{border-bottom:none;}
+  .emp-item-row .ei-left b{font-weight:600;}
+  .emp-item-row .ei-meta{font-size:11px;color:var(--muted);margin-top:1px;}
+  .emp-item-row .ei-right{text-align:right;flex:none;}
+
+  .sig-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;}
+  .sig-gallery-item{border:1px solid var(--line);border-radius:10px;padding:8px;background:#fbfbfc;text-align:center;}
+  .sig-gallery-item img{width:100%;height:50px;object-fit:contain;background:#fff;border-radius:6px;}
+  .sig-gallery-item .sg-label{font-size:10px;color:var(--muted);margin-top:5px;}
+  body.dark .sig-gallery-item{background:#0F1830;}
+  body.dark .sig-gallery-item img{background:#fff;}
+  .icon-btn{
+    border:1px solid var(--line);background:#fff;border-radius:8px;
+    width:30px;height:30px;display:flex;align-items:center;justify-content:center;
+    cursor:pointer;color:var(--graphite-2);
+  }
+  .icon-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+  .icon-btn.danger:hover{border-color:var(--orange);color:var(--orange);}
+  .icon-btn svg{width:14px;height:14px;}
+
+  .compliance-box{
+    display:flex;align-items:center;gap:16px;
+    border:1px solid var(--line);border-radius:14px;
+    padding:14px 16px;margin-bottom:14px;
+    background:linear-gradient(135deg,#F5FAFE,#F4F6FA);
+  }
+  .donut{
+    --p:0; --c:var(--cyan);
+    position:relative;flex:none;
+    width:62px;height:62px;border-radius:50%;
+    background:conic-gradient(var(--c) calc(var(--p)*3.6deg), #E4E7EC 0deg);
+    transition:background .6s ease;
+  }
+  .donut::after{content:"";position:absolute;inset:7px;background:#fff;border-radius:50%;}
+  .donut span{
+    position:absolute;inset:0;z-index:1;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px;color:var(--navy-800);
+  }
+  .compliance-info .c-title{font-size:12.5px;font-weight:700;color:var(--graphite-2);}
+  .compliance-info .c-sub{font-size:11.5px;color:var(--muted);margin-top:2px;}
+  .stat-row{display:flex;gap:10px;margin-bottom:16px;}
+  .stat{
+    flex:1;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fbfbfc;
+  }
+  .stat .num{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;}
+  .stat .lbl{font-size:11px;color:var(--muted);margin-top:1px;}
+  body.dark .stat{background:#0F1830;border-color:var(--navy-700);}
+
+  /* ---------- Dashboard ranking bars ---------- */
+  .rank-row{margin-bottom:14px;}
+  .rank-row:last-child{margin-bottom:0;}
+  .rank-row .rank-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:13px;margin-bottom:5px;}
+  .rank-row .rank-name{font-weight:600;color:var(--graphite-2);}
+  body.dark .rank-row .rank-name{color:#fff;}
+  .rank-row .rank-value{font-family:'Space Grotesk',sans-serif;font-weight:700;color:var(--navy-800);white-space:nowrap;}
+  body.dark .rank-row .rank-value{color:var(--cyan-light);}
+  .rank-bar-track{background:#EEF1F6;border-radius:8px;height:10px;overflow:hidden;}
+  body.dark .rank-bar-track{background:#0F1830;}
+  .rank-bar-fill{height:100%;border-radius:8px;background:linear-gradient(90deg,var(--cyan),var(--navy-700));}
+  .rank-bar-fill.gold{background:linear-gradient(90deg,var(--gold),var(--gold-dark));}
+
+  /* ---------- Modern KPI cards (dashboard) ---------- */
+  .kpi-grid{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:14px;
+    margin-top:18px;
+  }
+  @media (max-width:900px){ .kpi-grid{grid-template-columns:repeat(2, 1fr);} }
+  @media (max-width:540px){ .kpi-grid{grid-template-columns:1fr;} }
+  .kpi-card{
+    position:relative;
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:16px 16px 15px;
+    background:var(--paper-card);
+    overflow:hidden;
+    box-shadow:0 1px 2px rgba(10,24,56,.04);
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .kpi-card:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(10,24,56,.1);}
+  .kpi-card::before{
+    content:"";position:absolute;left:0;top:0;bottom:0;width:4px;
+    background:var(--kpi-accent, var(--cyan));
+  }
+  .kpi-card .kpi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .kpi-card .kpi-icon{
+    width:34px;height:34px;border-radius:10px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:16px;
+    background:var(--kpi-accent-soft, rgba(14,165,224,.12));
+    color:var(--kpi-accent, var(--cyan));
+  }
+  .kpi-card .kpi-num{
+    font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:700;color:var(--navy-800);line-height:1.1;
+  }
+  body.dark .kpi-card .kpi-num{color:#fff;}
+  .kpi-card .kpi-lbl{font-size:11.5px;color:var(--muted);margin-top:4px;font-weight:600;}
+  body.dark .kpi-card{background:#0F1830;border-color:var(--navy-700);}
+  .kpi-card.c-cyan{--kpi-accent:var(--cyan);--kpi-accent-soft:rgba(14,165,224,.13);}
+  .kpi-card.c-navy{--kpi-accent:var(--navy-600);--kpi-accent-soft:rgba(30,72,153,.13);}
+  .kpi-card.c-gold{--kpi-accent:var(--gold-dark);--kpi-accent-soft:rgba(227,174,62,.18);}
+  .kpi-card.c-green{--kpi-accent:var(--green);--kpi-accent-soft:rgba(31,157,99,.13);}
+
+  /* ---------- Obras chips ---------- */
+  .obra-chip{
+    display:inline-flex;align-items:center;gap:8px;
+    background:#EEF3FB;border:1px solid var(--line);border-radius:999px;
+    padding:6px 8px 6px 14px;font-size:13px;font-weight:600;color:var(--navy-800);
+    margin:0 8px 8px 0;
+  }
+  body.dark .obra-chip{background:#152040;border-color:var(--navy-700);color:#fff;}
+  .obra-chip button{
+    border:none;background:rgba(0,0,0,.06);color:inherit;border-radius:999px;
+    width:20px;height:20px;line-height:1;cursor:pointer;font-size:12px;
+  }
+  body.dark .obra-chip button{background:rgba(255,255,255,.12);}
+
+  /* ---------- Toast ---------- */
+  #toast{
+    position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:var(--graphite);color:#fff;
+    padding:12px 20px;border-radius:10px;
+    font-size:13.5px;font-weight:500;
+    display:flex;align-items:center;gap:10px;
+    box-shadow:0 10px 30px rgba(0,0,0,.25);
+    opacity:0;pointer-events:none;
+    transition:opacity .25s, transform .25s;
+    z-index:999;
+  }
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  #toast .dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);flex:none;}
+
+  footer.note{
+    max-width:1280px;margin:0 auto;padding:6px 28px 40px;
+    font-size:11.5px;color:var(--muted);text-align:center;
+  }
+
+  /* ---------- Print document (hidden, used for PDF) ---------- */
+  html, body{overflow-x:hidden;}
+  #printDoc{position:fixed;left:-10000px;top:0;width:800px;background:#fff;color:#111;font-family:'Inter',sans-serif;pointer-events:none;}
+  #printDoc .doc-inner{padding:0;position:relative;overflow:hidden;}
+  #printDoc .watermark{
+    position:absolute;inset:0;z-index:0;
+    display:flex;align-items:center;justify-content:center;
+    transform:rotate(-28deg);
+    opacity:.05;
+    pointer-events:none;
+  }
+  #printDoc .watermark img{width:640px;}
+  #printDoc .doc-body{position:relative;z-index:1;padding:34px 40px 40px;}
+  #printDoc .doc-head{
+    display:flex;justify-content:space-between;align-items:center;gap:16px;
+    background:linear-gradient(135deg, var(--navy-900), var(--navy-700) 60%, var(--navy-600));
+    padding:20px 28px;color:#fff;
+    position:relative;overflow:hidden;
+  }
+  #printDoc .doc-head::before{
+    content:"";position:absolute;inset:-40% -10%;
+    background:linear-gradient(115deg, transparent 42%, rgba(255,255,255,.14) 50%, transparent 58%);
+  }
+  #printDoc .doc-head .left{display:flex;align-items:center;gap:12px;position:relative;z-index:1;}
+  #printDoc .doc-head .left img{height:34px;width:auto;background:#fff;border-radius:8px;padding:5px 8px;}
+  #printDoc h1{font-family:'Space Grotesk',sans-serif;font-size:17px;margin:0 0 2px;color:#fff;}
+  #printDoc .doc-head .subtitle{font-size:10.5px;color:var(--cyan-light);letter-spacing:.4px;}
+  #printDoc .doc-head .right{text-align:right;font-size:10.5px;color:#CFE0F5;position:relative;z-index:1;}
+  #printDoc .doc-head .right .docnum{
+    font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:#fff;
+    border:1.5px dashed rgba(123,201,239,.6);border-radius:6px;padding:3px 10px;margin-bottom:5px;display:inline-block;
+  }
+  #printDoc table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12px;}
+  #printDoc th{background:var(--navy-800);color:#fff;text-align:left;padding:8px 8px;font-size:10.5px;letter-spacing:.3px;text-transform:uppercase;}
+  #printDoc td{padding:8px;border-bottom:1px solid #E4E7EC;font-family:'IBM Plex Mono',monospace;font-size:11.5px;}
+  #printDoc .decl{font-size:11px;color:#333;line-height:1.6;margin-top:20px;background:#F4F7FB;padding:14px 16px;border-radius:8px;border-left:3px solid var(--cyan);}
+  #printDoc .sign-area{display:flex;justify-content:space-between;margin-top:34px;gap:30px;align-items:flex-end;}
+  #printDoc .sign-area .sign-col{flex:1;text-align:center;}
+  #printDoc .sign-area img{max-height:60px;margin-bottom:4px;}
+  #printDoc .sign-line{border-top:1px solid #111;padding-top:6px;font-size:11px;}
+  #printDoc .verify-col{flex:none;text-align:center;}
+  #printDoc .verify-col .qr-box{width:74px;height:74px;}
+  #printDoc .verify-col .qr-label{font-size:8.5px;color:#888;margin-top:4px;letter-spacing:.3px;}
+  #printDoc .doc-footer{margin-top:22px;border-top:1px solid #E4E7EC;padding-top:10px;font-size:9.5px;color:#9AA3AF;display:flex;justify-content:space-between;}
+
+  /* ---------- Dark mode (not applied to the printable PDF template) ---------- */
+  body.pdf-busy #btnSaveShare,
+  body.pdf-busy #btnExportAllPdf,
+  body.pdf-busy .icon-btn[data-act="pdf"]{
+    opacity:.5;pointer-events:none;cursor:wait;
+  }
+
+  body.dark{
+    --paper:#0B1220;
+    --paper-card:#121B2E;
+    --ink:#E7ECF5;
+    --muted:#93A0B4;
+    --line:#243250;
+  }
+  body.dark input, body.dark select, body.dark textarea{
+    background:#0F1830;color:var(--ink);border-color:var(--line);
+  }
+  body.dark input:focus, body.dark select:focus{background:#101B36;}
+  body.dark .card{box-shadow:0 1px 2px rgba(0,0,0,.3), 0 12px 30px rgba(0,0,0,.35);}
+  body.dark .item-content, body.dark .hist-card, body.dark .stat, body.dark .sig-box{
+    background:#0F1830;border-color:var(--line);
+  }
+  body.dark .items-empty, body.dark .hist-empty{border-color:var(--line);color:var(--muted);}
+  body.dark .compliance-box{background:linear-gradient(135deg,#101B36,#0F1830);border-color:var(--line);}
+  body.dark .donut::after{background:#121B2E;}
+  body.dark .letterhead [contenteditable]:hover, body.dark .letterhead [contenteditable]:focus{background:#0F2A38;}
+  body.dark .letterhead{border-color:var(--line);}
+  body.dark hr.sep{border-top-color:var(--line);}
+  body.dark .icon-btn{background:#0F1830;border-color:var(--line);color:var(--ink);}
+  body.dark .btn-ghost{background:#0F1830;border-color:var(--line);color:var(--ink);}
+  body.dark footer.note{color:var(--muted);}
+  body.dark #printDoc{color-scheme:light;}
+
+  @media print{
+    body *{visibility:hidden;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="logo-chip"><img src="esf-logo-sidebar.svg" alt="ESF"></div>
+      <div class="brand-text">
+        <div class="name">ESF <b>ERP</b></div>
+        <div class="tagline">CONTROLE DE ENTREGA DE EPIs</div>
+      </div>
+    </div>
+    <a href="index.html" style="display:block;margin:0 14px 10px;font-size:11px;font-weight:700;color:inherit;text-decoration:none;border:1px solid currentColor;border-radius:20px;padding:5px 12px;text-align:center;opacity:.75">← Sistema de Gestão</a>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Navegação</div>
+      <button class="nav-item active" id="viewBtnDashboard" data-view="dashboard"><span class="nav-icon">📊</span><span class="nav-label">Dashboard</span></button>
+      <button class="nav-item" id="viewBtnEntregas" data-view="entregas"><span class="nav-icon">🧾</span><span class="nav-label">Entregas de EPI</span></button>
+      <button class="nav-item" id="viewBtnObras" data-view="obras"><span class="nav-icon">🏗️</span><span class="nav-label">Obras &amp; Remessas</span></button>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="sidebar-toggle" id="sidebarToggle" type="button">
+        <span class="arrow">⇤</span><span class="toggle-label">Recolher menu</span>
+      </button>
+    </div>
+  </aside>
+
+  <div class="main-wrap">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="icon-toggle-btn mobile-menu-btn" id="mobileMenuBtn" title="Abrir menu">☰</button>
+        <div>
+          <div class="topbar-title" id="topbarTitle">Dashboard</div>
+          <div class="topbar-sub">Controle de Entrega de EPIs · Ficha NR-6</div>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <span id="connStatus" class="conn-badge">🟢 Online</span>
+        <button id="btnRefreshPage" class="icon-toggle-btn" title="Atualizar página (recarrega os dados salvos)">🔄</button>
+        <button id="darkToggle" class="icon-toggle-btn" title="Alternar modo escuro">🌙</button>
+        <div class="doc-chip">FICHA Nº <span id="docNumber">ME-0001</span></div>
+        <div class="topbar-session">Registros nesta sessão<b id="sessionCount">0</b></div>
+      </div>
+    </header>
+
+    <main>
+      <div id="expiryBanner" class="expiry-banner" style="display:none;"></div>
+
+      <div id="viewEntregas" style="display:none;">
+  <!-- ===================== FORM ===================== -->
+  <div>
+    <div class="card">
+      <div class="letterhead">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <img src="esf-logo-sidebar.svg" alt="ESF" style="height:38px;width:auto;">
+          <div>
+            <div class="field-inline">Empresa</div>
+            <div contenteditable="true" id="companyName" class="display">ESF LTDA</div>
+          </div>
+        </div>
+        <div>
+          <div class="field-inline">CNPJ</div>
+          <div contenteditable="true" id="companyCnpj" class="mono">00.000.000/0001-00</div>
+        </div>
+        <div>
+          <div class="field-inline">Unidade / Obra</div>
+          <div contenteditable="true" id="companyUnit">Matriz</div>
+        </div>
+        <div>
+          <div class="field-inline">Nº da ficha</div>
+          <div id="companyDocNumber" class="mono" style="font-weight:600;color:var(--cyan);">ME-0001</div>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
+        <div>
+          <h2 style="margin-bottom:2px;">Dados do colaborador <span class="tag">SEÇÃO 1</span></h2>
+          <p class="hint" style="margin-bottom:0;">Preencha os dados de quem está recebendo o equipamento.</p>
+        </div>
+        <button class="btn btn-ghost" id="btnNovaFicha" type="button" style="padding:8px 12px;font-size:12px;white-space:nowrap;">🆕 Nova ficha em branco</button>
+      </div>
+      <div style="height:14px;"></div>
+
+      <label class="toggle-row">
+        <input type="checkbox" id="batchToggle">
+        <span>Entregar para vários colaboradores de uma vez (mesmos itens)</span>
+      </label>
+
+      <div id="singleModeFields">
+        <div class="grid g2">
+          <div>
+            <label>Nome completo <span class="req">*</span></label>
+            <input type="text" id="fName" placeholder="Ex.: João da Silva">
+          </div>
+          <div>
+            <label>Matrícula</label>
+            <input type="text" id="fMatricula" class="mono-field" placeholder="0000">
+          </div>
+        </div>
+        <div class="grid g2" style="margin-top:14px;">
+          <div>
+            <label>CPF <span class="req">*</span></label>
+            <input type="text" id="fCpf" class="mono-field" placeholder="000.000.000-00" maxlength="14">
+            <div class="field-status" id="cpfStatus"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="batchModeFields" style="display:none;">
+        <div id="batchRows"></div>
+        <button class="btn btn-ghost" id="btnAddBatchRow" type="button" style="margin-top:4px;">＋ Adicionar colaborador</button>
+        <p class="hint" style="margin-top:10px;">Neste modo, a assinatura individual do colaborador não é capturada aqui — colete-a na ficha impressa de cada um. A assinatura do responsável abaixo vale para toda a entrega.</p>
+      </div>
+
+      <div class="grid g2" style="margin-top:14px;">
+        <div>
+          <label>Função / Cargo <span class="req">*</span></label>
+          <select id="fFuncao">
+            <option value="">Selecione a função…</option>
+            <option>Encanador</option>
+            <option>Mec. Montador</option>
+            <option>Mont. Andaime</option>
+            <option>Encarregado</option>
+            <option>Supervisor</option>
+            <option>Tec. Segurança</option>
+            <option>Soldador</option>
+            <option>Eletricista Montador</option>
+            <option>Eletricista Força Controle</option>
+            <option>Instrumentista</option>
+            <option>Líder</option>
+            <option>Ajudante</option>
+            <option>Pintor</option>
+            <optgroup label="Outro">
+              <option value="__custom__">✏️ Outro / não está na lista (digitar)</option>
+            </optgroup>
+          </select>
+          <input type="text" id="fFuncaoCustom" placeholder="Digite a função" style="display:none;margin-top:8px;">
+        </div>
+        <div>
+          <label>Setor</label>
+          <select id="fSetor">
+            <option value="">Selecione o setor…</option>
+            <option>Mecânica</option>
+            <option>Elétrica</option>
+            <option>Pintura</option>
+            <option>Instrumentação</option>
+            <option>Civil</option>
+            <option>Jardinagem</option>
+            <optgroup label="Outro">
+              <option value="__custom__">✏️ Outro / não está na lista (digitar)</option>
+            </optgroup>
+          </select>
+          <input type="text" id="fSetorCustom" placeholder="Digite o setor" style="display:none;margin-top:8px;">
+        </div>
+      </div>
+      <div class="grid g2" style="margin-top:14px;">
+        <div>
+          <label>Obra / Projeto</label>
+          <div style="display:flex;gap:8px;">
+            <select id="fObra" style="flex:1;">
+              <option value="">Selecione a obra…</option>
+            </select>
+            <button type="button" class="btn btn-ghost" id="btnFObraNova" title="Cadastrar nova obra" style="padding:0 14px;white-space:nowrap;">＋ Obra</button>
+          </div>
+        </div>
+        <div>
+          <label>Responsável pela entrega</label>
+          <input type="text" id="fResponsavel" placeholder="Ex.: Técnico de Segurança">
+        </div>
+      </div>
+
+      <hr class="sep">
+
+      <h2>Itens entregues <span class="tag">SEÇÃO 2</span></h2>
+      <p class="hint">Adicione um item por EPI. O CA varia por fabricante — confira sempre na etiqueta do equipamento em mãos.</p>
+
+      <div class="grid g3">
+        <div>
+          <label>Descrição do EPI <span class="req">*</span></label>
+          <select id="iDesc">
+            <option value="">Selecione o EPI...</option>
+            <optgroup label="Proteção das mãos">
+              <option>Luva mista cano longo</option>
+              <option>Luva mista cano curto</option>
+              <option>Luva nitrílica</option>
+              <option>Luva multitato</option>
+              <option>Luva de proteção contra corte (anticorte)</option>
+            </optgroup>
+            <optgroup label="Proteção elétrica (NR-10)">
+              <option>Luva isolante de borracha</option>
+              <option>Manga isolante de borracha</option>
+              <option>Capacete de segurança classe B (isolante)</option>
+              <option>Vestimenta anti-chama para arco elétrico (blusa)</option>
+              <option>Vestimenta anti-chama para arco elétrico (calça)</option>
+              <option>Balaclava anti-chama para arco elétrico</option>
+              <option>Manta isolante de borracha</option>
+            </optgroup>
+            <optgroup label="Proteção dos olhos e face">
+              <option>Óculos incolor de impacto</option>
+              <option>Óculos escuro de impacto</option>
+              <option>Óculos ampla visão</option>
+              <option>Óculos de maçarico</option>
+              <option>Protetor facial incolor</option>
+              <option>Protetor facial escuro</option>
+            </optgroup>
+            <optgroup label="Proteção respiratória">
+              <option>Máscara semifacial com filtro</option>
+              <option>Filtro individual de máscara semifacial</option>
+              <option>Máscara de pó PFF2</option>
+              <option>Máscara de pó PFF3</option>
+            </optgroup>
+            <optgroup label="Proteção da cabeça e audição">
+              <option>Capacete com carneira</option>
+              <option>Carneira individual</option>
+              <option>Protetor auricular tipo plug</option>
+              <option>Protetor auricular tipo concha</option>
+            </optgroup>
+            <optgroup label="Proteção do corpo">
+              <option>Avental de raspa</option>
+              <option>Manga de raspa</option>
+              <option>Perneira de raspa</option>
+              <option>Macacão Tychem</option>
+              <option>Colete refletivo sinalizador</option>
+            </optgroup>
+            <optgroup label="Proteção dos pés">
+              <option>Bota bico de aço</option>
+              <option>Bota bico de PVC</option>
+              <option>Bota cano longo de PVC</option>
+            </optgroup>
+            <optgroup label="Proteção contra quedas (NR-35)">
+              <option>Cinturão de segurança tipo paraquedista</option>
+              <option>Talabarte duplo com absorvedor de energia</option>
+              <option>Trava-quedas retrátil</option>
+            </optgroup>
+            <optgroup label="Uniformes">
+              <option>Calça uniforme NR-10</option>
+              <option>Camisa uniforme NR-10</option>
+              <option>Calça uniforme (sem NR-10)</option>
+              <option>Camisa uniforme (sem NR-10)</option>
+            </optgroup>
+            <optgroup label="Outro">
+              <option value="__custom__">✏️ Outro / não está na lista (digitar)</option>
+            </optgroup>
+          </select>
+          <input type="text" id="iDescCustom" placeholder="Digite o nome do EPI" style="display:none;margin-top:8px;">
+          <div class="field-status ok" style="margin-top:5px;">Não encontrou o EPI? Escolha "Outro" no fim da lista e digite.</div>
+        </div>
+        <div>
+          <label>CA <span class="req">*</span></label>
+          <input type="text" id="iCA" class="mono-field" placeholder="Ex.: 34011" maxlength="7">
+          <div class="field-status" id="caStatus"></div>
+        </div>
+        <div>
+          <label>Quantidade</label>
+          <input type="number" id="iQtd" min="1" value="1">
+        </div>
+      </div>
+      <div class="grid g3" style="margin-top:14px;">
+        <div>
+          <label>Data de entrega</label>
+          <input type="date" id="iData">
+        </div>
+        <div>
+          <label>Vida útil / troca</label>
+          <select id="iVida">
+            <option value="0">Sem prazo definido</option>
+            <option value="3">3 meses</option>
+            <option value="6" selected>6 meses</option>
+            <option value="12">12 meses</option>
+            <option value="24">24 meses</option>
+          </select>
+        </div>
+        <div>
+          <label>Motivo</label>
+          <select id="iMotivo">
+            <option>Entrega inicial</option>
+            <option>Troca periódica</option>
+            <option>Reposição por dano</option>
+            <option>Reposição por perda</option>
+            <option>Higienização</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid g2" style="margin-top:14px;">
+        <div>
+          <label>Valor unitário <span class="hint" style="display:inline;">(opcional, para o dashboard de custos)</span></label>
+          <input type="number" id="iValor" min="0" step="0.01" placeholder="Ex.: 45.90">
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-amber" id="btnAddItem">＋ Adicionar EPI à ficha</button>
+      </div>
+
+      <div id="itemsWrap">
+        <div class="items-empty" id="itemsEmpty">Nenhum EPI adicionado ainda. Use o formulário acima.</div>
+      </div>
+
+      <hr class="sep">
+
+      <h2>Assinaturas <span class="tag">SEÇÃO 3</span></h2>
+      <p class="hint">Declaração de recebimento — colaborador e responsável assinam com o mouse ou o dedo (touch).</p>
+
+      <div class="grid g2" id="sigGrid">
+        <div id="employeeSigBlock">
+          <label>Colaborador</label>
+          <div class="sig-box">
+            <canvas id="sigCanvas"></canvas>
+            <div class="sig-placeholder" id="sigPlaceholder">Assine aqui</div>
+          </div>
+          <div class="sig-row">
+            <span>Recebimento do EPI</span>
+            <button class="btn btn-ghost" id="btnClearSig" style="padding:6px 12px;font-size:12px;">Limpar</button>
+          </div>
+        </div>
+        <div>
+          <label>Responsável pela entrega</label>
+          <div class="sig-box">
+            <canvas id="sigCanvasResp"></canvas>
+            <div class="sig-placeholder" id="sigPlaceholderResp">Assine aqui</div>
+          </div>
+          <div class="sig-row">
+            <span>Entrega e orientação de uso</span>
+            <button class="btn btn-ghost" id="btnClearSigResp" style="padding:6px 12px;font-size:12px;">Limpar</button>
+          </div>
+        </div>
+      </div>
+      <p class="hint" style="margin-top:6px;">As assinaturas são armazenadas apenas nesta sessão do navegador.</p>
+
+      <div class="btn-row" style="gap:10px;">
+        <button class="btn btn-primary" id="btnSave" style="flex:1;">Salvar registro</button>
+        <button class="btn btn-whatsapp" id="btnSaveShare" style="flex:1;">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.1-.6.1-.2.3-.7.9-.9 1.1-.2.2-.3.2-.6.1-.3-.1-1.2-.4-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6.1-.1.3-.3.4-.5.1-.1.2-.3.3-.4.1-.2 0-.4 0-.5C10.2 9.2 9.8 8 9.6 7.6c-.2-.4-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1s.9 2.5 1.1 2.6c.1.2 1.8 2.8 4.4 3.9.6.3 1.1.4 1.5.5.6.2 1.2.2 1.6.1.5-.1 1.7-.7 1.9-1.3.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.6-.3z"/><path d="M12 2C6.5 2 2 6.5 2 12c0 1.9.5 3.6 1.5 5.2L2 22l4.9-1.5c1.5.8 3.2 1.2 5.1 1.2 5.5 0 10-4.5 10-10S17.5 2 12 2zm0 18.3c-1.7 0-3.3-.5-4.7-1.3l-.3-.2-3 .9.9-3-.2-.3C3.7 14.9 3.2 13.5 3.2 12 3.2 7.1 7.1 3.2 12 3.2S20.8 7.1 20.8 12 16.9 20.3 12 20.3z"/></svg>
+          Salvar e enviar (WhatsApp + PDF)
+        </button>
+      </div>
+      <p class="hint" style="margin-top:8px;text-align:center;">📲 O PDF é baixado automaticamente e o WhatsApp abre em seguida — é só anexar o arquivo baixado na conversa. Em alguns celulares, a caixa de compartilhamento do sistema abre direto com o PDF já anexado.</p>
+    </div>
+  </div>
+
+  <!-- ===================== HISTORY ===================== -->
+  <div>
+    <div class="card">
+      <h2>Histórico da sessão <span class="tag">EM MEMÓRIA</span></h2>
+      <p class="hint">Os registros ficam disponíveis enquanto esta página estiver aberta. Exporte o backup para não perder dados.</p>
+
+      <div class="compliance-box">
+        <div class="donut" id="donutRing"><span id="donutPct">—</span></div>
+        <div class="compliance-info">
+          <div class="c-title">Conformidade dos EPIs</div>
+          <div class="c-sub" id="complianceSub">Sem itens com prazo de troca ainda</div>
+        </div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat">
+          <div class="num" id="statRecords">0</div>
+          <div class="lbl">Fichas</div>
+        </div>
+        <div class="stat">
+          <div class="num" id="statItems">0</div>
+          <div class="lbl">EPIs entregues</div>
+        </div>
+      </div>
+
+      <div class="tab-row">
+        <button class="tab-btn active" id="tabFichas" data-tab="fichas">📋 Fichas</button>
+        <button class="tab-btn" id="tabFuncionarios" data-tab="funcionarios">👤 Funcionários</button>
+      </div>
+
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="searchInput" placeholder="Buscar por nome, CPF ou CA...">
+      </div>
+
+      <div id="historyList">
+        <div class="hist-empty" id="histEmpty">Nenhum registro salvo ainda.</div>
+      </div>
+
+      <div id="employeeList" style="display:none;">
+        <div class="hist-empty">Nenhum colaborador registrado ainda.</div>
+      </div>
+
+      <hr class="sep">
+
+      <label class="toggle-row">
+        <input type="checkbox" id="autoBackupToggle">
+        <span>Baixar backup (.json) automaticamente a cada ficha salva</span>
+      </label>
+
+      <div class="period-row">
+        <label style="margin-bottom:0;">Exportar período:</label>
+        <select id="periodFilter">
+          <option value="all">Tudo</option>
+          <option value="today">Hoje</option>
+          <option value="week">Esta semana</option>
+          <option value="month">Este mês</option>
+        </select>
+      </div>
+
+      <div class="btn-row" style="margin-top:12px;">
+        <button class="btn btn-ghost" id="btnExportAllPdf">📄 Exportar tudo em PDF</button>
+        <button class="btn btn-ghost" id="btnExportJson">⇩ Backup (.json)</button>
+        <button class="btn btn-ghost" id="btnImportJson">⇧ Importar backup</button>
+        <input type="file" id="importFile" accept=".json" style="display:none;">
+      </div>
+    </div>
+  </div>
+  </div><!-- /viewEntregas -->
+
+  <!-- ===================== OBRAS & REMESSAS ===================== -->
+  <div id="viewObras" style="display:none;grid-column:1/-1;">
+    <div class="card">
+      <h2>Obras cadastradas <span class="tag">CADASTRO</span></h2>
+      <p class="hint">Cadastre as obras/projetos para vincular entregas individuais e remessas de EPIs a cada obra.</p>
+      <div style="display:flex;gap:8px;margin:12px 0 14px;flex-wrap:wrap;">
+        <input type="text" id="novaObraInput" placeholder="Nome da obra/projeto — ex.: Obra Exemplo A" style="flex:1;min-width:220px;">
+        <button class="btn btn-amber" id="btnAddObra" style="white-space:nowrap;">＋ Cadastrar obra</button>
+      </div>
+      <div id="obrasChipsWrap">
+        <div class="hist-empty" id="obrasEmpty">Nenhuma obra cadastrada ainda.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Nova remessa de EPIs para obra <span class="tag">REMESSA</span></h2>
+      <p class="hint">Registre o envio de um lote de EPIs para o estoque de uma obra — separado da entrega individual ao colaborador.</p>
+
+      <div class="grid g2" style="margin-top:14px;">
+        <div>
+          <label>Obra <span class="req">*</span></label>
+          <select id="remObra"><option value="">Selecione a obra…</option></select>
+        </div>
+        <div>
+          <label>Data do envio</label>
+          <input type="date" id="remData">
+        </div>
+      </div>
+      <div class="grid g2" style="margin-top:14px;">
+        <div>
+          <label>Recebido por <span class="req">*</span> <span class="hint" style="display:inline;">(responsável na obra)</span></label>
+          <input type="text" id="remRecebidoPor" placeholder="Ex.: Encarregado da obra">
+        </div>
+        <div>
+          <label>Enviado por</label>
+          <input type="text" id="remEnviadoPor" placeholder="Ex.: Almoxarife">
+        </div>
+      </div>
+
+      <hr class="sep">
+      <h2>Itens da remessa <span class="tag">EPIs</span></h2>
+      <div class="grid g3" style="margin-top:14px;">
+        <div>
+          <label>EPI</label>
+          <select id="remDesc"></select>
+          <input type="text" id="remDescCustom" placeholder="Digite o nome do EPI" style="display:none;margin-top:8px;">
+        </div>
+        <div>
+          <label>CA</label>
+          <input type="text" id="remCA" class="mono-field" placeholder="Ex.: 34011" maxlength="7">
+        </div>
+        <div>
+          <label>Quantidade</label>
+          <input type="number" id="remQtd" min="1" value="1">
+        </div>
+      </div>
+      <div class="grid g2" style="margin-top:14px;">
+        <div>
+          <label>Valor unitário <span class="hint" style="display:inline;">(opcional, para o dashboard de custos)</span></label>
+          <input type="number" id="remValor" min="0" step="0.01" placeholder="Ex.: 45.90">
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-amber" id="btnAddRemItem">＋ Adicionar item à remessa</button>
+      </div>
+
+      <div id="remItemsWrap">
+        <div class="items-empty" id="remItemsEmpty">Nenhum item adicionado ainda. Use o formulário acima.</div>
+      </div>
+
+      <hr class="sep">
+      <div>
+        <label>Observações</label>
+        <input type="text" id="remObs" placeholder="Opcional">
+      </div>
+
+      <div class="btn-row" style="margin-top:14px;">
+        <button class="btn btn-primary" id="btnSaveRemessa" style="flex:1;">Salvar remessa</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Histórico de remessas <span class="tag">HISTÓRICO</span></h2>
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="remSearchInput" placeholder="Buscar por obra ou responsável...">
+      </div>
+      <div id="remessasList">
+        <div class="hist-empty" id="remEmpty">Nenhuma remessa registrada ainda.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== DASHBOARD ===================== -->
+  <div id="viewDashboard" style="display:block;grid-column:1/-1;">
+    <div style="width:100%;max-width:960px;margin:0 auto 16px;border-radius:16px;overflow:hidden;height:180px;background:#061224;">
+      <img src="esf-banner-panoramico.png" alt="ESF ERP — Sistema de Gestão" style="width:100%;height:100%;object-fit:cover;object-position:center center">
+    </div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+        <div>
+          <h2 style="margin-bottom:2px;">Dashboard de EPIs <span class="tag">VISÃO GERAL</span></h2>
+          <p class="hint" style="margin-bottom:0;">Consumo, custos e indicadores de controle de EPIs — entregas individuais e remessas para obras.</p>
+        </div>
+        <select id="dashPeriodFilter" style="max-width:180px;">
+          <option value="month" selected>Este mês</option>
+          <option value="week">Esta semana</option>
+          <option value="today">Hoje</option>
+          <option value="all">Tudo</option>
+        </select>
+      </div>
+
+      <div class="kpi-grid" id="dashKpis">
+        <div class="kpi-card c-cyan">
+          <div class="kpi-top"><div class="kpi-icon">🧾</div></div>
+          <div class="kpi-num" id="dashTotalEntregas">0</div>
+          <div class="kpi-lbl">Fichas no período</div>
+        </div>
+        <div class="kpi-card c-navy">
+          <div class="kpi-top"><div class="kpi-icon">🏗️</div></div>
+          <div class="kpi-num" id="dashTotalRemessas">0</div>
+          <div class="kpi-lbl">Remessas no período</div>
+        </div>
+        <div class="kpi-card c-green">
+          <div class="kpi-top"><div class="kpi-icon">📦</div></div>
+          <div class="kpi-num" id="dashTotalItens">0</div>
+          <div class="kpi-lbl">EPIs movimentados</div>
+        </div>
+        <div class="kpi-card c-gold">
+          <div class="kpi-top"><div class="kpi-icon">💰</div></div>
+          <div class="kpi-num" id="dashGastoTotal">R$ 0,00</div>
+          <div class="kpi-lbl">Gasto no período</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>EPIs mais requisitados <span class="tag">RANKING · QUANTIDADE</span></h2>
+      <p class="hint">Soma de entregas individuais + itens enviados em remessas, no período selecionado.</p>
+      <div id="dashTopEpis" style="margin-top:12px;"><div class="hist-empty">Sem dados no período.</div></div>
+    </div>
+
+    <div class="card">
+      <h2>Gasto por colaborador <span class="tag">TOP 10</span></h2>
+      <p class="hint">Considera apenas itens de fichas individuais com valor unitário informado.</p>
+      <div id="dashTopFuncionarios" style="margin-top:12px;"><div class="hist-empty">Sem dados no período.</div></div>
+    </div>
+
+    <div class="card">
+      <h2>Consumo e gasto por obra <span class="tag">OBRAS</span></h2>
+      <p class="hint">Soma de fichas individuais atribuídas à obra + itens enviados em remessas para a obra.</p>
+      <div id="dashTopObras" style="margin-top:12px;"><div class="hist-empty">Sem dados no período.</div></div>
+    </div>
+
+    <div class="card">
+      <h2>Categorias de EPI <span class="tag">DISTRIBUIÇÃO</span></h2>
+      <div id="dashCategorias" style="margin-top:12px;"><div class="hist-empty">Sem dados no período.</div></div>
+    </div>
+  </div>
+</main>
+
+<footer class="note">ESF · Ficha de EPI baseada nas diretrizes da NR-6. ⚡ Funciona sem internet. Os dados ficam salvos automaticamente neste navegador/aparelho — mesmo fechando e abrindo de novo. Ainda assim, exporte backups (.json) periodicamente: limpar o navegador ou trocar de aparelho apaga os dados locais.</footer>
+  </div><!-- /main-wrap -->
+</div><!-- /app-shell -->
+
+<div id="toast"><span class="dot"></span><span id="toastMsg"></span></div>
+
+<div id="employeeModal">
+  <div class="emp-modal-box">
+    <div class="emp-modal-head">
+      <button class="close-btn" id="btnCloseEmpModal" title="Fechar">✕</button>
+      <div class="em-name" id="emName">—</div>
+      <div class="em-meta" id="emMeta">—</div>
+    </div>
+    <div class="emp-modal-body">
+      <button class="btn btn-amber btn-full" id="btnEmpAddItem" type="button" style="margin-bottom:20px;font-size:14px;padding:13px;">
+        ➕ Adicionar novo item entregue a este colaborador
+      </button>
+
+      <h3>RESUMO POR CATEGORIA</h3>
+      <div class="cat-grid" id="emCatGrid"></div>
+
+      <h3>FICHAS DESTE COLABORADOR</h3>
+      <div id="emFichasList"></div>
+
+      <h3>TODOS OS ITENS RECEBIDOS</h3>
+      <div id="emItemsList"></div>
+
+      <h3>ASSINATURAS REGISTRADAS</h3>
+      <div class="sig-gallery" id="emSigGallery"></div>
+
+      <div class="btn-row" style="margin-top:20px;">
+        <button class="btn btn-ghost" id="btnEmpExportPdf">📄 PDF consolidado deste colaborador</button>
+        <button class="btn btn-whatsapp" id="btnEmpShare">📲 Compartilhar (WhatsApp + PDF)</button>
+      </div>
+
+      <hr class="sep">
+      <button class="btn btn-danger-ghost btn-full" id="btnEmpDeleteAll" type="button">🗑 Excluir todos os registros deste colaborador</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden printable template used to render each PDF -->
+<div id="printDoc">
+  <div class="doc-inner">
+    <div class="watermark"><img src="esf-logo-sidebar.svg" alt=""></div>
+    <div class="doc-head">
+      <div class="left">
+        <img src="esf-logo-sidebar.svg" alt="ESF">
+        <div>
+          <h1 id="pdCompany">ESF LTDA</h1>
+          <div class="subtitle">FICHA DE ENTREGA DE EPI · NR-6</div>
+        </div>
+      </div>
+      <div class="right">
+        <div class="docnum" id="pdDocNumber">ME-0001</div>
+        <div id="pdCnpj">CNPJ: —</div>
+        <div id="pdUnit">Unidade: —</div>
+        <div id="pdEmitted"></div>
+      </div>
+    </div>
+
+    <div class="doc-body">
+      <table style="margin-bottom:14px;">
+        <tr><td style="width:25%;background:#F6F7FA;font-weight:600;">Colaborador</td><td id="pdName"></td>
+            <td style="width:25%;background:#F6F7FA;font-weight:600;">CPF</td><td id="pdCpf"></td></tr>
+        <tr><td style="background:#F6F7FA;font-weight:600;">Matrícula</td><td id="pdMatricula"></td>
+            <td style="background:#F6F7FA;font-weight:600;">Função</td><td id="pdFuncao"></td></tr>
+        <tr><td style="background:#F6F7FA;font-weight:600;">Setor</td><td id="pdSetor"></td>
+            <td style="background:#F6F7FA;font-weight:600;">Obra</td><td id="pdObra"></td></tr>
+        <tr><td style="background:#F6F7FA;font-weight:600;">Responsável</td><td id="pdResponsavel" colspan="3"></td></tr>
+      </table>
+
+      <table>
+        <thead>
+          <tr><th>Descrição do EPI</th><th>CA</th><th>Qtd</th><th>Entrega</th><th>Troca prevista</th><th>Motivo</th><th>Situação</th></tr>
+        </thead>
+        <tbody id="pdItems"></tbody>
+      </table>
+
+      <div class="decl">
+        Declaro, para os devidos fins previstos na Norma Regulamentadora NR-6, que recebi da empresa acima identificada
+        o(s) Equipamento(s) de Proteção Individual listado(s), em perfeito estado de conservação e funcionamento,
+        comprometendo-me a: usá-lo(s) apenas para a finalidade a que se destina(m); responsabilizar-me por sua guarda e
+        conservação; comunicar ao empregador qualquer alteração que o(s) torne impróprio(s) para uso; e devolvê-lo(s)
+        quando determinado ou ao término do vínculo empregatício.
+      </div>
+
+      <div class="sign-area">
+        <div class="sign-col">
+          <img id="pdSigImg" src="" alt="">
+          <div class="sign-line">Assinatura do colaborador</div>
+        </div>
+        <div class="verify-col">
+          <div class="qr-box" id="pdQr"></div>
+          <div class="qr-label">CÓDIGO DE<br>CONFERÊNCIA</div>
+        </div>
+        <div class="sign-col">
+          <img id="pdSigImgResp" src="" alt="">
+          <div class="sign-line">Assinatura do responsável</div>
+        </div>
+      </div>
+
+      <div class="doc-footer">
+        <span>ESF · Montagem e Manutenção Industrial</span>
+        <span id="pdFooterMeta"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- Conexão com o ERP (Supabase) ---------------- */
+  const SUPABASE_URL = 'https://bddjdpyfypsiwnirbyhv.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkZGpkcHlmeXBzaXduaXJieWh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NDk1MjgsImV4cCI6MjEwMDQyNTUyOH0.0HnH7caYH6sLp5n68izQXqbCJ-cLqTyxELl1EqoHHww';
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  /* ---------------- State ---------------- */
+  let currentItems = [];
+  let history = [];
+  let editingIndex = null;
+  let docCounter = 1;
+
+  function docNumberString(n){
+    return 'ME-' + String(n).padStart(4,'0');
+  }
+  function refreshDocNumber(){
+    const num = docNumberString(docCounter);
+    $('docNumber').textContent = num;
+    $('companyDocNumber').textContent = num;
+  }
+
+  const $ = (id) => document.getElementById(id);
+
+  /* ---------------- Persistência local (localStorage) ---------------- */
+  const STORAGE_KEY = 'esf_epi_v1';
+
+  async function salvarEntregasNoBanco(records){
+    try{
+      const linhas = records.map(r => ({
+        numero_documento: r.docNumber, funcionario_nome: r.name, funcionario_cpf: r.cpf,
+        matricula: r.matricula, funcao: r.funcao, setor: r.setor, obra: r.obra,
+        responsavel: r.responsavel, itens: r.items,
+        assinatura_funcionario: r.signature, assinatura_responsavel: r.signatureResponsavel
+      }));
+      const{error} = await supabaseClient.from('epi_entregas').insert(linhas);
+      if(error) throw error;
+    }catch(e){
+      console.error('Falha ao salvar entrega no servidor:', e);
+      toast('A entrega foi salva neste aparelho, mas não foi possível enviar ao servidor. Confira a internet.');
+    }
+  }
+
+  async function carregarEntregasDoBanco(){
+    try{
+      const{data, error} = await supabaseClient.from('epi_entregas').select('*').order('created_at', {ascending:false});
+      if(error) throw error;
+      return (data||[]).map(r => ({
+        id: r.id, docNumber: r.numero_documento, name: r.funcionario_nome, cpf: r.funcionario_cpf,
+        matricula: r.matricula, funcao: r.funcao, setor: r.setor, obra: r.obra, responsavel: r.responsavel,
+        items: r.itens || [], savedAt: r.created_at, signature: r.assinatura_funcionario,
+        signatureResponsavel: r.assinatura_responsavel, company: null
+      }));
+    }catch(e){
+      console.error('Falha ao carregar entregas do servidor:', e);
+      return [];
+    }
+  }
+
+  function localStorageAvailable(){
+    try{
+      const k = '__me_test__';
+      localStorage.setItem(k, '1');
+      localStorage.removeItem(k);
+      return true;
+    }catch(e){ return false; }
+  }
+  const storageOk = localStorageAvailable();
+
+  function persistState(){
+    if(!storageOk) return;
+    try{
+      const payload = {
+        history,
+        docCounter,
+        obras,
+        shipments,
+        remDocCounter,
+        company: {
+          name: $('companyName').textContent.trim(),
+          cnpj: $('companyCnpj').textContent.trim(),
+          unit: $('companyUnit').textContent.trim()
+        }
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    }catch(err){
+      console.error('Falha ao salvar localmente:', err);
+      toast('Não foi possível salvar os dados neste navegador (armazenamento cheio ou bloqueado).');
+    }
+  }
+
+  async function loadPersistedState(){
+    if(!storageOk){
+      history = await carregarEntregasDoBanco();
+      return;
+    }
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw){ history = await carregarEntregasDoBanco(); return; }
+      const payload = JSON.parse(raw);
+      if(payload && Array.isArray(payload.history)){
+        history = payload.history.map(normalizeRecord);
+      }
+      if(payload && typeof payload.docCounter === 'number' && payload.docCounter > docCounter){
+        docCounter = payload.docCounter;
+      }
+      if(payload && Array.isArray(payload.obras)){
+        obras = payload.obras;
+      }
+      if(payload && Array.isArray(payload.shipments)){
+        shipments = payload.shipments.map(normalizeShipment);
+      }
+      if(payload && typeof payload.remDocCounter === 'number' && payload.remDocCounter > remDocCounter){
+        remDocCounter = payload.remDocCounter;
+      }
+      if(payload && payload.company){
+        if(payload.company.name) $('companyName').textContent = payload.company.name;
+        if(payload.company.cnpj) $('companyCnpj').textContent = payload.company.cnpj;
+        if(payload.company.unit) $('companyUnit').textContent = payload.company.unit;
+      }
+    }catch(err){
+      console.error('Falha ao carregar dados salvos:', err);
+      toast('Não foi possível ler os dados salvos anteriormente neste navegador.');
+    }
+    // O servidor é a fonte de verdade pra entregas — sobrescreve o que veio do
+    // navegador local assim que a resposta chegar (assim funciona compartilhado
+    // entre aparelhos diferentes, não só no navegador de quem cadastrou).
+    history = await carregarEntregasDoBanco();
+  }
+
+  ['companyName','companyCnpj','companyUnit'].forEach(id=>{
+    $(id).addEventListener('blur', persistState);
+  });
+
+  /* ---------------- Toast ---------------- */
+  let toastTimer = null;
+  let pendingToasts = [];
+
+  function toast(msg){
+    const t = $('toast');
+    $('toastMsg').textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>{
+      t.classList.remove('show');
+      if(pendingToasts.length > 0){
+        setTimeout(()=> toast(pendingToasts.shift()), 250);
+      }
+    }, 2600);
+  }
+
+  /* Para avisos que não podem ser silenciosamente sobrescritos por outro toast imediato (ex.: itens ignorados) */
+  function toastQueued(msg){
+    pendingToasts.push(msg);
+  }
+
+  /* ---------------- Defaults ---------------- */
+  function todayISO(){
+    const d = new Date();
+    const off = d.getTimezoneOffset();
+    return new Date(d.getTime() - off*60000).toISOString().slice(0,10);
+  }
+  $('iData').value = todayISO();
+
+  /* ---------------- Validation helpers ---------------- */
+  function formatCPF(v){
+    v = v.replace(/\D/g,'').slice(0,11);
+    if(v.length > 9) return v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/,'$1.$2.$3-$4');
+    if(v.length > 6) return v.replace(/(\d{3})(\d{3})(\d{1,3})/,'$1.$2.$3');
+    if(v.length > 3) return v.replace(/(\d{3})(\d{1,3})/,'$1.$2');
+    return v;
+  }
+  $('fCpf').addEventListener('input', (e)=>{
+    e.target.value = formatCPF(e.target.value);
+    const digits = e.target.value.replace(/\D/g,'');
+    const st = $('cpfStatus');
+    if(digits.length === 0){ st.textContent=''; return; }
+    if(digits.length === 11){ st.textContent='CPF completo'; st.className='field-status ok'; }
+    else { st.textContent='Faltam '+(11-digits.length)+' dígito(s)'; st.className='field-status bad'; }
+  });
+
+  $('iCA').addEventListener('input', (e)=>{
+    e.target.value = e.target.value.replace(/\D/g,'').slice(0,6);
+    const st = $('caStatus');
+    const v = e.target.value;
+    if(v.length === 0){ st.textContent=''; return; }
+    if(v.length >= 3){ st.textContent='CA nº '+v+' — verifique na etiqueta do EPI'; st.className='field-status ok'; }
+    else { st.textContent='Número de CA muito curto'; st.className='field-status bad'; }
+  });
+
+  function addMonths(iso, months){
+    if(!iso) return null;
+    const d = new Date(iso+'T00:00:00');
+    d.setMonth(d.getMonth() + Number(months));
+    return d.toISOString().slice(0,10);
+  }
+  function fmtDate(iso){
+    if(!iso) return '—';
+    const [y,m,d] = iso.split('-');
+    return d+'/'+m+'/'+y;
+  }
+  function fmtBRL(v){
+    return (Number(v)||0).toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+  }
+
+  /* ---------------- Items (circuit list) ---------------- */
+  function itemStatus(it){
+    if(!it.troca) return {label:'SEM PRAZO', cls:'neutral'};
+    const today = new Date(todayISO()+'T00:00:00');
+    const troca = new Date(it.troca+'T00:00:00');
+    const days = Math.round((troca - today) / 86400000);
+    if(days < 0)  return {label:'VENCIDO · '+fmtDate(it.troca), cls:'bad'};
+    if(days <= 30) return {label:'VENCE EM '+days+'d', cls:'warn'};
+    return {label:'VÁLIDO ATÉ '+fmtDate(it.troca), cls:'ok'};
+  }
+
+  function categorizeItem(desc){
+    const d = (desc || '').toLowerCase();
+    if(/luva/.test(d)) return 'Luvas';
+    if(/óculos|oculos/.test(d)) return 'Óculos';
+    if(/protetor facial/.test(d)) return 'Protetor facial';
+    if(/máscara|mascara|filtro/.test(d)) return 'Proteção respiratória';
+    if(/capacete|carneira/.test(d)) return 'Capacete';
+    if(/protetor auricular/.test(d)) return 'Proteção auditiva';
+    if(/bota/.test(d)) return 'Calçados';
+    if(/cinturão|cinturao|talabarte|trava-quedas/.test(d)) return 'Proteção contra quedas';
+    if(/manga isolante|manta isolante|classe b/.test(d)) return 'Proteção elétrica';
+    if(/uniforme|calça|calca|camisa/.test(d)) return 'Uniformes';
+    if(/avental|manga de raspa|perneira|colete|macacão|macacao|tychem/.test(d)) return 'Vestimenta';
+    return 'Outros';
+  }
+
+  function getEmployees(){
+    const map = new Map();
+    history.forEach(r=>{
+      const key = (r.cpf || r.name || 'sem-cpf').trim();
+      if(!map.has(key)){
+        map.set(key, {
+          cpf: r.cpf, name: r.name, funcao: r.funcao, setor: r.setor, obra: r.obra, matricula: r.matricula,
+          fichas: [], totalItems: 0, totalValor: 0, categoryCounts: {}, lastDate: r.savedAt
+        });
+      }
+      const emp = map.get(key);
+      emp.fichas.push(r);
+      if(new Date(r.savedAt) >= new Date(emp.lastDate)){
+        emp.lastDate = r.savedAt;
+        emp.funcao = r.funcao || emp.funcao;
+        emp.setor = r.setor || emp.setor;
+        emp.obra = r.obra || emp.obra;
+        emp.matricula = r.matricula || emp.matricula;
+        emp.name = r.name || emp.name;
+      }
+      r.items.forEach(it=>{
+        emp.totalItems += (it.qtd || 1);
+        emp.totalValor += (it.qtd || 1) * (it.valorUnit || 0);
+        const cat = categorizeItem(it.desc);
+        emp.categoryCounts[cat] = (emp.categoryCounts[cat] || 0) + (it.qtd || 1);
+      });
+    });
+    return Array.from(map.values()).sort((a,b)=> new Date(b.lastDate) - new Date(a.lastDate));
+  }
+
+  function renderItems(){
+    const wrap = $('itemsWrap');
+    wrap.innerHTML = '';
+    if(currentItems.length === 0){
+      wrap.innerHTML = '<div class="items-empty">Nenhum EPI adicionado ainda. Use o formulário acima.</div>';
+      return;
+    }
+    currentItems.forEach((it, idx)=>{
+      const row = document.createElement('div');
+      row.className = 'item-row' + (idx === currentItems.length-1 ? ' latest' : '');
+      const st = itemStatus(it);
+      const badge = '<span class="badge '+st.cls+'">'+st.label+'</span>';
+      row.innerHTML = `
+        <div class="node-col"><div class="node-dot"></div></div>
+        <div class="item-content">
+          <div class="top-line"><span>${escapeHtml(it.desc)}</span>${badge}</div>
+          <div class="meta">
+            <span>CA <b>${escapeHtml(it.ca)}</b></span>
+            <span>Qtd <b>${it.qtd}</b></span>
+            <span>Entrega <b>${fmtDate(it.data)}</b></span>
+            <span>${escapeHtml(it.motivo)}</span>
+            ${it.valorUnit ? `<span>Valor <b>${fmtBRL(it.valorUnit)}</b> / un.</span>` : ''}
+          </div>
+        </div>
+        <button class="item-remove" data-idx="${idx}" title="Remover item">✕</button>
+      `;
+      wrap.appendChild(row);
+    });
+    wrap.querySelectorAll('.item-remove').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        currentItems.splice(Number(btn.dataset.idx),1);
+        renderItems();
+      });
+    });
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  /* ================= Obras & Remessas ================= */
+  let obras = [];
+  let shipments = [];
+  let remCurrentItems = [];
+  let remDocCounter = 1;
+
+  function remDocNumberString(n){
+    return 'REM-' + String(n).padStart(4,'0');
+  }
+
+  function renderObras(){
+    const wrap = $('obrasChipsWrap');
+    if(obras.length === 0){
+      wrap.innerHTML = '<div class="hist-empty" id="obrasEmpty">Nenhuma obra cadastrada ainda.</div>';
+      return;
+    }
+    wrap.innerHTML = obras.map((nome, idx) =>
+      `<span class="obra-chip">${escapeHtml(nome)} <button type="button" data-idx="${idx}" title="Remover obra">✕</button></span>`
+    ).join('');
+    wrap.querySelectorAll('.obra-chip button').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const nome = obras[Number(btn.dataset.idx)];
+        if(!confirm('Remover a obra "' + nome + '" da lista? Fichas e remessas já registradas não serão afetadas.')) return;
+        obras.splice(Number(btn.dataset.idx), 1);
+        persistState();
+        renderObras();
+        refreshObraSelects();
+        toast('Obra removida da lista.');
+      });
+    });
+  }
+
+  function refreshObraSelects(){
+    [$('fObra'), $('remObra')].forEach(sel=>{
+      const current = sel.value;
+      sel.innerHTML = '<option value="">Selecione a obra…</option>' +
+        obras.map(o => `<option${o === current ? ' selected' : ''}>${escapeHtml(o)}</option>`).join('');
+      if(obras.includes(current)) sel.value = current;
+    });
+  }
+
+  function addObra(nomeRaw){
+    const nome = (nomeRaw || '').trim();
+    if(!nome){ toast('Digite o nome da obra.'); return false; }
+    if(obras.some(o => o.toLowerCase() === nome.toLowerCase())){
+      toast('Essa obra já está cadastrada.');
+      return false;
+    }
+    obras.push(nome);
+    obras.sort((a,b) => a.localeCompare(b, 'pt-BR'));
+    persistState();
+    renderObras();
+    refreshObraSelects();
+    return true;
+  }
+
+  $('btnAddObra').addEventListener('click', ()=>{
+    const nome = $('novaObraInput').value.trim();
+    if(addObra(nome)){
+      toast('Obra cadastrada: ' + nome);
+      $('novaObraInput').value = '';
+      $('novaObraInput').focus();
+    }
+  });
+  $('novaObraInput').addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter'){ e.preventDefault(); $('btnAddObra').click(); }
+  });
+  $('btnFObraNova').addEventListener('click', ()=>{
+    const nome = prompt('Nome da nova obra/projeto:');
+    if(nome === null) return;
+    if(addObra(nome)){
+      $('fObra').value = nome.trim();
+      toast('Obra cadastrada e selecionada.');
+    }
+  });
+
+  /* ---- Itens da remessa ---- */
+  function renderRemItems(){
+    const wrap = $('remItemsWrap');
+    if(remCurrentItems.length === 0){
+      wrap.innerHTML = '<div class="items-empty" id="remItemsEmpty">Nenhum item adicionado ainda. Use o formulário acima.</div>';
+      return;
+    }
+    let totalQtd = 0, totalValor = 0;
+    wrap.innerHTML = remCurrentItems.map((it, idx) => {
+      totalQtd += it.qtd;
+      totalValor += it.qtd * (it.valorUnit || 0);
+      return `
+        <div class="item-row${idx === remCurrentItems.length-1 ? ' latest' : ''}">
+          <div class="node-col"><div class="node-dot"></div></div>
+          <div class="item-content">
+            <div class="top-line"><span>${escapeHtml(it.desc)}</span></div>
+            <div class="meta">
+              <span>CA <b>${escapeHtml(it.ca)}</b></span>
+              <span>Qtd <b>${it.qtd}</b></span>
+              ${it.valorUnit ? `<span>Valor <b>${fmtBRL(it.valorUnit)}</b> / un.</span>` : ''}
+            </div>
+          </div>
+          <button class="item-remove" data-idx="${idx}" title="Remover item">✕</button>
+        </div>`;
+    }).join('') + `<p class="hint" style="margin-top:10px;">Total da remessa: <b>${totalQtd} item(ns)</b>${totalValor > 0 ? ' · ' + fmtBRL(totalValor) : ''}</p>`;
+
+    wrap.querySelectorAll('.item-remove').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        remCurrentItems.splice(Number(btn.dataset.idx), 1);
+        renderRemItems();
+      });
+    });
+  }
+
+  $('remDesc').addEventListener('change', ()=>{
+    const isCustom = $('remDesc').value === '__custom__';
+    $('remDescCustom').style.display = isCustom ? 'block' : 'none';
+    if(isCustom) $('remDescCustom').focus();
+  });
+
+  function addPendingRemItem(){
+    const isCustom = $('remDesc').value === '__custom__';
+    const desc = isCustom ? $('remDescCustom').value.trim() : $('remDesc').value.trim();
+    const ca = $('remCA').value.trim();
+    const qtd = Number($('remQtd').value) || 1;
+    const valorUnit = Number($('remValor').value) || 0;
+    if(!desc || !ca || ca.length < 3) return false;
+    remCurrentItems.push({desc, ca, qtd, valorUnit});
+    renderRemItems();
+    $('remDesc').value=''; $('remDescCustom').value=''; $('remDescCustom').style.display='none';
+    $('remCA').value=''; $('remQtd').value=1; $('remValor').value='';
+    return true;
+  }
+
+  $('btnAddRemItem').addEventListener('click', ()=>{
+    const isCustom = $('remDesc').value === '__custom__';
+    const desc = isCustom ? $('remDescCustom').value.trim() : $('remDesc').value.trim();
+    const ca = $('remCA').value.trim();
+    if(!desc){ toast('Selecione ou digite o EPI.'); (isCustom ? $('remDescCustom') : $('remDesc')).focus(); return; }
+    if(!ca || ca.length < 3){ toast('Informe um número de CA válido.'); $('remCA').focus(); return; }
+    addPendingRemItem();
+    $('remDesc').focus();
+    toast('Item adicionado à remessa.');
+  });
+
+  /* ---- Salvar remessa ---- */
+  function clearRemessaForm(){
+    $('remObra').value=''; $('remRecebidoPor').value=''; $('remEnviadoPor').value=''; $('remObs').value='';
+    remCurrentItems = [];
+    renderRemItems();
+    $('remData').value = todayISO();
+  }
+
+  function buildAndSaveRemessa(){
+    const obra = $('remObra').value.trim();
+    if(!obra){ toast('Selecione a obra que vai receber a remessa.'); $('remObra').focus(); return null; }
+    const recebidoPor = $('remRecebidoPor').value.trim();
+    if(!recebidoPor){ toast('Informe quem recebeu a remessa na obra.'); $('remRecebidoPor').focus(); return null; }
+
+    if(remCurrentItems.length === 0){
+      if(addPendingRemItem()){
+        toastQueued('O EPI selecionado foi adicionado automaticamente à remessa.');
+      }
+    }
+    if(remCurrentItems.length === 0){ toast('Adicione ao menos um EPI à remessa antes de salvar.'); return null; }
+
+    const shipment = {
+      id: Date.now() + Math.floor(Math.random()*1000),
+      docNumber: remDocNumberString(remDocCounter++),
+      obra,
+      dataEnvio: $('remData').value || todayISO(),
+      recebidoPor,
+      enviadoPor: $('remEnviadoPor').value.trim(),
+      observacao: $('remObs').value.trim(),
+      items: JSON.parse(JSON.stringify(remCurrentItems)),
+      savedAt: new Date().toISOString()
+    };
+    shipments.unshift(shipment);
+    persistState();
+    renderRemessasList($('remSearchInput').value);
+    clearRemessaForm();
+    return shipment;
+  }
+
+  $('btnSaveRemessa').addEventListener('click', ()=>{
+    const shipment = buildAndSaveRemessa();
+    if(shipment){
+      const qtd = shipment.items.reduce((s,it) => s + it.qtd, 0);
+      toast('Remessa ' + shipment.docNumber + ' salva — ' + qtd + ' item(ns) enviados para ' + shipment.obra + '.');
+    }
+  });
+
+  function remessaTotals(s){
+    let qtd = 0, valor = 0;
+    s.items.forEach(it => { qtd += it.qtd; valor += it.qtd * (it.valorUnit || 0); });
+    return {qtd, valor};
+  }
+
+  function renderRemessasList(filter){
+    const list = $('remessasList');
+    const q = (filter || '').toLowerCase().trim();
+    const filtered = shipments.filter(s=>{
+      if(!q) return true;
+      const hay = (s.obra + ' ' + s.recebidoPor + ' ' + (s.enviadoPor||'')).toLowerCase();
+      return hay.includes(q);
+    });
+
+    if(filtered.length === 0){
+      list.innerHTML = '<div class="hist-empty">' + (shipments.length ? 'Nenhum resultado para a busca.' : 'Nenhuma remessa registrada ainda.') + '</div>';
+      persistState();
+      return;
+    }
+
+    list.innerHTML = filtered.map(s=>{
+      const {qtd, valor} = remessaTotals(s);
+      const d = new Date(s.dataEnvio + 'T00:00:00');
+      return `
+        <div class="hist-card">
+          <div class="h-top">
+            <div class="h-name">🏗️ ${escapeHtml(s.obra)}</div>
+            <div class="h-date">${d.toLocaleDateString('pt-BR')}</div>
+          </div>
+          <div class="h-meta"><span class="mono" style="color:var(--cyan);font-weight:600;">${s.docNumber}</span> · Recebido por ${escapeHtml(s.recebidoPor)} · ${qtd} item(ns)${valor > 0 ? ' · ' + fmtBRL(valor) : ''}</div>
+          <div class="h-actions">
+            <button class="icon-btn danger" title="Excluir remessa" data-act="delrem" data-id="${s.id}">🗑</button>
+          </div>
+        </div>`;
+    }).join('');
+
+    list.querySelectorAll('[data-act="delrem"]').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        const s = shipments.find(x => x.id == b.dataset.id);
+        const label = s ? (s.docNumber + ' — ' + s.obra) : 'esta remessa';
+        if(!confirm('Excluir a remessa ' + label + '? Essa ação não pode ser desfeita.')) return;
+        shipments = shipments.filter(x => x.id != b.dataset.id);
+        renderRemessasList($('remSearchInput').value);
+        toast('Remessa excluída.');
+      });
+    });
+
+    persistState();
+  }
+
+  $('remSearchInput').addEventListener('input', (e) => renderRemessasList(e.target.value));
+
+  /* ================= Navegação entre visões ================= */
+  const viewPanels = {entregas: $('viewEntregas'), obras: $('viewObras'), dashboard: $('viewDashboard')};
+  const viewBtns = {entregas: $('viewBtnEntregas'), obras: $('viewBtnObras'), dashboard: $('viewBtnDashboard')};
+  const viewTitles = {
+    entregas: ['Entregas de EPI', 'Ficha individual e em lote · Almoxarifado'],
+    obras: ['Obras & Remessas', 'Cadastro de obras e envio de lotes de EPIs'],
+    dashboard: ['Dashboard', 'Controle de Entrega de EPIs · Ficha NR-6']
+  };
+  function setActiveView(view){
+    Object.keys(viewPanels).forEach(k=>{
+      viewPanels[k].style.display = (k === view) ? (k === 'entregas' ? 'contents' : 'block') : 'none';
+      viewBtns[k].classList.toggle('active', k === view);
+    });
+    const titles = viewTitles[view];
+    if(titles){
+      $('topbarTitle').textContent = titles[0];
+      document.querySelector('.topbar-sub').textContent = titles[1];
+    }
+    if(view === 'obras'){
+      renderObras();
+      refreshObraSelects();
+      renderRemessasList($('remSearchInput').value);
+    }
+    if(view === 'dashboard') renderDashboard();
+    closeMobileSidebar();
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+  viewBtns.entregas.addEventListener('click', () => setActiveView('entregas'));
+  viewBtns.obras.addEventListener('click', () => setActiveView('obras'));
+  viewBtns.dashboard.addEventListener('click', () => setActiveView('dashboard'));
+
+  /* ---- Sidebar: recolher (desktop) / gaveta (mobile) ---- */
+  $('sidebarToggle').addEventListener('click', ()=>{
+    $('sidebar').classList.toggle('collapsed');
+  });
+  function openMobileSidebar(){
+    $('sidebar').classList.add('mobile-open');
+    $('sidebarBackdrop').classList.add('show');
+  }
+  function closeMobileSidebar(){
+    $('sidebar').classList.remove('mobile-open');
+    $('sidebarBackdrop').classList.remove('show');
+  }
+  $('mobileMenuBtn').addEventListener('click', ()=>{
+    if($('sidebar').classList.contains('mobile-open')) closeMobileSidebar();
+    else openMobileSidebar();
+  });
+  $('sidebarBackdrop').addEventListener('click', closeMobileSidebar);
+
+  /* ================= Dashboard ================= */
+  function matchesPeriod(dateVal, mode){
+    if(mode === 'all') return true;
+    const d = new Date(dateVal);
+    const now = new Date();
+    if(mode === 'today') return d.toDateString() === now.toDateString();
+    if(mode === 'week'){
+      const start = new Date(now); start.setDate(now.getDate() - now.getDay()); start.setHours(0,0,0,0);
+      return d >= start;
+    }
+    if(mode === 'month') return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    return true;
+  }
+
+  function renderRankList(containerId, entries, opts){
+    opts = opts || {};
+    const el = $(containerId);
+    if(entries.length === 0){
+      el.innerHTML = '<div class="hist-empty">Sem dados no período.</div>';
+      return;
+    }
+    const max = Math.max(...entries.map(e => e.value), 1);
+    el.innerHTML = entries.map(e => `
+      <div class="rank-row">
+        <div class="rank-top"><span class="rank-name">${escapeHtml(e.label)}</span><span class="rank-value">${opts.valueFormatter ? opts.valueFormatter(e.value) : e.value}</span></div>
+        <div class="rank-bar-track"><div class="rank-bar-fill ${opts.barClass||''}" style="width:${Math.max(4, e.value/max*100)}%;"></div></div>
+      </div>
+    `).join('');
+  }
+
+  function renderDashboard(){
+    const mode = $('dashPeriodFilter').value;
+    const recs = history.filter(r => matchesPeriod(r.savedAt, mode));
+    const ships = shipments.filter(s => matchesPeriod(s.dataEnvio || s.savedAt, mode));
+
+    let totalItens = 0, gastoTotal = 0;
+    const epiQtd = new Map();
+    const empGasto = new Map();
+    const obraStats = new Map();
+    const catQtd = new Map();
+
+    recs.forEach(r=>{
+      r.items.forEach(it=>{
+        const q = it.qtd || 1;
+        totalItens += q;
+        gastoTotal += q * (it.valorUnit || 0);
+        epiQtd.set(it.desc, (epiQtd.get(it.desc)||0) + q);
+        const cat = categorizeItem(it.desc);
+        catQtd.set(cat, (catQtd.get(cat)||0) + q);
+        if(it.valorUnit){
+          const key = (r.cpf || r.name || 'sem-cpf');
+          const cur = empGasto.get(key) || {name: r.name, valor: 0};
+          cur.valor += q * it.valorUnit;
+          cur.name = r.name;
+          empGasto.set(key, cur);
+        }
+      });
+      if(r.obra){
+        const cur = obraStats.get(r.obra) || {qtd: 0, valor: 0};
+        r.items.forEach(it => { cur.qtd += (it.qtd||1); cur.valor += (it.qtd||1) * (it.valorUnit||0); });
+        obraStats.set(r.obra, cur);
+      }
+    });
+
+    ships.forEach(s=>{
+      s.items.forEach(it=>{
+        const q = it.qtd || 1;
+        totalItens += q;
+        gastoTotal += q * (it.valorUnit || 0);
+        epiQtd.set(it.desc, (epiQtd.get(it.desc)||0) + q);
+        const cat = categorizeItem(it.desc);
+        catQtd.set(cat, (catQtd.get(cat)||0) + q);
+      });
+      const cur = obraStats.get(s.obra) || {qtd: 0, valor: 0};
+      s.items.forEach(it => { cur.qtd += (it.qtd||1); cur.valor += (it.qtd||1) * (it.valorUnit||0); });
+      obraStats.set(s.obra, cur);
+    });
+
+    $('dashTotalEntregas').textContent = recs.length;
+    $('dashTotalRemessas').textContent = ships.length;
+    $('dashTotalItens').textContent = totalItens;
+    $('dashGastoTotal').textContent = fmtBRL(gastoTotal);
+
+    const topEpis = Array.from(epiQtd.entries())
+      .map(([label,value]) => ({label, value}))
+      .sort((a,b) => b.value - a.value).slice(0,8);
+    renderRankList('dashTopEpis', topEpis, {valueFormatter: v => v + ' un.', barClass:'gold'});
+
+    const topFuncs = Array.from(empGasto.values())
+      .map(e => ({label: e.name, value: e.valor}))
+      .sort((a,b) => b.value - a.value).slice(0,10);
+    renderRankList('dashTopFuncionarios', topFuncs, {valueFormatter: v => fmtBRL(v)});
+
+    const obEl = $('dashTopObras');
+    const topObras = Array.from(obraStats.entries())
+      .map(([obra, st]) => ({label: obra, value: st.qtd, valor: st.valor}))
+      .sort((a,b) => b.value - a.value);
+    if(topObras.length === 0){
+      obEl.innerHTML = '<div class="hist-empty">Sem dados no período.</div>';
+    } else {
+      const max = Math.max(...topObras.map(o => o.value), 1);
+      obEl.innerHTML = topObras.map(o => `
+        <div class="rank-row">
+          <div class="rank-top"><span class="rank-name">🏗️ ${escapeHtml(o.label)}</span><span class="rank-value">${o.value} un.${o.valor > 0 ? ' · ' + fmtBRL(o.valor) : ''}</span></div>
+          <div class="rank-bar-track"><div class="rank-bar-fill" style="width:${Math.max(4, o.value/max*100)}%;"></div></div>
+        </div>
+      `).join('');
+    }
+
+    const topCats = Array.from(catQtd.entries())
+      .map(([label,value]) => ({label, value}))
+      .sort((a,b) => b.value - a.value);
+    renderRankList('dashCategorias', topCats, {valueFormatter: v => v + ' un.'});
+  }
+
+  $('dashPeriodFilter').addEventListener('change', renderDashboard);
+
+  $('iDesc').addEventListener('change', ()=>{
+    const isCustom = $('iDesc').value === '__custom__';
+    $('iDescCustom').style.display = isCustom ? 'block' : 'none';
+    if(isCustom) $('iDescCustom').focus();
+  });
+
+  /* Função e Setor: listas suspensas com opção "Outro" para digitar livremente */
+  function getSelectOrCustom(selectEl, customEl){
+    if(selectEl.value === '__custom__') return customEl.value.trim();
+    return selectEl.value.trim();
+  }
+  function setSelectOrCustom(selectEl, customEl, value){
+    value = (value || '').trim();
+    if(!value){
+      selectEl.value = '';
+      customEl.value = '';
+      customEl.style.display = 'none';
+      return;
+    }
+    selectEl.value = value;
+    if(selectEl.value === value){
+      customEl.value = '';
+      customEl.style.display = 'none';
+    } else {
+      selectEl.value = '__custom__';
+      customEl.value = value;
+      customEl.style.display = 'block';
+    }
+  }
+  $('fFuncao').addEventListener('change', ()=>{
+    const isCustom = $('fFuncao').value === '__custom__';
+    $('fFuncaoCustom').style.display = isCustom ? 'block' : 'none';
+    if(isCustom) $('fFuncaoCustom').focus();
+  });
+  $('fSetor').addEventListener('change', ()=>{
+    const isCustom = $('fSetor').value === '__custom__';
+    $('fSetorCustom').style.display = isCustom ? 'block' : 'none';
+    if(isCustom) $('fSetorCustom').focus();
+  });
+
+  /* Lê os campos da Seção 2 e, se estiverem válidos, adiciona à lista de itens.
+     Usada tanto pelo botão "Adicionar EPI à ficha" quanto como rede de segurança
+     ao salvar, caso o usuário tenha escolhido um EPI mas esquecido de clicar em adicionar. */
+  function addPendingItemToList(){
+    const isCustom = $('iDesc').value === '__custom__';
+    const desc = isCustom ? $('iDescCustom').value.trim() : $('iDesc').value.trim();
+    const ca = $('iCA').value.trim();
+    const qtd = Number($('iQtd').value) || 1;
+    const data = $('iData').value || todayISO();
+    const vida = $('iVida').value;
+    const motivo = $('iMotivo').value;
+    const valorUnit = Number($('iValor').value) || 0;
+
+    if(!desc || !ca || ca.length < 3) return false;
+
+    currentItems.push({
+      desc, ca, qtd, data, vida, motivo, valorUnit,
+      troca: vida === '0' ? null : addMonths(data, vida)
+    });
+    renderItems();
+    $('iDesc').value=''; $('iDescCustom').value=''; $('iDescCustom').style.display='none';
+    $('iCA').value=''; $('caStatus').textContent=''; $('iQtd').value=1; $('iValor').value='';
+    return true;
+  }
+
+  $('btnAddItem').addEventListener('click', ()=>{
+    const isCustom = $('iDesc').value === '__custom__';
+    const desc = isCustom ? $('iDescCustom').value.trim() : $('iDesc').value.trim();
+    const ca = $('iCA').value.trim();
+
+    if(!desc){ toast('Selecione ou digite o EPI.'); (isCustom ? $('iDescCustom') : $('iDesc')).focus(); return; }
+    if(!ca || ca.length < 3){ toast('Informe um número de CA válido.'); $('iCA').focus(); return; }
+
+    addPendingItemToList();
+    $('iDesc').focus();
+    toast('EPI adicionado à ficha.');
+  });
+
+  /* ---------------- Signature pad (fábrica reutilizável) ---------------- */
+  function createSignaturePad(canvasId, placeholderId, clearBtnId){
+    const canvas = $(canvasId);
+    const ctx = canvas.getContext('2d');
+    const placeholder = $(placeholderId);
+    const state = {drawing:false, hasSig:false, last:null};
+
+    function resizeCanvas(){
+      const ratio = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      const prev = state.hasSig ? canvas.toDataURL() : null;
+      canvas.width = rect.width * ratio;
+      canvas.height = rect.height * ratio;
+      ctx.setTransform(ratio,0,0,ratio,0,0);
+      ctx.lineWidth = 2; ctx.lineCap='round'; ctx.strokeStyle='#1B2027';
+      if(prev){
+        const img = new Image();
+        img.onload = ()=> ctx.drawImage(img,0,0,rect.width,rect.height);
+        img.src = prev;
+      }
+    }
+    window.addEventListener('resize', resizeCanvas);
+    setTimeout(resizeCanvas, 50);
+
+    function pos(e){
+      const r = canvas.getBoundingClientRect();
+      const p = e.touches ? e.touches[0] : e;
+      return {x: p.clientX - r.left, y: p.clientY - r.top};
+    }
+    function start(e){ state.drawing = true; state.hasSig = true; state.last = pos(e); placeholder.style.display='none'; e.preventDefault(); }
+    function move(e){
+      if(!state.drawing) return;
+      const p = pos(e);
+      ctx.beginPath(); ctx.moveTo(state.last.x,state.last.y); ctx.lineTo(p.x,p.y); ctx.stroke();
+      state.last = p; e.preventDefault();
+    }
+    function end(){ state.drawing = false; }
+    canvas.addEventListener('mousedown', start);
+    canvas.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', end);
+    canvas.addEventListener('touchstart', start, {passive:false});
+    canvas.addEventListener('touchmove', move, {passive:false});
+    canvas.addEventListener('touchend', end);
+
+    $(clearBtnId).addEventListener('click', ()=>{
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      state.hasSig = false;
+      placeholder.style.display='flex';
+    });
+
+    return {
+      clear(){ ctx.clearRect(0,0,canvas.width,canvas.height); state.hasSig=false; placeholder.style.display='flex'; },
+      hasSignature(){ return state.hasSig; },
+      dataURL(){ return state.hasSig ? canvas.toDataURL('image/png') : null; }
+    };
+  }
+
+  const sigEmployee = createSignaturePad('sigCanvas', 'sigPlaceholder', 'btnClearSig');
+  const sigResponsavel = createSignaturePad('sigCanvasResp', 'sigPlaceholderResp', 'btnClearSigResp');
+
+  /* ---------------- Batch mode (vários colaboradores) ---------------- */
+  function addBatchRow(prefill){
+    prefill = prefill || {};
+    const row = document.createElement('div');
+    row.className = 'batch-row';
+    row.innerHTML = `
+      <input type="text" class="b-name" placeholder="Nome completo">
+      <input type="text" class="b-cpf mono-field" placeholder="CPF" maxlength="14">
+      <input type="text" class="b-matricula mono-field mini" placeholder="Matrícula">
+      <button type="button" class="item-remove" title="Remover">✕</button>
+    `;
+    row.querySelector('.b-name').value = prefill.name || '';
+    row.querySelector('.b-cpf').value = prefill.cpf || '';
+    row.querySelector('.b-matricula').value = prefill.matricula || '';
+    row.querySelector('.b-cpf').addEventListener('input', (e)=>{ e.target.value = formatCPF(e.target.value); });
+    row.querySelector('.item-remove').addEventListener('click', ()=>{
+      row.remove();
+      if(document.querySelectorAll('#batchRows .batch-row').length === 0) addBatchRow();
+    });
+    $('batchRows').appendChild(row);
+  }
+
+  $('btnAddBatchRow').addEventListener('click', ()=> addBatchRow());
+
+  $('batchToggle').addEventListener('change', ()=>{
+    const on = $('batchToggle').checked;
+    $('singleModeFields').style.display = on ? 'none' : 'block';
+    $('batchModeFields').style.display = on ? 'block' : 'none';
+    $('employeeSigBlock').style.display = on ? 'none' : 'block';
+    $('sigGrid').style.gridTemplateColumns = on ? '1fr' : '';
+
+    if(on){
+      // Migra o que já foi digitado no modo único para não perder nada
+      const name = $('fName').value.trim();
+      const cpf = $('fCpf').value.trim();
+      const matricula = $('fMatricula').value.trim();
+      document.querySelectorAll('#batchRows .batch-row').forEach(r=>r.remove());
+      if(name || cpf){
+        addBatchRow({name, cpf, matricula});
+        addBatchRow();
+      } else {
+        addBatchRow(); addBatchRow();
+      }
+    } else {
+      // Migra de volta se havia só 1 colaborador preenchido no modo em lote
+      const rows = Array.from(document.querySelectorAll('#batchRows .batch-row'))
+        .map(r=>({
+          name: r.querySelector('.b-name').value.trim(),
+          cpf: r.querySelector('.b-cpf').value.trim(),
+          matricula: r.querySelector('.b-matricula').value.trim()
+        }))
+        .filter(r=>r.name || r.cpf);
+      if(rows.length === 1){
+        $('fName').value = rows[0].name;
+        $('fCpf').value = rows[0].cpf;
+        $('fMatricula').value = rows[0].matricula;
+      }
+    }
+  });
+
+  /* ---------------- Save record ---------------- */
+  function clearForm(){
+    ['fName','fMatricula','fCpf','fFuncao','fSetor','fFuncaoCustom','fSetorCustom','fObra','fResponsavel'].forEach(id => $(id).value='');
+    $('fFuncaoCustom').style.display = 'none';
+    $('fSetorCustom').style.display = 'none';
+    currentItems = [];
+    renderItems();
+    sigEmployee.clear();
+    sigResponsavel.clear();
+    $('cpfStatus').textContent='';
+    $('iData').value = todayISO();
+    $('batchRows').innerHTML = '';
+    if($('batchToggle').checked){ addBatchRow(); addBatchRow(); }
+  }
+
+  function hasUnsavedFormData(){
+    if(currentItems.length > 0) return true;
+    if($('fName').value.trim() || $('fCpf').value.trim()) return true;
+    const batchFilled = Array.from(document.querySelectorAll('#batchRows .b-name, #batchRows .b-cpf'))
+      .some(i => i.value.trim() !== '');
+    return batchFilled;
+  }
+
+  $('btnNovaFicha').addEventListener('click', ()=>{
+    if(hasUnsavedFormData()){
+      if(!confirm('Isso vai limpar os dados preenchidos que ainda não foram salvos. Continuar?')) return;
+    }
+    if($('batchToggle').checked){
+      $('batchToggle').checked = false;
+      $('batchToggle').dispatchEvent(new Event('change'));
+    }
+    clearForm();
+    document.querySelector('main').scrollIntoView({behavior:'smooth', block:'start'});
+    $('fName').focus();
+    toast('Ficha em branco pronta para um novo colaborador.');
+  });
+
+  function buildAndSaveRecords(){
+    const isBatch = $('batchToggle').checked;
+    const funcaoIsCustom = $('fFuncao').value === '__custom__';
+    const funcao = getSelectOrCustom($('fFuncao'), $('fFuncaoCustom'));
+
+    if(!funcao){ toast('Informe a função do colaborador.'); (funcaoIsCustom ? $('fFuncaoCustom') : $('fFuncao')).focus(); return []; }
+
+    if(currentItems.length === 0){
+      // Rede de segurança: o usuário escolheu um EPI e preencheu o CA, mas
+      // esqueceu de clicar em "Adicionar EPI à ficha". Em vez de bloquear
+      // com um erro confuso, aproveitamos a seleção pendente automaticamente.
+      if(addPendingItemToList()){
+        toastQueued('O EPI selecionado foi adicionado automaticamente à ficha.');
+      }
+    }
+    if(currentItems.length === 0){ toast('Adicione ao menos um EPI antes de salvar.'); return []; }
+
+    let colaboradores = [];
+    if(isBatch){
+      const incompletos = [];
+      document.querySelectorAll('#batchRows .batch-row').forEach(row=>{
+        const name = row.querySelector('.b-name').value.trim();
+        const cpf = row.querySelector('.b-cpf').value.trim();
+        const matricula = row.querySelector('.b-matricula').value.trim();
+        if(!name && !cpf) return; // linha vazia, ignora silenciosamente
+        const digits = cpf.replace(/\D/g,'');
+        if(name && digits.length === 11){
+          colaboradores.push({name, cpf, matricula});
+        } else {
+          incompletos.push(name || cpf || 'linha sem nome');
+        }
+      });
+      if(colaboradores.length === 0){
+        toast('Adicione ao menos um colaborador com nome e CPF completo (11 dígitos).');
+        return [];
+      }
+      if(incompletos.length > 0){
+        toastQueued('Ignorado(s) por CPF incompleto: ' + incompletos.join(', '));
+      }
+    } else {
+      const name = $('fName').value.trim();
+      const cpf = $('fCpf').value.trim();
+      if(!name){ toast('Informe o nome do colaborador.'); $('fName').focus(); return []; }
+      if(!cpf){ toast('Informe o CPF do colaborador.'); $('fCpf').focus(); return []; }
+      if(cpf.replace(/\D/g,'').length !== 11){ toast('CPF incompleto — confira os 11 dígitos.'); $('fCpf').focus(); return []; }
+      colaboradores = [{name, cpf, matricula: $('fMatricula').value.trim()}];
+    }
+
+    const setor = getSelectOrCustom($('fSetor'), $('fSetorCustom'));
+    const obra = $('fObra').value.trim();
+    const responsavel = $('fResponsavel').value.trim();
+    const itemsCopy = JSON.parse(JSON.stringify(currentItems));
+    const signatureResponsavel = sigResponsavel.dataURL();
+    const employeeSignature = isBatch ? null : sigEmployee.dataURL();
+    const company = {
+      name: $('companyName').textContent.trim(),
+      cnpj: $('companyCnpj').textContent.trim(),
+      unit: $('companyUnit').textContent.trim()
+    };
+    const savedAt = new Date().toISOString();
+
+    const records = colaboradores.map(c => ({
+      id: Date.now() + Math.floor(Math.random()*1000),
+      docNumber: docNumberString(docCounter++),
+      name: c.name, cpf: c.cpf, matricula: c.matricula,
+      funcao, setor, obra, responsavel,
+      items: JSON.parse(JSON.stringify(itemsCopy)),
+      savedAt,
+      signature: employeeSignature,
+      signatureResponsavel,
+      company
+    }));
+
+    records.forEach(r => history.unshift(r));
+    salvarEntregasNoBanco(records);
+    refreshDocNumber();
+    renderHistory();
+    clearForm();
+    if($('autoBackupToggle').checked){
+      exportBackupJSON(history, true);
+    }
+    return records;
+  }
+
+  let savingInProgress = false;
+
+  $('btnSave').addEventListener('click', ()=>{
+    if(savingInProgress) return;
+    savingInProgress = true;
+    $('btnSave').disabled = true;
+    try{
+      const records = buildAndSaveRecords();
+      if(records.length === 1) toast('Ficha ' + records[0].docNumber + ' salva no histórico da sessão.');
+      else if(records.length > 1) toast(records.length + ' fichas salvas (' + records[0].docNumber + '–' + records[records.length-1].docNumber + ').');
+    } finally {
+      savingInProgress = false;
+      $('btnSave').disabled = false;
+    }
+  });
+
+  $('btnSaveShare').addEventListener('click', async ()=>{
+    if(savingInProgress) return;
+    savingInProgress = true;
+    $('btnSaveShare').disabled = true;
+    try{
+      const records = buildAndSaveRecords();
+      if(records.length === 0) return;
+      if(records.length === 1){
+        await generatePDF(records[0], {shareText: 'Ficha de EPI ' + records[0].docNumber + ' — ' + records[0].name});
+      } else {
+        await shareConsolidatedPDF(records, 'Fichas de EPI ' + records[0].docNumber + '–' + records[records.length-1].docNumber);
+      }
+    } finally {
+      savingInProgress = false;
+      $('btnSaveShare').disabled = false;
+    }
+  });
+
+  /* ---------------- History ---------------- */
+  function updateExpiryBanner(){
+    const banner = $('expiryBanner');
+    const alerts = [];
+    history.forEach(r=>{
+      r.items.forEach(it=>{
+        if(!it.troca) return;
+        const st = itemStatus(it);
+        if(st.cls === 'bad' || st.cls === 'warn'){
+          alerts.push({name:r.name, desc:it.desc, cls:st.cls, troca:it.troca});
+        }
+      });
+    });
+    if(alerts.length === 0){ banner.style.display='none'; return; }
+
+    alerts.sort((a,b)=> new Date(a.troca) - new Date(b.troca));
+    const vencidos = alerts.filter(a=>a.cls==='bad').length;
+    const vencendo = alerts.length - vencidos;
+
+    const preview = alerts.slice(0,4)
+      .map(a => escapeHtml(a.name) + ' — ' + escapeHtml(a.desc) + ' (' + fmtDate(a.troca) + ')')
+      .join(' · ');
+    const extra = alerts.length > 4 ? ' · +' + (alerts.length - 4) + ' outro(s)' : '';
+
+    banner.className = 'expiry-banner' + (vencidos > 0 ? ' critical' : '');
+    banner.style.display = 'flex';
+    banner.innerHTML = `
+      <div class="eb-icon">${vencidos > 0 ? '⛔' : '⚠️'}</div>
+      <div>
+        <div><b>${vencidos > 0 ? vencidos+' EPI(s) vencido(s)' : ''}${vencidos>0 && vencendo>0 ? ' · ' : ''}${vencendo>0 ? vencendo+' vencendo em até 30 dias' : ''}</b></div>
+        <div class="eb-list">${preview}${extra}</div>
+      </div>
+    `;
+  }
+
+  function updateCompliance(){
+    const allItems = history.flatMap(r => r.items);
+    const withDeadline = allItems.filter(i => i.troca);
+    const ring = $('donutRing');
+    const pctEl = $('donutPct');
+    const sub = $('complianceSub');
+
+    if(withDeadline.length === 0){
+      ring.style.setProperty('--p', 0);
+      ring.style.setProperty('--c', '#D9DEE7');
+      pctEl.textContent = '—';
+      sub.textContent = 'Sem itens com prazo de troca ainda';
+      return;
+    }
+    const ok = withDeadline.filter(i => itemStatus(i).cls !== 'bad').length;
+    const pct = Math.round((ok / withDeadline.length) * 100);
+    const color = pct >= 80 ? 'var(--cyan)' : (pct >= 50 ? 'var(--gold)' : 'var(--orange)');
+    ring.style.setProperty('--p', pct);
+    ring.style.setProperty('--c', color);
+    pctEl.textContent = pct + '%';
+    sub.textContent = ok + ' de ' + withDeadline.length + ' itens dentro da validade';
+  }
+
+  function renderHistory(filter){
+    const list = $('historyList');
+    const q = (filter||'').toLowerCase().trim();
+    const filtered = history.filter(r=>{
+      if(!q) return true;
+      const hay = (r.name+' '+r.cpf+' '+r.items.map(i=>i.ca).join(' ')).toLowerCase();
+      return hay.includes(q);
+    });
+
+    if(history.length === 0 && docCounter !== 1){
+      docCounter = 1;
+      refreshDocNumber();
+    }
+
+    $('statRecords').textContent = history.length;
+    $('statItems').textContent = history.reduce((s,r)=> s + r.items.length, 0);
+    $('sessionCount').textContent = history.length;
+    updateCompliance();
+    updateExpiryBanner();
+
+    if(filtered.length === 0){
+      list.innerHTML = '<div class="hist-empty">'+(history.length ? 'Nenhum resultado para a busca.' : 'Nenhum registro salvo ainda.')+'</div>';
+      renderEmployees(filter);
+      persistState();
+      return;
+    }
+
+    list.innerHTML = '';
+    filtered.forEach(r=>{
+      const el = document.createElement('div');
+      el.className = 'hist-card';
+      const d = new Date(r.savedAt);
+      el.innerHTML = `
+        <div class="h-top">
+          <div class="h-name">${escapeHtml(r.name)}</div>
+          <div class="h-date">${d.toLocaleDateString('pt-BR')}</div>
+        </div>
+        <div class="h-meta"><span class="mono" style="color:var(--cyan);font-weight:600;">${r.docNumber || '—'}</span> · ${escapeHtml(r.funcao)} · ${r.items.length} EPI(s) · CPF ${escapeHtml(r.cpf)}</div>
+        <div class="h-actions">
+          <button class="icon-btn" title="Duplicar ficha (novo colaborador, mesmos itens)" data-act="dup" data-id="${r.id}">⧉</button>
+          <button class="icon-btn" title="Compartilhar (WhatsApp + PDF)" data-act="pdf" data-id="${r.id}">📲</button>
+          <button class="icon-btn danger" title="Excluir" data-act="del" data-id="${r.id}">🗑</button>
+        </div>
+      `;
+      list.appendChild(el);
+    });
+
+    list.querySelectorAll('[data-act="dup"]').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        const rec = history.find(r => r.id == b.dataset.id);
+        if(!rec) return;
+        setSelectOrCustom($('fFuncao'), $('fFuncaoCustom'), rec.funcao || '');
+        setSelectOrCustom($('fSetor'), $('fSetorCustom'), rec.setor || '');
+        $('fObra').value = rec.obra || '';
+        $('fResponsavel').value = rec.responsavel || '';
+        currentItems = JSON.parse(JSON.stringify(rec.items)).map(it=>({...it, data: todayISO(), troca: it.vida === '0' ? null : addMonths(todayISO(), it.vida)}));
+        renderItems();
+        $('fName').focus();
+        toast('Itens de ' + rec.docNumber + ' copiados. Preencha o novo colaborador e assine.');
+      });
+    });
+
+    list.querySelectorAll('[data-act="del"]').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        const rec = history.find(r => r.id == b.dataset.id);
+        const label = rec ? (rec.docNumber + ' — ' + rec.name) : 'este registro';
+        if(!confirm('Excluir a ficha ' + label + '? Essa ação não pode ser desfeita.')) return;
+        history = history.filter(r => r.id != b.dataset.id);
+        renderHistory($('searchInput').value);
+        toast('Registro excluído.');
+      });
+    });
+    list.querySelectorAll('[data-act="pdf"]').forEach(b=>{
+      b.addEventListener('click', ()=> generatePDF(history.find(r => r.id == b.dataset.id)));
+    });
+
+    renderEmployees(filter);
+    persistState();
+  }
+
+  $('searchInput').addEventListener('input', (e)=>{
+    renderHistory(e.target.value);
+  });
+
+  /* ---------------- Funcionários (visão agrupada por colaborador) ---------------- */
+  function renderEmployees(filter){
+    const list = $('employeeList');
+    const q = (filter||'').toLowerCase().trim();
+    const employees = getEmployees().filter(emp=>{
+      if(!q) return true;
+      const hay = (emp.name+' '+emp.cpf).toLowerCase();
+      return hay.includes(q);
+    });
+
+    if(employees.length === 0){
+      list.innerHTML = '<div class="hist-empty">'+(history.length ? 'Nenhum colaborador encontrado.' : 'Nenhum colaborador registrado ainda.')+'</div>';
+      return;
+    }
+
+    list.innerHTML = '';
+    employees.forEach(emp=>{
+      const el = document.createElement('div');
+      el.className = 'emp-card';
+      el.innerHTML = `
+        <div class="e-top">
+          <div>
+            <div class="e-name">${escapeHtml(emp.name)}</div>
+            <div class="e-meta">${escapeHtml(emp.funcao || '—')} · ${emp.fichas.length} ficha(s) · CPF ${escapeHtml(emp.cpf || '—')}</div>
+          </div>
+          <div class="e-count">${emp.totalItems}<small>EPIs no total</small></div>
+        </div>
+        <div class="e-actions">
+          <button class="btn btn-ghost e-act-view" type="button">👤 Ver ficha completa</button>
+          <button class="btn btn-amber e-act-add" type="button">➕ Adicionar item</button>
+        </div>
+      `;
+      const empKey = emp.cpf || emp.name;
+      el.querySelector('.e-act-view').addEventListener('click', (ev)=>{ ev.stopPropagation(); openEmployeeModal(empKey); });
+      el.querySelector('.e-act-add').addEventListener('click', (ev)=>{ ev.stopPropagation(); startNewDeliveryFor(empKey); });
+      el.addEventListener('click', ()=> openEmployeeModal(empKey));
+      list.appendChild(el);
+    });
+  }
+
+  function setActiveTab(tab){
+    const onFichas = tab === 'fichas';
+    $('tabFichas').classList.toggle('active', onFichas);
+    $('tabFuncionarios').classList.toggle('active', !onFichas);
+    $('historyList').style.display = onFichas ? 'flex' : 'none';
+    $('employeeList').style.display = onFichas ? 'none' : 'flex';
+    $('searchInput').placeholder = onFichas ? 'Buscar por nome, CPF ou CA...' : 'Buscar colaborador por nome ou CPF...';
+  }
+  $('tabFichas').addEventListener('click', ()=> setActiveTab('fichas'));
+  $('tabFuncionarios').addEventListener('click', ()=> setActiveTab('funcionarios'));
+
+  /* ---------------- Modal de perfil do colaborador ---------------- */
+  function startNewDeliveryFor(key){
+    const emp = getEmployees().find(e => (e.cpf || e.name) === key);
+    if(!emp) return;
+
+    closeEmployeeModal();
+    setActiveTab('fichas');
+
+    if($('batchToggle').checked){
+      $('batchToggle').checked = false;
+      $('batchToggle').dispatchEvent(new Event('change'));
+    }
+
+    $('fName').value = emp.name || '';
+    $('fCpf').value = emp.cpf || '';
+    $('fMatricula').value = emp.matricula || '';
+    setSelectOrCustom($('fFuncao'), $('fFuncaoCustom'), emp.funcao || '');
+    setSelectOrCustom($('fSetor'), $('fSetorCustom'), emp.setor || '');
+    $('fObra').value = emp.obra || '';
+    $('cpfStatus').textContent = 'CPF completo';
+    $('cpfStatus').className = 'field-status ok';
+
+    currentItems = [];
+    renderItems();
+    sigEmployee.clear();
+    sigResponsavel.clear();
+    $('iData').value = todayISO();
+
+    document.querySelector('main').scrollIntoView({behavior:'smooth', block:'start'});
+    setTimeout(()=> $('iDesc').focus(), 350);
+    toast('Dados de ' + emp.name + ' carregados — escolha o EPI e clique em Adicionar.');
+  }
+
+  function openEmployeeModal(key){
+    const emp = getEmployees().find(e => (e.cpf || e.name) === key);
+    if(!emp) return;
+
+    $('emName').textContent = emp.name;
+    $('emMeta').textContent = (emp.funcao || '—') + ' · ' + (emp.setor || '—') + ' · CPF ' + (emp.cpf || '—');
+
+    const catGrid = $('emCatGrid');
+    const cats = Object.entries(emp.categoryCounts).sort((a,b)=> b[1]-a[1]);
+    catGrid.innerHTML = cats.map(([cat,n]) => `
+      <div class="cat-chip"><div class="cat-num">${n}</div><div class="cat-lbl">${escapeHtml(cat)}</div></div>
+    `).join('') || '<div class="hist-empty">Sem itens registrados.</div>';
+
+    const fichasSorted = [...emp.fichas].sort((a,b)=> new Date(b.savedAt) - new Date(a.savedAt));
+    $('emFichasList').innerHTML = fichasSorted.map(r => `
+      <div class="emp-ficha-row">
+        <div class="ef-info">
+          <b>${r.docNumber || '—'}</b> · ${r.items.length} EPI(s)
+          <div class="ef-meta">${new Date(r.savedAt).toLocaleDateString('pt-BR')}</div>
+        </div>
+        <button class="icon-btn danger" title="Excluir esta ficha" data-ficha-id="${r.id}">🗑</button>
+      </div>
+    `).join('') || '<div class="hist-empty">Nenhuma ficha encontrada.</div>';
+
+    $('emFichasList').querySelectorAll('[data-ficha-id]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const rec = history.find(r => r.id == btn.dataset.fichaId);
+        const label = rec ? (rec.docNumber + ' — ' + rec.name) : 'esta ficha';
+        if(!confirm('Excluir a ficha ' + label + '? Essa ação não pode ser desfeita.')) return;
+        history = history.filter(r => r.id != btn.dataset.fichaId);
+        renderHistory($('searchInput').value);
+        toast('Ficha excluída.');
+        // Reabre o modal atualizado, ou fecha se não sobrou nenhuma ficha
+        const stillExists = getEmployees().some(e => (e.cpf || e.name) === key);
+        if(stillExists) openEmployeeModal(key); else closeEmployeeModal();
+      });
+    });
+
+    const allItems = [];
+    emp.fichas.forEach(r=>{
+      r.items.forEach(it=> allItems.push({...it, docNumber:r.docNumber, savedAt:r.savedAt}));
+    });
+    allItems.sort((a,b)=> new Date(b.data) - new Date(a.data));
+    $('emItemsList').innerHTML = allItems.map(it=>{
+      const st = itemStatus(it);
+      return `
+        <div class="emp-item-row">
+          <div class="ei-left">
+            <b>${escapeHtml(it.desc)}</b>
+            <div class="ei-meta">CA ${escapeHtml(it.ca)} · Qtd ${it.qtd} · Ficha ${it.docNumber || '—'} · ${it.motivo || ''}</div>
+          </div>
+          <div class="ei-right">
+            <div class="mono">${fmtDate(it.data)}</div>
+            <span class="badge ${st.cls}" style="margin-top:3px;">${st.label}</span>
+          </div>
+        </div>
+      `;
+    }).join('') || '<div class="hist-empty">Nenhum item registrado.</div>';
+
+    const sigs = emp.fichas.filter(r => r.signature);
+    $('emSigGallery').innerHTML = sigs.map(r => `
+      <div class="sig-gallery-item">
+        <img src="${r.signature}" alt="Assinatura">
+        <div class="sg-label">${r.docNumber} · ${fmtDate(r.savedAt.slice(0,10))}</div>
+      </div>
+    `).join('') || '<div class="hist-empty">Nenhuma assinatura registrada nas fichas deste colaborador.</div>';
+
+    $('employeeModal').dataset.empKey = key;
+    $('employeeModal').classList.add('open');
+  }
+
+  function closeEmployeeModal(){
+    $('employeeModal').classList.remove('open');
+  }
+  $('btnCloseEmpModal').addEventListener('click', closeEmployeeModal);
+  $('btnEmpAddItem').addEventListener('click', ()=>{
+    const key = $('employeeModal').dataset.empKey;
+    startNewDeliveryFor(key);
+  });
+  $('employeeModal').addEventListener('click', (e)=>{
+    if(e.target.id === 'employeeModal') closeEmployeeModal();
+  });
+
+  $('btnEmpExportPdf').addEventListener('click', async ()=>{
+    const key = $('employeeModal').dataset.empKey;
+    const emp = getEmployees().find(e => (e.cpf || e.name) === key);
+    if(!emp) return;
+    if(!beginPdfWork()) return;
+    try{
+      toast('Gerando PDF consolidado de ' + emp.name + '...');
+      const pdf = await buildConsolidatedPDFBlob(emp.fichas);
+      pdf.save('EPI_' + emp.name.replace(/[^\p{L}\p{N}]+/gu,'_') + '.pdf');
+      toast('PDF gerado com ' + emp.fichas.length + ' ficha(s) de ' + emp.name + '.');
+    }catch(err){
+      console.error(err);
+      toast('Erro ao gerar o PDF: ' + (err && err.message ? err.message : 'tente novamente') + '.');
+    }finally{
+      endPdfWork();
+    }
+  });
+
+  $('btnEmpShare').addEventListener('click', async ()=>{
+    const key = $('employeeModal').dataset.empKey;
+    const emp = getEmployees().find(e => (e.cpf || e.name) === key);
+    if(!emp) return;
+    await shareConsolidatedPDF(emp.fichas, 'Fichas de EPI — ' + emp.name);
+  });
+
+  $('btnEmpDeleteAll').addEventListener('click', ()=>{
+    const key = $('employeeModal').dataset.empKey;
+    const emp = getEmployees().find(e => (e.cpf || e.name) === key);
+    if(!emp) return;
+    const confirmMsg = 'Excluir TODOS os ' + emp.fichas.length + ' registro(s) de ' + emp.name +
+      '? Isso vai apagar o histórico completo dele (itens e assinaturas). Essa ação não pode ser desfeita.';
+    if(!confirm(confirmMsg)) return;
+    const idsToRemove = new Set(emp.fichas.map(r => r.id));
+    history = history.filter(r => !idsToRemove.has(r.id));
+    closeEmployeeModal();
+    renderHistory($('searchInput').value);
+    toast('Todos os registros de ' + emp.name + ' foram excluídos.');
+  });
+
+  /* ---------------- PDF generation ---------------- */
+  function fillPrintDoc(record){
+    const company = record.company || {};
+    $('pdCompany').textContent = company.name || 'ESF LTDA';
+    $('pdDocNumber').textContent = record.docNumber || '—';
+    $('pdCnpj').textContent = 'CNPJ: ' + (company.cnpj || '—');
+    $('pdUnit').textContent = 'Unidade: ' + (company.unit || '—');
+    $('pdEmitted').textContent = 'Emitido em: ' + new Date().toLocaleString('pt-BR');
+    $('pdName').textContent = record.name || '—';
+    $('pdCpf').textContent = record.cpf || '—';
+    $('pdMatricula').textContent = record.matricula || '—';
+    $('pdFuncao').textContent = record.funcao || '—';
+    $('pdSetor').textContent = record.setor || '—';
+    $('pdObra').textContent = record.obra || '—';
+    $('pdResponsavel').textContent = record.responsavel || '—';
+    $('pdFooterMeta').textContent = 'Ficha ' + (record.docNumber || '') + ' · ' + record.items.length + ' item(ns)';
+
+    $('pdItems').innerHTML = record.items.map(it => {
+      const st = itemStatus(it);
+      const stColor = st.cls === 'bad' ? '#E4572E' : (st.cls === 'warn' ? '#C9932A' : (st.cls === 'ok' ? '#1F9D63' : '#6B7280'));
+      return `
+      <tr>
+        <td>${escapeHtml(it.desc)}</td>
+        <td>${escapeHtml(it.ca)}</td>
+        <td>${it.qtd}</td>
+        <td>${fmtDate(it.data)}</td>
+        <td>${it.troca ? fmtDate(it.troca) : 'Sem prazo'}</td>
+        <td>${escapeHtml(it.motivo)}</td>
+        <td style="color:${stColor};font-weight:600;">${st.label}</td>
+      </tr>`;
+    }).join('');
+
+    const sigImg = $('pdSigImg');
+    sigImg.style.display = record.signature ? 'inline-block' : 'none';
+    sigImg.src = record.signature || '';
+
+    const sigImgResp = $('pdSigImgResp');
+    sigImgResp.style.display = record.signatureResponsavel ? 'inline-block' : 'none';
+    sigImgResp.src = record.signatureResponsavel || '';
+
+    const qrBox = $('pdQr');
+    qrBox.innerHTML = '';
+    const qrPayload = [
+      record.docNumber, record.name,
+      'CPF ' + record.cpf,
+      record.items.length + ' EPI(s)',
+      new Date(record.savedAt).toLocaleDateString('pt-BR')
+    ].join(' | ');
+    if(window.QRCode){
+      new QRCode(qrBox, {
+        text: qrPayload,
+        width: 74, height: 74,
+        colorDark: '#0F2456', colorLight: '#ffffff'
+      });
+    }
+  }
+
+  let pdfBusy = false;
+  function pdfLibsReady(){
+    return typeof html2canvas === 'function' && window.jspdf && typeof window.jspdf.jsPDF === 'function';
+  }
+  function beginPdfWork(){
+    if(pdfBusy){
+      toast('Aguarde a geração do PDF anterior terminar.');
+      return false;
+    }
+    if(!pdfLibsReady()){
+      toast('Não foi possível carregar os componentes de PDF. Verifique sua internet e recarregue a página.');
+      return false;
+    }
+    pdfBusy = true;
+    document.body.classList.add('pdf-busy');
+    return true;
+  }
+  function endPdfWork(){
+    pdfBusy = false;
+    document.body.classList.remove('pdf-busy');
+  }
+
+  async function buildConsolidatedPDFBlob(records){
+    if(document.fonts && document.fonts.ready){ try{ await document.fonts.ready; }catch(e){} }
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p','pt','a4');
+    for(let i=0; i<records.length; i++){
+      fillPrintDoc(records[i]);
+      const target = document.querySelector('#printDoc .doc-inner');
+      const canvasImg = await html2canvas(target, {scale:2, backgroundColor:'#ffffff', scrollX:0, scrollY:0, windowWidth: document.documentElement.scrollWidth, useCORS:true});
+      const imgData = canvasImg.toDataURL('image/png');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const imgHeight = canvasImg.height * (pageWidth / canvasImg.width);
+      if(i > 0) pdf.addPage();
+      pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, imgHeight);
+    }
+    return pdf;
+  }
+
+  async function buildSinglePDFBlob(record){
+    if(document.fonts && document.fonts.ready){ try{ await document.fonts.ready; }catch(e){} }
+    fillPrintDoc(record);
+    const target = document.querySelector('#printDoc .doc-inner');
+    const canvasImg = await html2canvas(target, {scale:2, backgroundColor:'#ffffff', scrollX:0, scrollY:0, windowWidth: document.documentElement.scrollWidth, useCORS:true});
+    const imgData = canvasImg.toDataURL('image/png');
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p','pt','a4');
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const imgHeight = canvasImg.height * (pageWidth / canvasImg.width);
+    pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, imgHeight);
+    return pdf;
+  }
+
+  /* ---------------- WhatsApp + PDF ----------------
+     Estratégia robusta em duas frentes:
+     1) Se o navegador suportar compartilhamento nativo de arquivo (comum em celular),
+        tenta anexar o PDF direto na caixa de compartilhamento do sistema.
+     2) Caminho garantido (funciona em qualquer navegador/computador): baixa o PDF
+        automaticamente e abre o WhatsApp já com uma mensagem pronta — só falta anexar
+        o arquivo que acabou de ser baixado.
+     A aba do WhatsApp é aberta de forma SÍNCRONA, ainda dentro do clique do usuário,
+     para não ser bloqueada por bloqueadores de pop-up (o bloqueio costuria acontecer
+     porque a geração do PDF é assíncrona e "gasta" a permissão do navegador). */
+  async function deliverPdfWhatsApp(buildPdf, {fileName, shareTitle, shareText, waText, busyLabel}){
+    if(!beginPdfWork()) return;
+
+    let waTab = null;
+    try{ waTab = window.open('about:blank', '_blank'); }catch(e){ waTab = null; }
+
+    try{
+      toast(busyLabel || 'Gerando PDF...');
+      const pdf = await buildPdf();
+      const blob = pdf.output('blob');
+      const file = new File([blob], fileName, {type:'application/pdf'});
+
+      if(navigator.canShare && navigator.canShare({files:[file]})){
+        try{
+          await navigator.share({files:[file], title:shareTitle, text:shareText});
+          if(waTab && !waTab.closed) waTab.close();
+          toast('Caixa de compartilhamento aberta — escolha o WhatsApp.');
+          return;
+        }catch(err){
+          if(err && err.name === 'AbortError'){
+            if(waTab && !waTab.closed) waTab.close();
+            toast('Envio cancelado.');
+            return;
+          }
+          console.warn('Compartilhamento nativo indisponível, usando alternativa PDF + WhatsApp:', err);
+        }
+      }
+
+      pdf.save(fileName);
+      const waUrl = 'https://wa.me/?text=' + encodeURIComponent(waText || shareText || shareTitle);
+      if(waTab && !waTab.closed){ waTab.location.href = waUrl; }
+      else { window.open(waUrl, '_blank'); }
+      toast('PDF baixado (' + fileName + '). Anexe esse arquivo na conversa do WhatsApp que abrimos.');
+    }catch(err){
+      console.error(err);
+      if(waTab && !waTab.closed) waTab.close();
+      toast('Erro ao gerar o PDF: ' + (err && err.message ? err.message : 'tente novamente') + '.');
+    }finally{
+      endPdfWork();
+    }
+  }
+
+  async function shareConsolidatedPDF(records, title){
+    const fileName = 'esf_Fichas_EPI_' + Date.now() + '.pdf';
+    await deliverPdfWhatsApp(() => buildConsolidatedPDFBlob(records), {
+      fileName,
+      shareTitle: title,
+      shareText: title,
+      waText: title + ' — ESF (' + records.length + ' ficha(s))',
+      busyLabel: 'Gerando PDF com ' + records.length + ' ficha(s)...'
+    });
+  }
+
+  async function generatePDF(record, opts){
+    if(!record) return;
+    opts = opts || {};
+    const safeName = record.name.replace(/[^\p{L}\p{N}]+/gu,'_').replace(/^_+|_+$/g,'') || 'colaborador';
+    const fileName = 'EPI_' + safeName + '_' + record.id + '.pdf';
+    const shareTitle = 'Ficha de EPI — ' + record.name;
+    const shareText = opts.shareText || shareTitle;
+    await deliverPdfWhatsApp(() => buildSinglePDFBlob(record), {
+      fileName,
+      shareTitle,
+      shareText,
+      waText: shareText + ' — ESF',
+      busyLabel: 'Gerando PDF...'
+    });
+  }
+
+  function getFilteredHistory(){
+    const mode = $('periodFilter').value;
+    if(mode === 'all') return history;
+    const now = new Date();
+    return history.filter(r=>{
+      const d = new Date(r.savedAt);
+      if(mode === 'today'){
+        return d.toDateString() === now.toDateString();
+      }
+      if(mode === 'week'){
+        const start = new Date(now); start.setDate(now.getDate() - now.getDay()); start.setHours(0,0,0,0);
+        return d >= start;
+      }
+      if(mode === 'month'){
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      }
+      return true;
+    });
+  }
+
+  function exportBackupJSON(records, silent){
+    if(records.length === 0){ if(!silent) toast('Não há registros para exportar.'); return; }
+    const blob = new Blob([JSON.stringify(records, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'backup_epi_esf.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    if(!silent) toast('Backup exportado.');
+  }
+
+  $('btnExportAllPdf').addEventListener('click', async ()=>{
+    const records = getFilteredHistory();
+    if(records.length === 0){ toast('Não há registros nesse período.'); return; }
+    if(!beginPdfWork()) return;
+    try{
+      toast('Gerando PDF consolidado...');
+      const pdf = await buildConsolidatedPDFBlob(records);
+      pdf.save('esf_Fichas_EPI.pdf');
+      toast('PDF consolidado gerado (' + records.length + ' ficha(s)).');
+    }catch(err){
+      console.error(err);
+      toast('Erro ao gerar o PDF: ' + (err && err.message ? err.message : 'tente novamente') + '.');
+    }finally{
+      endPdfWork();
+    }
+  });
+
+  /* ---------------- Backup JSON ---------------- */
+  $('btnExportJson').addEventListener('click', ()=> exportBackupJSON(getFilteredHistory(), false));
+
+  function normalizeRecord(r){
+    r = r || {};
+    return {
+      id: r.id || (Date.now() + Math.floor(Math.random()*100000)),
+      docNumber: r.docNumber || 'ME-????',
+      name: r.name || '(sem nome)',
+      cpf: r.cpf || '',
+      matricula: r.matricula || '',
+      funcao: r.funcao || '',
+      setor: r.setor || '',
+      obra: r.obra || '',
+      responsavel: r.responsavel || '',
+      items: Array.isArray(r.items) ? r.items : [],
+      savedAt: r.savedAt || new Date().toISOString(),
+      signature: r.signature || null,
+      signatureResponsavel: r.signatureResponsavel || null,
+      company: r.company || {name:'ESF LTDA', cnpj:'', unit:''}
+    };
+  }
+
+  function normalizeShipment(s){
+    s = s || {};
+    return {
+      id: s.id || (Date.now() + Math.floor(Math.random()*100000)),
+      docNumber: s.docNumber || 'REM-????',
+      obra: s.obra || '(sem obra)',
+      dataEnvio: s.dataEnvio || (s.savedAt ? s.savedAt.slice(0,10) : todayISO()),
+      recebidoPor: s.recebidoPor || '',
+      enviadoPor: s.enviadoPor || '',
+      observacao: s.observacao || '',
+      items: Array.isArray(s.items) ? s.items : [],
+      savedAt: s.savedAt || new Date().toISOString()
+    };
+  }
+
+  function bumpDocCounterPast(records){
+    let maxN = docCounter - 1;
+    records.forEach(r=>{
+      const m = /ME-(\d+)/.exec(r.docNumber || '');
+      if(m){ const n = parseInt(m[1],10); if(n > maxN) maxN = n; }
+    });
+    if(maxN + 1 > docCounter){
+      docCounter = maxN + 1;
+      refreshDocNumber();
+    }
+  }
+
+  $('btnImportJson').addEventListener('click', ()=> $('importFile').click());
+  $('importFile').addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev)=>{
+      try{
+        const data = JSON.parse(ev.target.result);
+        if(!Array.isArray(data)) throw new Error('formato inválido');
+        const normalized = data.map(normalizeRecord);
+        history = normalized.concat(history);
+        bumpDocCounterPast(normalized);
+        renderHistory();
+        toast('Backup importado: '+normalized.length+' registro(s).');
+      }catch(err){
+        console.error(err);
+        toast('Arquivo inválido. Verifique o backup.');
+      }
+    };
+    reader.onerror = ()=> toast('Não foi possível ler o arquivo selecionado.');
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+
+  /* ---------------- Dark mode ---------------- */
+  $('btnRefreshPage').addEventListener('click', ()=>{
+    if(hasUnsavedFormData()){
+      if(!confirm('Há dados preenchidos que ainda não foram salvos. Atualizar a página mesmo assim?')) return;
+    }
+    location.reload();
+  });
+
+  $('darkToggle').addEventListener('click', ()=>{
+    document.body.classList.toggle('dark');
+    $('darkToggle').textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
+  });
+
+  /* ---------------- Connectivity badge ---------------- */
+  function updateConnStatus(){
+    const el = $('connStatus');
+    if(navigator.onLine){
+      el.textContent = '🟢 Online';
+    } else {
+      el.textContent = '🟡 Offline · funcionando normalmente';
+    }
+  }
+  window.addEventListener('online', updateConnStatus);
+  window.addEventListener('offline', updateConnStatus);
+
+  /* ---------------- Proteção contra perda de dados ao fechar/recarregar ---------------- */
+  window.addEventListener('beforeunload', (e)=>{
+    const hasUnsavedForm = hasUnsavedFormData();
+    const hasUnbackedHistory = !storageOk && history.length > 0;
+    if(hasUnsavedForm || hasUnbackedHistory){
+      e.preventDefault();
+      e.returnValue = hasUnsavedForm
+        ? 'Há uma ficha em preenchimento que ainda não foi salva.'
+        : 'Este navegador não está salvando os dados automaticamente. Exporte um backup antes de sair.';
+      return e.returnValue;
+    }
+  });
+
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape') closeEmployeeModal();
+  });
+
+  /* ---------------- Init ---------------- */
+  $('remDesc').innerHTML = $('iDesc').innerHTML;
+  $('remData').value = todayISO();
+  (async function initAsync(){
+    await loadPersistedState();
+    refreshDocNumber();
+    renderItems();
+    renderHistory();
+    renderObras();
+    refreshObraSelects();
+    renderRemItems();
+    renderRemessasList();
+    renderDashboard();
+    updateConnStatus();
+  })();
+  if(!storageOk){
+    toast('Este navegador não permite salvar dados entre sessões. Exporte backups com frequência.');
+  } else if(history.length > 0){
+    toast(history.length + ' ficha(s) carregada(s) do armazenamento deste navegador.');
+  }
+})();
+</script>
+</body>
+</html>
