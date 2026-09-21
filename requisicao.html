@@ -95,12 +95,12 @@ body{font-family:'Inter',sans-serif;font-size:var(--fs-base);background:var(--bg
 .sf-wrap{position:relative;}
 .sf-inp{width:100%;height:40px;background:var(--bg);border:1.5px solid var(--bd2);border-radius:var(--rad-sm);padding:0 40px 0 14px;color:var(--tx);font-size:var(--fs-base);font-family:inherit;outline:none;transition:border-color .14s,box-shadow .14s;}
 .sf-inp:focus{border-color:var(--ac);box-shadow:0 0 0 3px rgba(20,166,232,.1);}
-.sf-lupa{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:5px;background:var(--ac);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#0a2540;font-size:14px;}
+.sf-lupa{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:5px;background:linear-gradient(135deg,var(--ac),#102b65);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;}
 .sf-filters{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
 .sf-sel{height:30px;padding:0 10px;background:var(--bg);border:1px solid var(--bd);border-radius:var(--rad-sm);color:var(--tx);font-size:var(--fs-xs);font-family:inherit;outline:none;cursor:pointer;}
 .sf-btn{height:30px;padding:0 11px;border-radius:var(--rad-sm);border:1px solid var(--bd);background:transparent;color:var(--mu);font-size:var(--fs-xs);cursor:pointer;font-family:inherit;transition:all .13s;white-space:nowrap;}
 .sf-btn:hover{background:var(--s2);color:var(--tx);}
-.sf-btn-primary{background:var(--ac);border-color:var(--ac);color:#0a2540;font-weight:700;}
+.sf-btn-primary{background:linear-gradient(135deg,var(--ac),#102b65);border-color:var(--ac);color:#fff;font-weight:700;}
 .sf-btn-primary:hover{background:var(--ac2);}
 .sf-btn-primary.active{outline:2px solid #fff3;}
 .sc-info{font-size:var(--fs-xs);color:var(--mu);font-family:'JetBrains Mono',monospace;margin-left:auto;}
@@ -112,8 +112,8 @@ body{font-family:'Inter',sans-serif;font-size:var(--fs-base);background:var(--bg
 .lgd-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
 .tipo-btns{display:flex;gap:5px;}
 .tipo-btn{padding:4px 10px;border-radius:20px;border:1px solid var(--bd);background:transparent;color:var(--mu);font-size:var(--fs-xs);cursor:pointer;font-family:inherit;transition:all .13s;font-weight:600;}
-.tipo-btn.active{background:var(--ac);border-color:var(--ac);color:#0a2540;}
-.sel-bar{background:var(--ac);color:#0a2540;border-radius:var(--rad);padding:7px 12px;align-items:center;gap:8px;font-size:var(--fs-sm);font-weight:700;flex-shrink:0;display:none;}
+.tipo-btn.active{background:linear-gradient(135deg,var(--ac),#102b65);border-color:var(--ac);color:#fff;}
+.sel-bar{background:linear-gradient(135deg,var(--ac),#102b65);color:#fff;border-radius:var(--rad);padding:7px 12px;align-items:center;gap:8px;font-size:var(--fs-sm);font-weight:700;flex-shrink:0;display:none;}
 .sel-bar.on{display:flex;}
 .sel-bar button{background:rgba(0,0,0,.18);border:none;color:#0a2540;padding:3px 9px;border-radius:var(--rad-sm);cursor:pointer;font-size:var(--fs-xs);font-weight:700;font-family:inherit;}
 
@@ -146,7 +146,7 @@ body{font-family:'Inter',sans-serif;font-size:var(--fs-base);background:var(--bg
 .load-more-hint{font-size:var(--fs-xs);color:var(--mu);}
 
 /* ── BOTÃO FLUTUANTE PARA REABRIR A REQUISIÇÃO (some quando o painel está aberto) ── */
-.cart-fab{position:absolute;bottom:22px;right:22px;width:56px;height:56px;border-radius:50%;background:var(--ac);border:none;box-shadow:0 6px 18px rgba(0,0,0,.4);cursor:pointer;align-items:center;justify-content:center;z-index:80;transition:transform .2s ease,box-shadow .2s ease;}
+.cart-fab{position:absolute;bottom:22px;right:22px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--ac),#102b65);border:none;box-shadow:0 6px 18px rgba(0,0,0,.4);cursor:pointer;align-items:center;justify-content:center;z-index:80;transition:transform .2s ease,box-shadow .2s ease;color:#fff;}
 .cart-fab:hover{transform:scale(1.08);box-shadow:0 8px 24px rgba(20,166,232,.5);}
 .cart-fab-icon{font-size:26px;}
 .cart-fab-badge{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:var(--red);color:#fff;font-size:var(--fs-xs);font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);}
@@ -197,7 +197,7 @@ select.mi{cursor:pointer;}
 .fbtn{flex:1 1 40%;min-width:80px;height:34px;border-radius:var(--rad-sm);border:1px solid var(--bd);background:var(--s2);color:var(--tx);font-size:var(--fs-sm);font-weight:700;cursor:pointer;}
 .fbtn-confirm{background:var(--grn);border-color:var(--grn);color:#052e1c;font-size:var(--fs-sm);height:38px;}
 .fbtn-confirm:hover{filter:brightness(1.08);}
-.fbtn-pdf{background:var(--ac);border-color:var(--ac);color:#0a2540;}
+.fbtn-pdf{background:linear-gradient(135deg,var(--ac),#102b65);border-color:var(--ac);color:#fff;}
 .fbtn-wpp{background:#25d366;border-color:#25d366;color:#04220f;}
 .fbtn-clr:hover{background:var(--red);border-color:var(--red);color:#fff;}
 
@@ -215,7 +215,7 @@ select.mi{cursor:pointer;}
 .fg textarea{height:70px;padding:8px 10px;resize:vertical;}
 .mftr{display:flex;gap:8px;justify-content:flex-end;margin-top:6px;}
 .mbtn-cancel,.mbtn-ok,.mbtn-del{height:36px;padding:0 18px;border-radius:var(--rad-sm);border:1px solid var(--bd);background:transparent;color:var(--tx);font-size:var(--fs-sm);font-weight:700;cursor:pointer;font-family:inherit;}
-.mbtn-ok{background:var(--ac);border-color:var(--ac);color:#0a2540;}
+.mbtn-ok{background:linear-gradient(135deg,var(--ac),#102b65);border-color:var(--ac);color:#fff;}
 .mbtn-del{background:var(--red);border-color:var(--red);color:#fff;}
 .kv-list{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto;}
 .kv-row{display:flex;align-items:center;gap:8px;background:var(--s2);border:1px solid var(--bd);border-radius:6px;padding:6px 10px;font-size:var(--fs-sm);}
@@ -317,7 +317,7 @@ tbody tr:hover{background:var(--s2);}
 }
 .req-body::-webkit-scrollbar-thumb:hover, .kv-list::-webkit-scrollbar-thumb:hover, .movim-table-wrap::-webkit-scrollbar-thumb:hover,
 .catalog-area::-webkit-scrollbar-thumb:hover, .sidebar::-webkit-scrollbar-thumb:hover, .modal::-webkit-scrollbar-thumb:hover, .suggest-list::-webkit-scrollbar-thumb:hover{
-  background:var(--ac);
+  background:#102b65;
 }
 </style>
 </head>

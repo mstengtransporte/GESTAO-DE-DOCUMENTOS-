@@ -1779,7 +1779,7 @@ body.dark #workers-body tr:hover{background-color:rgba(58,110,232,.08)}
          diferentes dos outros", em vez de mais um botão colorido perdido
          no meio de vários. -->
     <button class="btn admin-only-btn" style="background:#158038;color:#fff" onclick="abrirExtraEscopo()" title="Controle consolidado de todo o Extra Escopo/Adicional registrado">🟢 <span>Extra Escopo</span></button>
-    <button class="btn admin-only-btn" style="background:#00b5fe;color:#fff" onclick="abrirAndamento()" title="Controle consolidado de horas por projeto (Em Andamento)">🔵 <span>Andamento</span></button>
+    <button class="btn admin-only-btn" style="background:#102b65;color:#fff" onclick="abrirAndamento()" title="Controle consolidado de horas por projeto (Em Andamento)">🔵 <span>Andamento</span></button>
     <button class="btn admin-only-btn" style="background:#fd8a14;color:#fff" onclick="abrirHorasExtras()" title="Controle de horas extras (acima de 9h/dia, domingos e feriados), com justificativas">⏱️ <span>Horas Extras</span></button>
     <button class="btn admin-only-btn" id="btn-absenteismo" style="background:#b91c1c;color:#fff" onclick="abrirModalAbsenteismo()" title="Gera relatório de FALTA/SAIU MAIS CEDO/TRANSFERIDO, com opção de período">🚨 <span>Absenteísmo</span></button>
     <button class="btn admin-only-btn" id="btn-folha-ponto" style="background:linear-gradient(180deg,#e2e8f0 0%,#94a3b8 55%,#64748b 100%);color:#1e293b;text-shadow:0 1px 0 rgba(255,255,255,.4)" onclick="abrirFolhaPonto()" title="Folha de ponto de conferência — cruza os RDOs de todos os encarregados, por funcionário e por dia (uso interno, não substitui o relógio de ponto oficial)">🗓️ <span>Folha de Ponto</span></button>
@@ -2255,7 +2255,7 @@ body.dark #workers-body tr:hover{background-color:rgba(58,110,232,.08)}
         <input type="date" id="an-de" title="Data inicial (deixe em branco pra ver tudo)" style="flex:1;min-width:118px;padding:6px">
         <input type="date" id="an-ate" title="Data final (deixe em branco pra ver tudo)" style="flex:1;min-width:118px;padding:6px">
         <select id="an-encarregado" onchange="renderizarAndamento()" title="Ver só de um encarregado" style="flex:1.6;min-width:150px;padding:6px"><option value="">— Todos os encarregados —</option></select>
-        <button type="button" onclick="renderizarAndamento()" style="background:#00b5fe;color:#fff;border:2px solid #0090cc;padding:6px 12px;font-size:11px;font-weight:900;cursor:pointer;white-space:nowrap">🔍 Filtrar</button>
+        <button type="button" onclick="renderizarAndamento()" style="background:#102b65;color:#fff;border:2px solid #102b65;padding:6px 12px;font-size:11px;font-weight:900;cursor:pointer;white-space:nowrap">🔍 Filtrar</button>
         <button type="button" onclick="forcarAtualizacaoPainel('andamento',this)" style="background:#0090cc;color:#fff;border:2px solid #082763;padding:6px 12px;font-size:11px;font-weight:900;cursor:pointer;white-space:nowrap">🔄 Atualizar da nuvem</button>
       </div>
       <div style="flex-shrink:0;display:flex;justify-content:flex-end;gap:6px">
@@ -2270,7 +2270,7 @@ body.dark #workers-body tr:hover{background-color:rgba(58,110,232,.08)}
       <button class="multipdf-cancel" style="background:#fee2e2;color:#dc2626" onclick="deletarAndamentoTodos()">🗑️ Deletar Todos</button>
       <button class="multipdf-cancel" id="btn-desfazer-an" style="background:#fef3c7;color:#7c5a00" onclick="desfazerAcaoPainel()" title="Nada para desfazer neste painel no momento">↩️ Desfazer</button>
       <button class="multipdf-gerar" style="background:#0a6080" onclick="compartilharAndamentoTodos()">📤 PDF de Todos</button>
-      <button class="multipdf-gerar" style="background:#00b5fe" onclick="exportarAndamentoExcel()">📥 Exportar Excel</button>
+      <button class="multipdf-gerar" style="background:#102b65" onclick="exportarAndamentoExcel()">📥 Exportar Excel</button>
     </div>
   </div>
 </div>
@@ -11651,7 +11651,7 @@ function renderizarAndamento(){
             <div style="text-align:right;white-space:nowrap">
               <div style="font-weight:900;color:#00b5fe;margin-bottom:3px">${fmt(totalDia)}h</div>
               <button onclick="compartilharAndamentoDia('${g.chave}')" title="PDF só deste dia" style="background:#0a6080;color:#fff;border:none;padding:2px 5px;font-size:10px;cursor:pointer;margin-bottom:2px">📤</button>
-              <button onclick="exportarAndamentoExcelIndividual('${g.chave}')" title="Excel só deste dia" style="background:#00b5fe;color:#fff;border:none;padding:2px 5px;font-size:10px;cursor:pointer;margin-bottom:2px">📥</button>
+              <button onclick="exportarAndamentoExcelIndividual('${g.chave}')" title="Excel só deste dia" style="background:#102b65;color:#fff;border:none;padding:2px 5px;font-size:10px;cursor:pointer;margin-bottom:2px">📥</button>
               <button onclick="deletarAndamentoDia('${g.chave}')" title="Remover só este dia" style="background:#fee2e2;color:#dc2626;border:1px solid #dc2626;padding:2px 5px;font-size:10px;cursor:pointer">🗑️</button>
             </div>
           </div>
@@ -11675,7 +11675,7 @@ function renderizarAndamento(){
         ${disciplinasHtml}
         <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:6px">
           <button onclick="compartilharAndamentoProjeto('${chaveSegura}')" style="background:#0a6080;color:#fff;border:none;padding:4px 10px;font-size:10px;font-weight:900;cursor:pointer">📤 PDF deste projeto</button>
-          <button onclick="exportarAndamentoExcelProjeto('${chaveSegura}')" style="background:#00b5fe;color:#fff;border:none;padding:4px 10px;font-size:10px;font-weight:900;cursor:pointer">📥 Excel deste projeto</button>
+          <button onclick="exportarAndamentoExcelProjeto('${chaveSegura}')" style="background:#102b65;color:#fff;border:none;padding:4px 10px;font-size:10px;font-weight:900;cursor:pointer">📥 Excel deste projeto</button>
         </div>
       </div>
     </div>`;
