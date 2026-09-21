@@ -10,10 +10,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Requisição">
-<link rel="manifest" href="/manifest.webmanifest">
-<link rel="icon" href="/favicon.ico" sizes="any">
-<link rel="icon" type="image/png" sizes="192x192" href="/requisicao-materiais-192x192.png">
-<link rel="apple-touch-icon" href="/requisicao-materiais-180x180.png">
+<link rel="manifest" href="/requisicao-manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="/modulos/compras.png">
+<link rel="apple-touch-icon" href="/modulos/compras.png">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
 
@@ -30,7 +29,7 @@
   --bg:#0b0f1a; --s1:#111827; --s2:#1a2236; --s3:#1e2a40;
   --bd:#2a3552; --bd2:#334166;
   --tx:#e2e8f0; --mu:#64748b; --mu2:#9aabc4; --dim:#3d4f6e;
-  --ac:#14a6e8; --ac2:#0d7ab5; --acd:#0d5f9e;
+  --ac:#00b5fe; --ac2:#0090cc; --acd:#0090cc;
   --grn:#10b981; --red:#ef4444; --amb:#f59e0b;
   --sb-w:220px; --hdr-h:56px; --req-w:360px; --rad:10px; --rad-sm:6px;
   /* ── ESCALA TIPOGRÁFICA PADRONIZADA (desktop) ──────────────── */
@@ -328,6 +327,7 @@ tbody tr:hover{background:var(--s2);}
 <header class="topbar">
   <button id="btnSbToggle" class="icon-btn" style="display:none" data-action="toggle-sidebar">☰</button>
   <div class="topbar-logo"><img src="esf-logo-sidebar.svg" alt="ESF" id="logoImg" class="topbar-logo-img"></div>
+  <a href="index.html" style="margin-left:8px;font-size:11px;font-weight:700;color:inherit;text-decoration:none;border:1px solid currentColor;border-radius:20px;padding:5px 12px;white-space:nowrap;opacity:.75;flex-shrink:0">← Sistema de Gestão</a>
   <div class="topbar-search">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
     <input type="text" id="globalSearch" placeholder="Buscar materiais…" autocomplete="off">
@@ -3013,7 +3013,7 @@ function renderDashboard(){
   var reqTotal = Modules.tub.state.history.length + Modules.cons.state.history.length;
   var comprasPendentes = COMPRAS.filter(function(c){ return c.status !== 'Recebido'; }).length;
   var kpis = [
-    ['📦', totalItensTub + totalItensCons, 'Itens no catálogo', '#14a6e8', 'tub'],
+    ['📦', totalItensTub + totalItensCons, 'Itens no catálogo', '#00b5fe', 'tub'],
     ['🔩', totalItensTub, 'Itens — Tubulação/Elétrica', '#4a9eff', 'tub'],
     ['🪛', totalItensCons, 'Itens — Consumíveis/Ferramentas', '#8b5cf6', 'cons'],
     ['⚠️', estoqueBaixoTub + estoqueBaixoCons, 'Itens sem estoque', '#f59e0b', 'compras'],
