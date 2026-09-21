@@ -51,7 +51,7 @@ input[type=date],input[type=month],input[type=number]{font-family:var(--font-mon
 select option{background:#ffffff;color:#0b1220;font-weight:600;padding:6px;}
 button{cursor:pointer;font-weight:600;font-size:13px;border-radius:9px;padding:10px 16px;border:1px solid transparent;font-family:var(--font-body);transition:transform .1s,filter .15s,background .15s;}
 button:active{transform:scale(.98);}
-.btn-primary{background:linear-gradient(135deg,var(--blue-glow),var(--blue-500));color:#fff;box-shadow:0 4px 14px rgba(0,146,214,.28);}
+.btn-primary{background:linear-gradient(135deg,var(--blue-glow) 0%,var(--blue-500) 30%,var(--blue-500) 100%);color:#fff;box-shadow:0 4px 14px rgba(0,146,214,.28);border-color:#fd8a14;}
 .btn-primary:hover{filter:brightness(1.08);}
 .btn-ghost{background:var(--surface-1);border-color:var(--surface-border);color:var(--ink-50);}
 .btn-ghost:hover{background:var(--surface-2);}
@@ -80,7 +80,7 @@ td{font-variant-numeric:tabular-nums;}
   background:var(--surface-1);border:1px solid var(--surface-border);border-radius:11px;color:var(--ink-50);
   font-size:12px;font-weight:600;transition:transform .12s,border-color .15s,background .15s;
 }
-.acao-rapida-btn:hover{background:var(--surface-2);border-color:var(--blue-500);transform:translateY(-2px);}
+.acao-rapida-btn:hover{background:var(--surface-2);border-color:#fd8a14;transform:translateY(-2px);}
 .acao-rapida-btn svg{color:var(--blue-400);}
 @keyframes pulso-alerta{
   0%,100%{box-shadow:0 0 0 0 rgba(229,72,77,.55);}
@@ -248,7 +248,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
 .nav-item svg{width:16px;height:16px;stroke-width:2;flex:none;}
 .nav-item [data-icone-marca] svg{width:auto !important;height:auto !important;}
 .nav-item:hover{background:var(--surface-1);color:var(--ink-50);}
-.nav-item.btn-primary{background:linear-gradient(135deg,var(--blue-glow),var(--blue-500));color:#fff;box-shadow:0 4px 14px rgba(0,146,214,.28);border-color:transparent;}
+.nav-item.btn-primary{background:linear-gradient(135deg,var(--blue-glow) 0%,var(--blue-500) 30%,var(--blue-500) 100%);color:#fff;box-shadow:0 4px 14px rgba(0,146,214,.28);border-color:#fd8a14;}
 .nav-item.btn-ghost{background:transparent;border-color:transparent;}
 
 .sidebar-foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--surface-border);}
