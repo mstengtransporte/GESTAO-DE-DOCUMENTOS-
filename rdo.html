@@ -165,7 +165,7 @@ textarea.hrs.falta,textarea.hrs.cedo,textarea.hrs.integracao,textarea.hrs.aguard
   box-shadow:2px 2px 0 rgba(0,0,0,.85)
 }
 .btn:disabled{opacity:.35;cursor:not-allowed}
-.btn:hover{filter:brightness(1.15);transform:translate(-2px,-2px) scale(1.02);box-shadow:4px 4px 0 rgba(0,0,0,.85),0 0 12px rgba(37,104,214,.35)}
+.btn:hover{filter:brightness(1.15);transform:translate(-2px,-2px) scale(1.02);box-shadow:4px 4px 0 rgba(0,0,0,.85),0 0 12px rgba(253,138,20,.5)}
 #login-overlay button{transition:transform .1s ease,filter .1s ease,opacity .1s ease}
 /* Papel de parede de verdade: cobre 100% da tela, sem sobrar faixa vazia
    em lugar nenhum — nem no celular, nem no computador. A caixa de login
@@ -213,13 +213,13 @@ body.dark #menu-usuario-dropdown{background:#1a2530}
   animation:none;background:#374151;text-transform:none;font-weight:700;
   border-top-color:rgba(255,255,255,.2);border-bottom-color:rgba(255,255,255,.2)
 }
-.btn-search{background:linear-gradient(180deg,#00b5fe 0%,#123166 100%)!important;color:#fff;border-color:#0a2454}
-.btn-new{background:linear-gradient(180deg,#00b5fe 0%,#123166 100%)!important;color:#fff;border-color:#0a2454}
-.btn-pdf{background:linear-gradient(180deg,#00b5fe 0%,#123166 100%)!important;color:#fff;border-color:#0a2454}
-.btn-wpp-pdf{background:linear-gradient(180deg,#00b5fe 0%,#123166 100%)!important;color:#fff;border-color:#0a2454}
-.btn-xlsx{background:linear-gradient(180deg,#00b5fe 0%,#123166 100%)!important;color:#fff;border-color:#0a2454}
-.btn-csv{background:linear-gradient(180deg,#00b5fe 0%,#123166 100%)!important;color:#fff;border-color:#0a2454}
-.btn-theme{background:linear-gradient(180deg,#00b5fe 0%,#123166 100%)!important;color:#fff;border-color:#0a2454}
+.btn-search{background:linear-gradient(180deg,#00b5fe 0%,#102b65 28%,#102b65 100%)!important;color:#fff;border-color:#fd8a14}
+.btn-new{background:linear-gradient(180deg,#00b5fe 0%,#102b65 28%,#102b65 100%)!important;color:#fff;border-color:#fd8a14}
+.btn-pdf{background:linear-gradient(180deg,#00b5fe 0%,#102b65 28%,#102b65 100%)!important;color:#fff;border-color:#fd8a14}
+.btn-wpp-pdf{background:linear-gradient(180deg,#00b5fe 0%,#102b65 28%,#102b65 100%)!important;color:#fff;border-color:#fd8a14}
+.btn-xlsx{background:linear-gradient(180deg,#00b5fe 0%,#102b65 28%,#102b65 100%)!important;color:#fff;border-color:#fd8a14}
+.btn-csv{background:linear-gradient(180deg,#00b5fe 0%,#102b65 28%,#102b65 100%)!important;color:#fff;border-color:#fd8a14}
+.btn-theme{background:linear-gradient(180deg,#00b5fe 0%,#102b65 28%,#102b65 100%)!important;color:#fff;border-color:#fd8a14}
 
 /* ══════════════════════════════════════
    BANNER PRINCIPAL
@@ -1750,13 +1750,13 @@ body.dark #workers-body tr:hover{background-color:rgba(58,110,232,.08)}
   <div class="topbar-actions">
     <button class="btn btn-theme"   onclick="toggleTheme()">🌙 <span id="theme-label">Escuro</span></button>
     <button class="btn btn-save"    onclick="salvarRDO()" title="Salva neste aparelho E envia pro admin">💾 <span>Salvar e Enviar</span></button>
-    <button class="btn" style="background:linear-gradient(180deg,#00b5fe 0%,#123166 100%);color:#fff" onclick="verificarEReenviarPendentes()" title="Confere se algum RDO seu ficou só neste aparelho sem chegar no admin, e reenvia">🔄 <span>Reenviar</span></button>
+    <button class="btn" style="background:linear-gradient(180deg,#00b5fe 0%,#102b65 28%,#102b65 100%);border-color:#fd8a14;color:#fff" onclick="verificarEReenviarPendentes()" title="Confere se algum RDO seu ficou só neste aparelho sem chegar no admin, e reenvia">🔄 <span>Reenviar</span></button>
     <button class="btn btn-new"     onclick="novoRDO()">📄 <span>Novo RDO</span></button>
     <button class="btn btn-search"  onclick="abrirBuscaRDO()">🔍 <span>Pesquisar RDOs</span></button>
-    <button class="btn" id="btn-desfazer" style="background:linear-gradient(180deg,#00b5fe 0%,#123166 100%);color:#fff" onclick="desfazerUltimaAcao()" title="Desfazer: volta ao estado de antes da última ação (excluir funcionário, criar novo RDO)">↩️ <span>Desfazer</span></button>
-    <button class="btn" style="background:linear-gradient(180deg,#00b5fe 0%,#123166 100%);color:#fff" onclick="abrirGrafico()">📊 <span>H.H</span></button>
-    <button class="btn" style="background:linear-gradient(180deg,#00b5fe 0%,#123166 100%);color:#fff" onclick="abrirFrases()">💬 <span>Frases</span></button>
-    <button class="btn admin-only-btn" id="btn-rel-periodo" style="background:linear-gradient(180deg,#00b5fe 0%,#123166 100%);color:#fff" onclick="abrirMultiPDF()">📑 <span>Rel.Período</span></button>
+    <button class="btn" id="btn-desfazer" style="background:linear-gradient(180deg,#00b5fe 0%,#102b65 28%,#102b65 100%);border-color:#fd8a14;color:#fff" onclick="desfazerUltimaAcao()" title="Desfazer: volta ao estado de antes da última ação (excluir funcionário, criar novo RDO)">↩️ <span>Desfazer</span></button>
+    <button class="btn" style="background:linear-gradient(180deg,#00b5fe 0%,#102b65 28%,#102b65 100%);border-color:#fd8a14;color:#fff" onclick="abrirGrafico()">📊 <span>H.H</span></button>
+    <button class="btn" style="background:linear-gradient(180deg,#00b5fe 0%,#102b65 28%,#102b65 100%);border-color:#fd8a14;color:#fff" onclick="abrirFrases()">💬 <span>Frases</span></button>
+    <button class="btn admin-only-btn" id="btn-rel-periodo" style="background:linear-gradient(180deg,#00b5fe 0%,#102b65 28%,#102b65 100%);border-color:#fd8a14;color:#fff" onclick="abrirMultiPDF()">📑 <span>Rel.Período</span></button>
 
     <!-- A partir daqui: ordem fixa pedida — Excel, PDF, PDF+WhatsApp, Clientes, Check,
          Backup, Dashboard, Executivo, Horas/Projeto — antes do bloco dos 4 botões
@@ -1764,12 +1764,12 @@ body.dark #workers-body tr:hover{background-color:rgba(58,110,232,.08)}
     <button class="btn btn-xlsx"    onclick="exportarXLSX()">📗 <span>Excel</span></button>
     <button class="btn btn-pdf"     onclick="exportarPDF()" title="Abre a tela de impressão para salvar como PDF">🖨️ <span>PDF</span></button>
     <button class="btn btn-wpp-pdf" onclick="pdfParaWhatsApp()" title="Gera o PDF e já abre o compartilhamento (WhatsApp, Drive etc.)">📎 <span>PDF+WPP</span></button>
-    <button class="btn admin-only-btn" style="background:linear-gradient(180deg,#00b5fe 0%,#123166 100%);color:#fff" onclick="abrirGerenciarClientes()" title="Adicionar/remover clientes da lista de Obra/Projeto">👥 <span>Clientes</span></button>
-    <button class="btn admin-only-btn" style="background:linear-gradient(180deg,#00b5fe 0%,#123166 100%);color:#fff" onclick="abrirCheckIntegridade()" title="Verifica inconsistências que podem causar erro na contagem de horas">🩺 <span>Check</span></button>
-    <button class="btn admin-only-btn" style="background:linear-gradient(180deg,#00b5fe 0%,#123166 100%);color:#fff" onclick="abrirBackup()">🗄️ <span>Backup</span></button>
-    <button class="btn admin-only-btn" style="background:linear-gradient(180deg,#00b5fe 0%,#123166 100%);color:#fff" onclick="abrirDashboardAoVivo()" title="Visão geral ao vivo — atualiza sozinho, mostra tudo que está acontecendo no sistema agora">📡 <span>Dashboard</span></button>
-    <button class="btn admin-only-btn" style="background:linear-gradient(180deg,#00b5fe 0%,#123166 100%);color:#fff" onclick="abrirPainelExecutivo()" title="Visão geral de todos os encarregados, ou individual de cada um">🎯 <span>Executivo</span></button>
-    <button class="btn admin-only-btn" style="background:linear-gradient(180deg,#00b5fe 0%,#123166 100%);color:#fff" onclick="abrirProjetos()" title="Total de horas de cada projeto, do início até a conclusão, em qualquer status">📁 <span>Horas/Projeto</span></button>
+    <button class="btn admin-only-btn" style="background:linear-gradient(180deg,#00b5fe 0%,#102b65 28%,#102b65 100%);border-color:#fd8a14;color:#fff" onclick="abrirGerenciarClientes()" title="Adicionar/remover clientes da lista de Obra/Projeto">👥 <span>Clientes</span></button>
+    <button class="btn admin-only-btn" style="background:linear-gradient(180deg,#00b5fe 0%,#102b65 28%,#102b65 100%);border-color:#fd8a14;color:#fff" onclick="abrirCheckIntegridade()" title="Verifica inconsistências que podem causar erro na contagem de horas">🩺 <span>Check</span></button>
+    <button class="btn admin-only-btn" style="background:linear-gradient(180deg,#00b5fe 0%,#102b65 28%,#102b65 100%);border-color:#fd8a14;color:#fff" onclick="abrirBackup()">🗄️ <span>Backup</span></button>
+    <button class="btn admin-only-btn" style="background:linear-gradient(180deg,#00b5fe 0%,#102b65 28%,#102b65 100%);border-color:#fd8a14;color:#fff" onclick="abrirDashboardAoVivo()" title="Visão geral ao vivo — atualiza sozinho, mostra tudo que está acontecendo no sistema agora">📡 <span>Dashboard</span></button>
+    <button class="btn admin-only-btn" style="background:linear-gradient(180deg,#00b5fe 0%,#102b65 28%,#102b65 100%);border-color:#fd8a14;color:#fff" onclick="abrirPainelExecutivo()" title="Visão geral de todos os encarregados, ou individual de cada um">🎯 <span>Executivo</span></button>
+    <button class="btn admin-only-btn" style="background:linear-gradient(180deg,#00b5fe 0%,#102b65 28%,#102b65 100%);border-color:#fd8a14;color:#fff" onclick="abrirProjetos()" title="Total de horas de cada projeto, do início até a conclusão, em qualquer status">📁 <span>Horas/Projeto</span></button>
 
     <span class="topbar-divider"></span>
     <!-- Bloco separado de propósito — os ÚNICOS 4 botões com cor "de
