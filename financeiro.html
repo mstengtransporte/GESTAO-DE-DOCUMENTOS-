@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESF ERP · Financeiro</title>
+<link rel="icon" type="image/png" href="/mod-financeiro.png">
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+:root{
+  --azul-claro:#00b5fe; --azul-escuro:#102b65; --laranja:#fd8a14;
+  --bg:#0a1220; --s1:#0e1a30; --s2:#132038; --bd:#1e2e48;
+  --tx:#e7eefc; --mu:#8fa3c4; --verde:#16a34a; --vermelho:#dc2626; --amarelo:#e8a33d; --roxo:#8b5cf6;
+  --rad:12px; --rad-sm:8px;
+}
+*{box-sizing:border-box;}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--tx);}
+a{color:inherit;}
+
+/* ── LAYOUT ── */
+.app-shell{display:flex;min-height:100vh;}
+.sidebar{
+  width:230px;flex-shrink:0;background:#081020;border-right:1px solid var(--bd);
+  padding:16px 12px;display:flex;flex-direction:column;
+  position:fixed;top:0;left:0;bottom:0;overflow-y:auto;z-index:100;
+}
+.main{flex:1;margin-left:230px;padding:20px 26px 60px;max-width:1400px;}
+@media (max-width:860px){
+  .sidebar{position:fixed;left:-240px;transition:left .2s ease;width:230px;}
+  .sidebar.open{left:0;}
+  .main{margin-left:0;padding:16px;}
+}
+
+/* ── SIDEBAR ── */
+.sidebar-logo{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+.sidebar-logo img{width:44px;height:44px;object-fit:contain;flex-shrink:0;}
+.sidebar-logo .tt{font-size:15px;font-weight:900;}
+.sidebar-logo .tt b{color:var(--azul-claro);}
+.sidebar-logo .st{font-size:9.5px;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+.voltar-hub{
+  display:block;margin:10px 0 14px;font-size:11px;font-weight:700;text-align:center;
+  border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:6px 10px;text-decoration:none;
+  color:#fff;opacity:.8;
+}
+.nav-lbl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--mu);padding:10px 6px 6px;}
+.nav-item{
+  display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  padding:10px 12px;border-radius:10px;font-size:13px;font-weight:700;
+  background:linear-gradient(180deg,var(--azul-claro) 0%,var(--azul-escuro) 30%,var(--azul-escuro) 100%);
+  border:1.5px solid var(--laranja);color:#fff;margin-bottom:6px;
+  cursor:pointer;box-shadow:2px 2px 0 rgba(0,0,0,.3);transition:all .16s ease;
+  text-decoration:none;
+}
+.nav-item .ic{font-size:16px;flex:none;width:18px;text-align:center;}
+.nav-item:hover{filter:brightness(1.15);transform:translate(-2px,-2px) scale(1.02);box-shadow:4px 4px 0 rgba(0,0,0,.3),0 0 12px rgba(253,138,20,.5);}
+.nav-item.active{border-color:#fff;box-shadow:0 0 8px rgba(253,138,20,.7),0 0 16px rgba(253,138,20,.4);}
+.sidebar-foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--bd);font-size:10.5px;color:var(--mu);}
+
+/* ── BANNER ── */
+.banner-topo{width:100%;max-width:960px;margin:0 auto 18px;border-radius:16px;overflow:hidden;height:170px;background:#061224;}
+.banner-topo img{width:100%;height:100%;object-fit:cover;object-position:center center;}
+
+/* ── HEADER DE PÁGINA ── */
+.pg-head{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:18px;}
+.pg-head h1{font-size:21px;margin:0 0 3px;}
+.pg-head p{margin:0;color:var(--mu);font-size:12.5px;}
+
+/* ── BOTÕES ── */
+.btn{
+  display:inline-flex;align-items:center;gap:7px;padding:10px 16px;border-radius:10px;
+  font-size:12.5px;font-weight:800;cursor:pointer;border:1.5px solid var(--laranja);
+  background:linear-gradient(180deg,var(--azul-claro) 0%,var(--azul-escuro) 30%,var(--azul-escuro) 100%);
+  color:#fff;box-shadow:2px 2px 0 rgba(0,0,0,.3);transition:all .16s ease;
+}
+.btn:hover{filter:brightness(1.15);transform:translate(-2px,-2px);box-shadow:4px 4px 0 rgba(0,0,0,.3),0 0 12px rgba(253,138,20,.5);}
+.btn-ghost{background:var(--s2);border-color:var(--bd);}
+.btn-sm{padding:6px 11px;font-size:11.5px;}
+.btn-danger{background:linear-gradient(180deg,#ef4444,#7f1d1d);border-color:#ef4444;}
+
+/* ── CARDS / KPI ── */
+.grid-kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:20px;}
+.kpi{background:var(--s1);border:1px solid var(--bd);border-radius:var(--rad);padding:16px;position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--cor,var(--azul-claro));}
+.kpi .n{font-size:26px;font-weight:900;}
+.kpi .l{font-size:11.5px;color:var(--mu);font-weight:700;}
+
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--rad);padding:18px;margin-bottom:18px;}
+.card h2{font-size:15px;margin:0 0 4px;}
+.card .sub{font-size:12px;color:var(--mu);margin:0 0 14px;}
+
+/* ── TABELA / LISTA DE PROJETOS ── */
+.proj-lista{display:flex;flex-direction:column;gap:10px;}
+.proj-card{
+  background:var(--s2);border:1px solid var(--bd);border-radius:var(--rad-sm);
+  padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;
+  transition:border-color .15s;
+}
+.proj-card:hover{border-color:var(--laranja);}
+.proj-card .cod{font-size:10.5px;font-weight:800;color:var(--azul-claro);}
+.proj-card .nome{font-size:14.5px;font-weight:800;margin:2px 0 4px;}
+.proj-card .meta{font-size:11.5px;color:var(--mu);}
+.proj-card .barra-wrap{flex-shrink:0;width:140px;}
+.proj-card .barra{height:7px;background:var(--bd);border-radius:10px;overflow:hidden;margin-bottom:4px;}
+.proj-card .barra i{display:block;height:100%;background:linear-gradient(90deg,var(--azul-claro),var(--laranja));}
+.status-pill{font-size:10px;font-weight:800;text-transform:uppercase;padding:4px 9px;border-radius:20px;white-space:nowrap;}
+.status-planejamento{background:rgba(139,92,246,.18);color:#c4b5fd;}
+.status-em_andamento{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-pausado{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-concluido{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-cancelado{background:rgba(220,38,38,.18);color:#fca5a5;}
+
+/* Status específicos do CRM */
+.status-prospeccao{background:rgba(139,92,246,.18);color:#c4b5fd;}
+.status-qualificacao{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-proposta{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-negociacao{background:rgba(253,138,20,.18);color:#fdba74;}
+.status-ganho{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-perdido{background:rgba(220,38,38,.18);color:#fca5a5;}
+.status-aberto{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-bloqueado_credito{background:rgba(220,38,38,.18);color:#fca5a5;}
+.status-bloqueado_margem{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-liberado{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-faturando{background:rgba(139,92,246,.18);color:#c4b5fd;}
+.status-rascunho{background:rgba(143,163,196,.18);color:#c3d0e8;}
+.status-enviada{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-aprovada{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-recusada{background:rgba(220,38,38,.18);color:#fca5a5;}
+
+/* Funil de vendas (kanban) */
+.funil-wrap{display:flex;gap:12px;overflow-x:auto;padding-bottom:10px;}
+.funil-col{flex:0 0 240px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rad-sm);padding:10px;}
+.funil-col h3{font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;margin:0 0 10px;padding-bottom:8px;border-bottom:2px solid var(--cor,var(--azul-claro));color:var(--mu);}
+.funil-card{background:var(--s1);border:1px solid var(--bd);border-radius:8px;padding:10px;margin-bottom:8px;cursor:pointer;transition:border-color .15s;}
+.funil-card:hover{border-color:var(--laranja);}
+.funil-card .tit{font-size:12.5px;font-weight:800;margin-bottom:4px;}
+.funil-card .val{font-size:12px;color:var(--azul-claro);font-weight:700;}
+.funil-card .cli{font-size:10.5px;color:var(--mu);margin-top:3px;}
+
+/* Bloco de alerta de bloqueio */
+.alerta-bloqueio{background:rgba(220,38,38,.12);border:1.5px solid #dc2626;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:12.5px;color:#fca5a5;font-weight:700;}
+.alerta-bloqueio.margem{background:rgba(232,163,61,.12);border-color:#e8a33d;color:#fbbf24;}
+
+/* Itens de pedido/proposta */
+.item-produto{display:grid;grid-template-columns:2fr 90px 100px 90px 100px 40px;gap:8px;align-items:center;padding:8px;background:var(--s2);border-radius:8px;margin-bottom:6px;}
+.item-produto input{background:#0d1830;border:1px solid var(--bd);border-radius:6px;color:var(--tx);padding:6px 8px;font-size:12px;width:100%;}
+.item-produto .rm{cursor:pointer;color:#fca5a5;text-align:center;font-weight:900;}
+.totais-box{background:var(--s2);border-radius:8px;padding:12px 16px;margin-top:10px;display:flex;justify-content:space-between;font-size:13px;font-weight:800;}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:900;display:flex;align-items:center;justify-content:center;padding:20px;}
+.modal-box{background:var(--s1);border:1.5px solid var(--laranja);border-radius:var(--rad);max-width:560px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,.5);}
+.modal-head{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--bd);}
+.modal-head h3{margin:0;font-size:15px;}
+.modal-head .fechar{cursor:pointer;font-size:20px;color:var(--mu);background:none;border:none;line-height:1;}
+.modal-body{padding:18px 20px;}
+.modal-foot{padding:14px 20px;border-top:1px solid var(--bd);display:flex;gap:8px;justify-content:flex-end;}
+.credito-barra{height:8px;background:var(--bd);border-radius:10px;overflow:hidden;margin-top:6px;}
+.credito-barra i{display:block;height:100%;}
+
+/* ── FORMULÁRIO ── */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
+.form-grid.full{grid-template-columns:1fr;}
+.fld{display:flex;flex-direction:column;gap:5px;}
+.fld label{font-size:11.5px;font-weight:700;color:var(--mu);}
+.fld input,.fld select,.fld textarea{
+  background:#0d1830;border:1px solid var(--bd);border-radius:8px;color:var(--tx);
+  padding:9px 11px;font-size:13px;font-family:inherit;
+}
+.fld input:focus,.fld select:focus,.fld textarea:focus{outline:none;border-color:var(--azul-claro);}
+.fld textarea{resize:vertical;min-height:70px;}
+
+/* ── ABAS DE DETALHE ── */
+.tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
+.tab-btn{
+  padding:8px 14px;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;
+  background:var(--s2);border:1px solid var(--bd);color:var(--mu);
+}
+.tab-btn.active{background:linear-gradient(180deg,var(--azul-claro),var(--azul-escuro));color:#fff;border-color:var(--laranja);}
+
+.item-linha{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--s2);border-radius:8px;margin-bottom:8px;border:1px solid var(--bd);}
+.item-linha .principal{font-size:13px;font-weight:700;}
+.item-linha .sec{font-size:11px;color:var(--mu);}
+
+.vazio{text-align:center;padding:40px 20px;color:var(--mu);font-size:13px;}
+
+.hidden{display:none !important;}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#102b65;border:1.5px solid var(--laranja);color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:700;z-index:9999;box-shadow:0 6px 20px rgba(0,0,0,.4);opacity:0;transition:opacity .2s;pointer-events:none;}
+.toast.show{opacity:1;}
+
+/* ── FINANCEIRO específico ── */
+.saldo-hero{background:linear-gradient(135deg,#0a1e42,#102b65);border:1.5px solid var(--laranja);border-radius:var(--rad);padding:22px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;}
+.saldo-hero .lbl{font-size:11.5px;color:var(--mu);font-weight:700;text-transform:uppercase;}
+.saldo-hero .val{font-size:30px;font-weight:900;}
+.saldo-hero .val.pos{color:#4ade80;} .saldo-hero .val.neg{color:#fca5a5;}
+
+.titulo-linha{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rad-sm);margin-bottom:8px;cursor:pointer;transition:border-color .15s;}
+.titulo-linha:hover{border-color:var(--laranja);}
+.titulo-linha .num{font-size:10px;font-weight:800;color:var(--azul-claro);}
+.titulo-linha .desc{font-size:13.5px;font-weight:700;margin:2px 0;}
+.titulo-linha .meta{font-size:11px;color:var(--mu);}
+.titulo-linha .val{font-size:14px;font-weight:800;text-align:right;flex-shrink:0;min-width:110px;}
+
+.status-aberto{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-parcial{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-pago{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-vencido{background:rgba(220,38,38,.18);color:#fca5a5;}
+.status-cancelado{background:rgba(143,163,196,.18);color:#c3d0e8;}
+.status-aguardando_aprovacao{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-aprovado{background:rgba(0,181,254,.18);color:#7dd3fc;}
+
+/* DRE */
+.dre-linha{display:flex;justify-content:space-between;padding:9px 4px;border-bottom:1px solid var(--bd);font-size:13px;}
+.dre-linha.total{font-weight:900;font-size:14.5px;border-bottom:none;border-top:2px solid var(--laranja);padding-top:12px;margin-top:4px;}
+.dre-linha .neg{color:#fca5a5;}
+.dre-linha .pos{color:#4ade80;}
+.dre-cat-barra{display:flex;height:26px;border-radius:6px;overflow:hidden;margin:10px 0;}
+.dre-cat-barra span{display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:800;color:#fff;}
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <img src="esf-logo-oficial.png" alt="ESF">
+      <div><div class="tt">ESF <b>ERP</b></div><div class="st">Financeiro</div></div>
+    </div>
+    <a href="index.html" class="voltar-hub">← Sistema de Gestão</a>
+
+    <div class="nav-lbl">Visão Geral</div>
+    <button class="nav-item active" data-view="dashboard"><span class="ic">📊</span>Dashboard</button>
+    <button class="nav-item" data-view="dre"><span class="ic">📈</span>DRE por Projeto</button>
+
+    <div class="nav-lbl">Movimentação</div>
+    <button class="nav-item" data-view="receber"><span class="ic">⬇️</span>Contas a Receber</button>
+    <button class="nav-item" data-view="pagar"><span class="ic">⬆️</span>Contas a Pagar</button>
+    <button class="nav-item" data-view="aprovacoes"><span class="ic">✅</span>Aprovações</button>
+    <button class="nav-item" data-view="custos"><span class="ic">🧾</span>Custos por Obra</button>
+
+    <div class="sidebar-foot">
+      ESF · Financeiro — v2026.09.22<br>
+      <span id="statusConexao">🟢 Online</span>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="banner-topo"><img src="esf-banner-panoramico.png" alt="ESF ERP — Sistema de Gestão"></div>
+
+    <!-- ═══════════ DASHBOARD ═══════════ -->
+    <div id="viewDashboard">
+      <div class="pg-head"><div><h1>Dashboard Financeiro</h1><p>Visão geral de recebíveis, pagáveis e saldo.</p></div></div>
+
+      <div class="saldo-hero">
+        <div><div class="lbl">Saldo projetado (a receber − a pagar, em aberto)</div><div class="val" id="saldoProjetado">—</div></div>
+      </div>
+
+      <div class="grid-kpi">
+        <div class="kpi" style="--cor:#16a34a"><div class="n" id="kpiAReceber">—</div><div class="l">A receber (em aberto)</div></div>
+        <div class="kpi" style="--cor:#dc2626"><div class="n" id="kpiAPagar">—</div><div class="l">A pagar (em aberto)</div></div>
+        <div class="kpi" style="--cor:#e8a33d"><div class="n" id="kpiVencidos">—</div><div class="l">Títulos vencidos</div></div>
+        <div class="kpi" style="--cor:#fd8a14"><div class="n" id="kpiAguardandoAprov">—</div><div class="l">Aguardando aprovação</div></div>
+      </div>
+
+      <div class="card">
+        <h2>Vencendo nos próximos 7 dias</h2>
+        <p class="sub">A receber e a pagar, juntos, pra não perder nenhum prazo.</p>
+        <div id="listaVencendo"><div class="vazio">Carregando...</div></div>
+      </div>
+    </div>
+
+    <!-- ═══════════ DRE POR PROJETO ═══════════ -->
+    <div id="viewDre" class="hidden">
+      <div class="pg-head"><div><h1>DRE por Projeto</h1><p>Receita menos custo, projeto por projeto — a margem real de cada obra.</p></div></div>
+      <div class="card">
+        <div class="fld" style="max-width:340px;margin-bottom:16px">
+          <label>Escolha o projeto</label>
+          <select id="dreProjetoId" onchange="calcularDre()"><option value="">— Selecione um projeto —</option></select>
+        </div>
+        <div id="dreConteudo"><div class="vazio">Escolha um projeto acima pra ver a DRE.</div></div>
+      </div>
+    </div>
+
+    <!-- ═══════════ CONTAS A RECEBER ═══════════ -->
+    <div id="viewReceber" class="hidden">
+      <div class="pg-head">
+        <div><h1>Contas a Receber</h1><p>Títulos gerados a partir de pedidos de venda, ou lançados direto.</p></div>
+        <button class="btn" onclick="abrirNovoReceber()">➕ Incluir Título</button>
+      </div>
+      <div class="card">
+        <select id="filtroStatusReceber" onchange="renderizarReceber()" style="background:#0d1830;border:1px solid var(--bd);border-radius:8px;color:var(--tx);padding:8px 12px;font-size:12.5px;margin-bottom:14px">
+          <option value="">Todos os status</option>
+          <option value="aberto">Aberto</option><option value="parcial">Parcial</option>
+          <option value="pago">Pago</option><option value="vencido">Vencido</option><option value="cancelado">Cancelado</option>
+        </select>
+        <div id="listaReceber"><div class="vazio">Carregando...</div></div>
+      </div>
+    </div>
+
+    <!-- ═══════════ CONTAS A PAGAR ═══════════ -->
+    <div id="viewPagar" class="hidden">
+      <div class="pg-head">
+        <div><h1>Contas a Pagar</h1><p>Fornecedores, folha, frota, EPI — tudo que sai do caixa.</p></div>
+        <button class="btn" onclick="abrirNovoPagar()">➕ Incluir Título</button>
+      </div>
+      <div class="card">
+        <select id="filtroStatusPagar" onchange="renderizarPagar()" style="background:#0d1830;border:1px solid var(--bd);border-radius:8px;color:var(--tx);padding:8px 12px;font-size:12.5px;margin-bottom:14px">
+          <option value="">Todos os status</option>
+          <option value="aberto">Aberto</option><option value="aguardando_aprovacao">Aguardando aprovação</option>
+          <option value="aprovado">Aprovado</option><option value="pago">Pago</option><option value="vencido">Vencido</option><option value="cancelado">Cancelado</option>
+        </select>
+        <div id="listaPagar"><div class="vazio">Carregando...</div></div>
+      </div>
+    </div>
+
+    <!-- ═══════════ APROVAÇÕES ═══════════ -->
+    <div id="viewAprovacoes" class="hidden">
+      <div class="pg-head"><div><h1>Aprovações Pendentes</h1><p>Títulos a pagar acima da alçada, esperando liberação.</p></div></div>
+      <div class="card"><div id="listaAprovacoes"><div class="vazio">Carregando...</div></div></div>
+    </div>
+
+    <!-- ═══════════ CUSTOS POR OBRA ═══════════ -->
+    <div id="viewCustos" class="hidden">
+      <div class="pg-head">
+        <div><h1>Lançamentos de Custo por Obra</h1><p>Mão de obra, frota, EPI, material — tudo categorizado por projeto.</p></div>
+        <button class="btn" onclick="abrirNovoCusto()">➕ Lançar Custo</button>
+      </div>
+      <div class="card">
+        <h2>Importar automaticamente do RDO</h2>
+        <p class="sub">Converte as horas apontadas nos RDOs de um projeto em lançamento de custo de mão de obra, usando o valor/hora cadastrado de cada funcionário.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+          <div class="fld" style="max-width:280px"><label>Projeto</label><select id="importProjetoId"></select></div>
+          <button class="btn btn-sm" onclick="importarCustoRdo()">☁️ Importar Horas do RDO</button>
+        </div>
+      </div>
+      <div class="card">
+        <select id="filtroCategoriaCusto" onchange="renderizarCustos()" style="background:#0d1830;border:1px solid var(--bd);border-radius:8px;color:var(--tx);padding:8px 12px;font-size:12.5px;margin-bottom:14px">
+          <option value="">Todas as categorias</option>
+          <option value="mao_obra">Mão de obra</option><option value="frota">Frota</option>
+          <option value="epi">EPI</option><option value="material">Material</option>
+          <option value="terceiros">Terceiros</option><option value="outros">Outros</option>
+        </select>
+        <div id="listaCustos"><div class="vazio">Carregando...</div></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════ MODAL: NOVO TÍTULO A RECEBER ═══════════ -->
+<div class="modal-overlay hidden" id="modalReceber">
+  <div class="modal-box">
+    <div class="modal-head"><h3>⬇️ Incluir Título a Receber</h3><button class="fechar" onclick="fecharModal('modalReceber')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="fld" style="grid-column:1/-1"><label>Descrição *</label><input type="text" id="rDescricao" placeholder="Ex: Medição 03 — Reforma Tanque"></div>
+        <div class="fld"><label>Cliente</label><select id="rCliente"><option value="">— Selecione —</option></select></div>
+        <div class="fld"><label>Projeto (centro de custo)</label><select id="rProjeto"><option value="">— Selecione —</option></select></div>
+        <div class="fld"><label>Valor (R$) *</label><input type="number" id="rValor" step="0.01"></div>
+        <div class="fld"><label>Vencimento</label><input type="date" id="rVencimento"></div>
+        <div class="fld"><label>Forma de recebimento</label>
+          <select id="rForma"><option value="boleto">Boleto</option><option value="pix">PIX</option><option value="transferencia">Transferência</option><option value="cartao">Cartão</option><option value="dinheiro">Dinheiro</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost btn-sm" onclick="fecharModal('modalReceber')">Cancelar</button><button class="btn btn-sm" onclick="salvarReceber()">💾 Salvar</button></div>
+  </div>
+</div>
+
+<!-- ═══════════ MODAL: NOVO TÍTULO A PAGAR ═══════════ -->
+<div class="modal-overlay hidden" id="modalPagar">
+  <div class="modal-box">
+    <div class="modal-head"><h3>⬆️ Incluir Título a Pagar</h3><button class="fechar" onclick="fecharModal('modalPagar')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="fld" style="grid-column:1/-1"><label>Descrição *</label><input type="text" id="pgDescricao" placeholder="Ex: Fornecedor de andaimes — locação"></div>
+        <div class="fld"><label>Fornecedor *</label><input type="text" id="pgFornecedor"></div>
+        <div class="fld"><label>Projeto (centro de custo)</label><select id="pgProjeto"><option value="">— Selecione —</option></select></div>
+        <div class="fld"><label>Origem</label>
+          <select id="pgOrigem"><option value="outro">Outro / Fornecedor direto</option><option value="rh_folha">Folha (RH)</option><option value="rdo_mao_obra">Mão de obra (RDO)</option><option value="frota">Frota</option><option value="epi">EPI</option><option value="requisicao">Requisição</option></select>
+        </div>
+        <div class="fld"><label>Valor (R$) *</label><input type="number" id="pgValor" step="0.01"></div>
+        <div class="fld"><label>Vencimento</label><input type="date" id="pgVencimento"></div>
+        <div class="fld"><label>Precisa de aprovação acima de (R$)</label><input type="number" id="pgAlcada" step="0.01" value="0" title="0 = nunca precisa de aprovação"></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost btn-sm" onclick="fecharModal('modalPagar')">Cancelar</button><button class="btn btn-sm" onclick="salvarPagar()">💾 Salvar</button></div>
+  </div>
+</div>
+
+<!-- ═══════════ MODAL: BAIXA DE TÍTULO ═══════════ -->
+<div class="modal-overlay hidden" id="modalBaixa">
+  <div class="modal-box">
+    <div class="modal-head"><h3 id="baixaTitulo">Dar Baixa</h3><button class="fechar" onclick="fecharModal('modalBaixa')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="fld"><label>Valor da baixa (R$)</label><input type="number" id="bxValor" step="0.01"></div>
+        <div class="fld"><label>Data</label><input type="date" id="bxData"></div>
+        <div class="fld" id="bxWrapJuros"><label>Juros/Multa (R$)</label><input type="number" id="bxJuros" step="0.01" value="0"></div>
+        <div class="fld" id="bxWrapDesconto"><label>Desconto (R$)</label><input type="number" id="bxDesconto" step="0.01" value="0"></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost btn-sm" onclick="fecharModal('modalBaixa')">Cancelar</button><button class="btn btn-sm" onclick="confirmarBaixa()">✅ Confirmar Baixa</button></div>
+  </div>
+</div>
+
+<!-- ═══════════ MODAL: NOVO CUSTO ═══════════ -->
+<div class="modal-overlay hidden" id="modalCusto">
+  <div class="modal-box">
+    <div class="modal-head"><h3>🧾 Lançar Custo de Obra</h3><button class="fechar" onclick="fecharModal('modalCusto')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="fld"><label>Projeto *</label><select id="cProjeto"><option value="">— Selecione —</option></select></div>
+        <div class="fld"><label>Categoria</label>
+          <select id="cCategoria"><option value="mao_obra">Mão de obra</option><option value="frota">Frota</option><option value="epi">EPI</option><option value="material">Material</option><option value="terceiros">Terceiros</option><option value="outros">Outros</option></select>
+        </div>
+        <div class="fld" style="grid-column:1/-1"><label>Descrição *</label><input type="text" id="cDescricao"></div>
+        <div class="fld"><label>Valor (R$) *</label><input type="number" id="cValor" step="0.01"></div>
+        <div class="fld"><label>Data</label><input type="date" id="cData"></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost btn-sm" onclick="fecharModal('modalCusto')">Cancelar</button><button class="btn btn-sm" onclick="salvarCusto()">💾 Salvar</button></div>
+  </div>
+</div>
+
+
+<script>
+/* ── CONEXÃO ─────────────────────────────────────────────── */
+const SUPABASE_URL = 'https://bddjdpyfypsiwnirbyhv.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkZGpkcHlmeXBzaXduaXJieWh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NDk1MjgsImV4cCI6MjEwMDQyNTUyOH0.0HnH7caYH6sLp5n68izQXqbCJ-cLqTyxELl1EqoHHww';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ── ESTADO ──────────────────────────────────────────────── */
+let TITULOS_RECEBER=[], TITULOS_PAGAR=[], CUSTOS=[], PROJETOS=[], CLIENTES=[], FUNCIONARIOS=[];
+let baixaContexto = {tipo:null, id:null};
+
+const STATUS_LABEL = {aberto:'Aberto', parcial:'Parcial', pago:'Pago', vencido:'Vencido', cancelado:'Cancelado', aguardando_aprovacao:'Aguardando aprovação', aprovado:'Aprovado'};
+const CATEGORIA_LABEL = {mao_obra:'Mão de obra', frota:'Frota', epi:'EPI', material:'Material', terceiros:'Terceiros', outros:'Outros'};
+const CATEGORIA_COR = {mao_obra:'#00b5fe', frota:'#fd8a14', epi:'#8b5cf6', material:'#16a34a', terceiros:'#e8a33d', outros:'#8fa3c4'};
+
+/* ── UTILITÁRIOS ─────────────────────────────────────────── */
+function toast(msg,cor){ const t=document.getElementById('toast'); t.textContent=msg; t.style.borderColor=cor||'#fd8a14'; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3200); }
+function fmtMoeda(v){ if(v===null||v===undefined||isNaN(v)) return 'R$ 0,00'; return 'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtData(d){ if(!d) return '—'; const p=d.split('T')[0].split('-'); return `${p[2]}/${p[1]}/${p[0]}`; }
+function abrirModal(id){ document.getElementById(id).classList.remove('hidden'); }
+function fecharModal(id){ document.getElementById(id).classList.add('hidden'); }
+
+/* ── NAVEGAÇÃO ───────────────────────────────────────────── */
+function mudarView(nome){
+  const views=['dashboard','dre','receber','pagar','aprovacoes','custos'];
+  views.forEach(v=>{ const el=document.getElementById('view'+v.charAt(0).toUpperCase()+v.slice(1)); if(el) el.classList.toggle('hidden', v!==nome); });
+  document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.classList.toggle('active', b.dataset.view===nome));
+  if(nome==='dashboard') renderizarDashboard();
+  if(nome==='receber') renderizarReceber();
+  if(nome==='pagar') renderizarPagar();
+  if(nome==='aprovacoes') renderizarAprovacoes();
+  if(nome==='custos') renderizarCustos();
+}
+document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.addEventListener('click',()=>mudarView(b.dataset.view)));
+
+/* ── CARREGAMENTO ────────────────────────────────────────── */
+async function carregarProjetos(){
+  try{
+    const{data,error}=await supabaseClient.from('projetos').select('id,nome,codigo').order('nome');
+    if(error) throw error;
+    PROJETOS=data||[];
+    const opts = PROJETOS.map(p=>`<option value="${p.id}">${p.codigo} — ${p.nome}</option>`).join('');
+    ['rProjeto','pgProjeto','cProjeto','importProjetoId'].forEach(id=>{
+      const el=document.getElementById(id); if(el) el.innerHTML = '<option value="">— Selecione —</option>' + opts;
+    });
+    document.getElementById('dreProjetoId').innerHTML = '<option value="">— Selecione um projeto —</option>' + opts;
+  }catch(e){ console.error(e); }
+}
+async function carregarClientes(){
+  try{
+    const{data,error}=await supabaseClient.from('crm_clientes').select('id,nome').order('nome');
+    if(error) throw error;
+    CLIENTES=data||[];
+    document.getElementById('rCliente').innerHTML='<option value="">— Selecione —</option>'+CLIENTES.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  }catch(e){ console.error(e); }
+}
+async function carregarFuncionarios(){
+  try{
+    const{data,error}=await supabaseClient.from('funcionarios').select('id,nome,valor_hora_padrao');
+    if(error) throw error;
+    FUNCIONARIOS=data||[];
+  }catch(e){ console.error(e); }
+}
+async function carregarReceber(){
+  try{ const{data,error}=await supabaseClient.from('fin_titulos_receber').select('*, crm_clientes(nome), projetos(nome,codigo)').order('data_vencimento'); if(error) throw error; TITULOS_RECEBER=data||[]; }
+  catch(e){ console.error(e); }
+}
+async function carregarPagar(){
+  try{ const{data,error}=await supabaseClient.from('fin_titulos_pagar').select('*, projetos(nome,codigo)').order('data_vencimento'); if(error) throw error; TITULOS_PAGAR=data||[]; }
+  catch(e){ console.error(e); }
+}
+async function carregarCustos(){
+  try{ const{data,error}=await supabaseClient.from('fin_lancamentos_custo').select('*, projetos(nome,codigo)').order('data',{ascending:false}); if(error) throw error; CUSTOS=data||[]; }
+  catch(e){ console.error(e); }
+}
+
+/* ── DASHBOARD ───────────────────────────────────────────── */
+function renderizarDashboard(){
+  const abertoReceber = TITULOS_RECEBER.filter(t=>t.status==='aberto'||t.status==='parcial');
+  const abertoPagar = TITULOS_PAGAR.filter(t=>t.status==='aberto'||t.status==='aprovado');
+  const totalReceber = abertoReceber.reduce((s,t)=>s+(Number(t.valor)-Number(t.valor_recebido||0)),0);
+  const totalPagar = abertoPagar.reduce((s,t)=>s+(Number(t.valor)-Number(t.valor_pago||0)),0);
+  const vencidos = TITULOS_RECEBER.filter(t=>t.status==='vencido').length + TITULOS_PAGAR.filter(t=>t.status==='vencido').length;
+  const aguardando = TITULOS_PAGAR.filter(t=>t.status==='aguardando_aprovacao').length;
+
+  document.getElementById('kpiAReceber').textContent = fmtMoeda(totalReceber);
+  document.getElementById('kpiAPagar').textContent = fmtMoeda(totalPagar);
+  document.getElementById('kpiVencidos').textContent = vencidos;
+  document.getElementById('kpiAguardandoAprov').textContent = aguardando;
+
+  const saldo = totalReceber - totalPagar;
+  const saldoEl = document.getElementById('saldoProjetado');
+  saldoEl.textContent = fmtMoeda(saldo);
+  saldoEl.className = 'val ' + (saldo>=0?'pos':'neg');
+
+  const hoje = new Date().toISOString().slice(0,10);
+  const em7dias = new Date(Date.now()+7*24*60*60*1000).toISOString().slice(0,10);
+  const vencendoR = TITULOS_RECEBER.filter(t=>(t.status==='aberto'||t.status==='parcial') && t.data_vencimento>=hoje && t.data_vencimento<=em7dias);
+  const vencendoP = TITULOS_PAGAR.filter(t=>(t.status==='aberto'||t.status==='aprovado') && t.data_vencimento>=hoje && t.data_vencimento<=em7dias);
+  const todos = [...vencendoR.map(t=>({...t,_tipo:'receber'})), ...vencendoP.map(t=>({...t,_tipo:'pagar'}))].sort((a,b)=>(a.data_vencimento||'')>(b.data_vencimento||'')?1:-1);
+
+  document.getElementById('listaVencendo').innerHTML = todos.length ? todos.map(t=>`
+    <div class="titulo-linha">
+      <div style="flex:1"><div class="num">${t.numero} · ${t._tipo==='receber'?'A RECEBER':'A PAGAR'}</div><div class="desc">${t.descricao}</div><div class="meta">Vence: ${fmtData(t.data_vencimento)}</div></div>
+      <div class="val" style="color:${t._tipo==='receber'?'#4ade80':'#fca5a5'}">${fmtMoeda(t.valor)}</div>
+    </div>`).join('') : '<div class="vazio">Nada vencendo nos próximos 7 dias. 🎉</div>';
+}
+
+/* ── CONTAS A RECEBER ────────────────────────────────────── */
+function renderizarTituloReceber(t){
+  return `<div class="titulo-linha" onclick="abrirBaixaReceber('${t.id}')">
+    <div style="flex:1"><div class="num">${t.numero}</div><div class="desc">${t.descricao}</div><div class="meta">${t.crm_clientes?.nome||'Sem cliente'} · ${t.projetos?.codigo||'Sem projeto'} · Vence: ${fmtData(t.data_vencimento)}</div></div>
+    <div class="val">${fmtMoeda(t.valor)}</div>
+    <span class="status-pill status-${t.status}">${STATUS_LABEL[t.status]}</span>
+  </div>`;
+}
+function renderizarReceber(){
+  const filtro=document.getElementById('filtroStatusReceber').value;
+  const lista=filtro?TITULOS_RECEBER.filter(t=>t.status===filtro):TITULOS_RECEBER;
+  document.getElementById('listaReceber').innerHTML = lista.length?lista.map(renderizarTituloReceber).join(''):'<div class="vazio">Nenhum título encontrado.</div>';
+}
+function abrirNovoReceber(){
+  ['rDescricao','rValor','rVencimento'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('rCliente').value=''; document.getElementById('rProjeto').value='';
+  abrirModal('modalReceber');
+}
+async function salvarReceber(){
+  const descricao=document.getElementById('rDescricao').value.trim();
+  const valor=parseFloat(document.getElementById('rValor').value);
+  if(!descricao||isNaN(valor)){ toast('Preenche descrição e valor.','#dc2626'); return; }
+  try{
+    const{error}=await supabaseClient.from('fin_titulos_receber').insert({
+      descricao, valor, cliente_id:document.getElementById('rCliente').value||null,
+      projeto_id:document.getElementById('rProjeto').value||null,
+      data_vencimento:document.getElementById('rVencimento').value||null,
+      forma_recebimento:document.getElementById('rForma').value,
+    });
+    if(error) throw error;
+    toast('✓ Título incluído.','#16a34a');
+    fecharModal('modalReceber');
+    await carregarReceber(); renderizarReceber(); renderizarDashboard();
+  }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
+}
+function abrirBaixaReceber(id){
+  const t=TITULOS_RECEBER.find(x=>x.id===id);
+  if(!t||t.status==='pago'||t.status==='cancelado'){ toast('Esse título já está '+STATUS_LABEL[t?.status]+'.', '#8fa3c4'); return; }
+  baixaContexto={tipo:'receber', id};
+  document.getElementById('baixaTitulo').textContent = `⬇️ Baixar: ${t.numero}`;
+  document.getElementById('bxValor').value = (Number(t.valor)-Number(t.valor_recebido||0)).toFixed(2);
+  document.getElementById('bxData').value = new Date().toISOString().slice(0,10);
+  document.getElementById('bxJuros').value = '0';
+  document.getElementById('bxDesconto').value = '0';
+  abrirModal('modalBaixa');
+}
+
+/* ── CONTAS A PAGAR ──────────────────────────────────────── */
+function renderizarTituloPagar(t){
+  return `<div class="titulo-linha" onclick="abrirBaixaPagar('${t.id}')">
+    <div style="flex:1"><div class="num">${t.numero} ${t.origem_tipo&&t.origem_tipo!=='outro'?'· '+t.origem_tipo:''}</div><div class="desc">${t.descricao}</div><div class="meta">${t.fornecedor} · ${t.projetos?.codigo||'Sem projeto'} · Vence: ${fmtData(t.data_vencimento)}</div></div>
+    <div class="val">${fmtMoeda(t.valor)}</div>
+    <span class="status-pill status-${t.status}">${STATUS_LABEL[t.status]}</span>
+  </div>`;
+}
+function renderizarPagar(){
+  const filtro=document.getElementById('filtroStatusPagar').value;
+  const lista=filtro?TITULOS_PAGAR.filter(t=>t.status===filtro):TITULOS_PAGAR;
+  document.getElementById('listaPagar').innerHTML = lista.length?lista.map(renderizarTituloPagar).join(''):'<div class="vazio">Nenhum título encontrado.</div>';
+}
+function abrirNovoPagar(){
+  ['pgDescricao','pgFornecedor','pgValor','pgVencimento'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('pgProjeto').value=''; document.getElementById('pgOrigem').value='outro'; document.getElementById('pgAlcada').value='0';
+  abrirModal('modalPagar');
+}
+async function salvarPagar(){
+  const descricao=document.getElementById('pgDescricao').value.trim();
+  const fornecedor=document.getElementById('pgFornecedor').value.trim();
+  const valor=parseFloat(document.getElementById('pgValor').value);
+  if(!descricao||!fornecedor||isNaN(valor)){ toast('Preenche descrição, fornecedor e valor.','#dc2626'); return; }
+  try{
+    const{error}=await supabaseClient.from('fin_titulos_pagar').insert({
+      descricao, fornecedor, valor, origem_tipo:document.getElementById('pgOrigem').value,
+      projeto_id:document.getElementById('pgProjeto').value||null,
+      data_vencimento:document.getElementById('pgVencimento').value||null,
+      alcada_necessaria:parseFloat(document.getElementById('pgAlcada').value)||0,
+    });
+    if(error) throw error;
+    toast('✓ Título incluído.','#16a34a');
+    fecharModal('modalPagar');
+    await carregarPagar(); renderizarPagar(); renderizarDashboard();
+  }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
+}
+function abrirBaixaPagar(id){
+  const t=TITULOS_PAGAR.find(x=>x.id===id);
+  if(!t) return;
+  if(t.status==='aguardando_aprovacao'){ toast('Esse título precisa ser aprovado antes de pagar. Vai em Aprovações.', '#e8a33d'); return; }
+  if(t.status==='pago'||t.status==='cancelado'){ toast('Esse título já está '+STATUS_LABEL[t.status]+'.', '#8fa3c4'); return; }
+  baixaContexto={tipo:'pagar', id};
+  document.getElementById('baixaTitulo').textContent = `⬆️ Pagar: ${t.numero}`;
+  document.getElementById('bxValor').value = (Number(t.valor)-Number(t.valor_pago||0)).toFixed(2);
+  document.getElementById('bxData').value = new Date().toISOString().slice(0,10);
+  document.getElementById('bxJuros').value='0'; document.getElementById('bxDesconto').value='0';
+  abrirModal('modalBaixa');
+}
+
+/* ── BAIXA (compartilhada entre Receber e Pagar) ────────── */
+async function confirmarBaixa(){
+  const valor = parseFloat(document.getElementById('bxValor').value)||0;
+  const data = document.getElementById('bxData').value;
+  const juros = parseFloat(document.getElementById('bxJuros').value)||0;
+  const desconto = parseFloat(document.getElementById('bxDesconto').value)||0;
+  const tabela = baixaContexto.tipo==='receber' ? 'fin_titulos_receber' : 'fin_titulos_pagar';
+  const campoValorPago = baixaContexto.tipo==='receber' ? 'valor_recebido' : 'valor_pago';
+  const campoData = baixaContexto.tipo==='receber' ? 'data_recebimento' : 'data_pagamento';
+  const lista = baixaContexto.tipo==='receber' ? TITULOS_RECEBER : TITULOS_PAGAR;
+  const t = lista.find(x=>x.id===baixaContexto.id);
+  if(!t) return;
+
+  const jaPago = Number(t[campoValorPago]||0);
+  const novoTotal = jaPago + valor;
+  const novoStatus = novoTotal >= Number(t.valor) ? (baixaContexto.tipo==='receber'?'pago':'pago') : 'parcial';
+
+  try{
+    const{error} = await supabaseClient.from(tabela).update({
+      [campoValorPago]: novoTotal, [campoData]: data, status: novoStatus,
+      juros_multa: baixaContexto.tipo==='receber' ? juros : undefined,
+      desconto: baixaContexto.tipo==='receber' ? desconto : undefined,
+    }).eq('id', baixaContexto.id);
+    if(error) throw error;
+    toast(novoStatus==='pago' ? '✓ Baixa total confirmada.' : '✓ Baixa parcial registrada.', '#16a34a');
+    fecharModal('modalBaixa');
+    if(baixaContexto.tipo==='receber'){ await carregarReceber(); renderizarReceber(); } else { await carregarPagar(); renderizarPagar(); }
+    renderizarDashboard();
+  }catch(e){ console.error(e); toast('Não foi possível confirmar a baixa.','#dc2626'); }
+}
+
+/* ── APROVAÇÕES ──────────────────────────────────────────── */
+function renderizarAprovacoes(){
+  const pendentes = TITULOS_PAGAR.filter(t=>t.status==='aguardando_aprovacao');
+  document.getElementById('listaAprovacoes').innerHTML = pendentes.length ? pendentes.map(t=>`
+    <div class="titulo-linha">
+      <div style="flex:1"><div class="num">${t.numero}</div><div class="desc">${t.descricao}</div><div class="meta">${t.fornecedor} · Alçada: ${fmtMoeda(t.alcada_necessaria)} · Valor: ${fmtMoeda(t.valor)}</div></div>
+      <button class="btn btn-sm" onclick="aprovarPagamento('${t.id}')">✅ Aprovar</button>
+      <button class="btn btn-sm btn-danger" onclick="reprovarPagamento('${t.id}')">✕ Reprovar</button>
+    </div>`).join('') : '<div class="vazio">Nenhuma aprovação pendente. 🎉</div>';
+}
+async function aprovarPagamento(id){
+  try{
+    const{error}=await supabaseClient.from('fin_titulos_pagar').update({status:'aprovado', aprovado_em:new Date().toISOString()}).eq('id',id);
+    if(error) throw error;
+    toast('✓ Pagamento aprovado.','#16a34a');
+    await carregarPagar(); renderizarAprovacoes(); renderizarDashboard();
+  }catch(e){ console.error(e); toast('Não foi possível aprovar.','#dc2626'); }
+}
+async function reprovarPagamento(id){
+  const motivo = prompt('Motivo da reprovação:');
+  if(!motivo) return;
+  try{
+    const{error}=await supabaseClient.from('fin_titulos_pagar').update({status:'cancelado'}).eq('id',id);
+    if(error) throw error;
+    toast('Pagamento reprovado.','#dc2626');
+    await carregarPagar(); renderizarAprovacoes(); renderizarDashboard();
+  }catch(e){ console.error(e); toast('Não foi possível reprovar.','#dc2626'); }
+}
+
+/* ── CUSTOS POR OBRA ─────────────────────────────────────── */
+function renderizarCustos(){
+  const filtro=document.getElementById('filtroCategoriaCusto').value;
+  const lista=filtro?CUSTOS.filter(c=>c.categoria===filtro):CUSTOS;
+  document.getElementById('listaCustos').innerHTML = lista.length ? lista.map(c=>`
+    <div class="titulo-linha">
+      <div style="flex:1"><div class="num" style="color:${CATEGORIA_COR[c.categoria]}">${CATEGORIA_LABEL[c.categoria]}${c.origem!=='manual'?' · importado':''}</div><div class="desc">${c.descricao}</div><div class="meta">${c.projetos?.codigo||'—'} · ${fmtData(c.data)}</div></div>
+      <div class="val">${fmtMoeda(c.valor)}</div>
+    </div>`).join('') : '<div class="vazio">Nenhum lançamento encontrado.</div>';
+}
+function abrirNovoCusto(){
+  ['cDescricao','cValor'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('cProjeto').value=''; document.getElementById('cCategoria').value='mao_obra';
+  document.getElementById('cData').value = new Date().toISOString().slice(0,10);
+  abrirModal('modalCusto');
+}
+async function salvarCusto(){
+  const projetoId=document.getElementById('cProjeto').value;
+  const descricao=document.getElementById('cDescricao').value.trim();
+  const valor=parseFloat(document.getElementById('cValor').value);
+  if(!projetoId||!descricao||isNaN(valor)){ toast('Preenche projeto, descrição e valor.','#dc2626'); return; }
+  try{
+    const{error}=await supabaseClient.from('fin_lancamentos_custo').insert({
+      projeto_id:projetoId, categoria:document.getElementById('cCategoria').value, descricao, valor,
+      data:document.getElementById('cData').value||new Date().toISOString().slice(0,10), origem:'manual',
+    });
+    if(error) throw error;
+    toast('✓ Custo lançado.','#16a34a');
+    fecharModal('modalCusto');
+    await carregarCustos(); renderizarCustos();
+  }catch(e){ console.error(e); toast('Não foi possível lançar.','#dc2626'); }
+}
+
+/* ── IMPORTAÇÃO AUTOMÁTICA: horas do RDO → custo de mão de obra ──
+   Mesma técnica usada no módulo de Projetos pra buscar horas: acha
+   as OSEs do projeto pelo nome, soma as horas de cada funcionário
+   naquela posição do array, multiplica pelo valor/hora cadastrado. */
+async function importarCustoRdo(){
+  const projetoId = document.getElementById('importProjetoId').value;
+  if(!projetoId){ toast('Escolhe um projeto primeiro.','#dc2626'); return; }
+  const projeto = PROJETOS.find(p=>p.id===projetoId);
+  const nomeProjeto = projeto.nome;
+  const alvo = nomeProjeto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+
+  try{
+    const{data:osesCandidatas, error} = await supabaseClient.from('rdo_oses').select('rdo_id,ose_numero,nome,rdos(nrdo,data)').ilike('nome', `%${nomeProjeto}%`);
+    if(error) throw error;
+    const oses = (osesCandidatas||[]).filter(o => (o.nome||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim() === alvo);
+    if(!oses.length){ toast('Nenhum RDO encontrado citando esse projeto pelo nome ainda.', '#e8a33d'); return; }
+
+    let totalLancado = 0, totalHorasGeral = 0;
+    for(const ose of oses){
+      const{data:workers} = await supabaseClient.from('rdo_workers').select('nome,hrs').eq('rdo_id', ose.rdo_id);
+      const idx = (ose.ose_numero||1)-1;
+      for(const w of (workers||[])){
+        const horas = parseFloat((w.hrs||[])[idx]) || 0;
+        if(horas<=0) continue;
+        const func = FUNCIONARIOS.find(f=>f.nome && f.nome.toUpperCase()===((w.nome||'').toUpperCase()));
+        const valorHora = func?.valor_hora_padrao || 0;
+        if(valorHora<=0) continue; // sem valor/hora cadastrado, não dá pra converter em custo
+        const valorCusto = horas * valorHora;
+        await supabaseClient.from('fin_lancamentos_custo').insert({
+          projeto_id: projetoId, categoria:'mao_obra', origem:'importado_rdo', origem_referencia_id: ose.rdo_id,
+          descricao: `${w.nome} — RDO ${ose.rdos?.nrdo||'—'} (${horas}h × ${fmtMoeda(valorHora)})`,
+          valor: valorCusto, data: ose.rdos?.data || new Date().toISOString().slice(0,10),
+        });
+        totalLancado += valorCusto; totalHorasGeral += horas;
+      }
+    }
+    if(totalLancado>0){
+      toast(`✓ Importado: ${totalHorasGeral.toFixed(0)}h → ${fmtMoeda(totalLancado)} em custo de mão de obra.`, '#16a34a');
+      await carregarCustos(); renderizarCustos();
+    }else{
+      toast('RDOs encontrados, mas nenhum funcionário tem valor/hora cadastrado ainda. Cadastra o valor/hora em Funcionários primeiro.', '#e8a33d');
+    }
+  }catch(e){ console.error(e); toast('Não foi possível importar.','#dc2626'); }
+}
+
+/* ── DRE POR PROJETO ─────────────────────────────────────── */
+function calcularDre(){
+  const projetoId = document.getElementById('dreProjetoId').value;
+  const wrap = document.getElementById('dreConteudo');
+  if(!projetoId){ wrap.innerHTML='<div class="vazio">Escolha um projeto acima pra ver a DRE.</div>'; return; }
+
+  const receitas = TITULOS_RECEBER.filter(t=>t.projeto_id===projetoId && t.status!=='cancelado');
+  const totalReceita = receitas.reduce((s,t)=>s+Number(t.valor),0);
+
+  const custosDoProjeto = CUSTOS.filter(c=>c.projeto_id===projetoId);
+  const porCategoria = {};
+  ['mao_obra','frota','epi','material','terceiros','outros'].forEach(cat=> porCategoria[cat] = custosDoProjeto.filter(c=>c.categoria===cat).reduce((s,c)=>s+Number(c.valor),0));
+  const totalCusto = Object.values(porCategoria).reduce((s,v)=>s+v,0);
+  const margem = totalReceita - totalCusto;
+  const margemPct = totalReceita>0 ? (margem/totalReceita*100) : 0;
+
+  const barraHtml = totalCusto>0 ? Object.entries(porCategoria).filter(([,v])=>v>0).map(([cat,v])=>
+    `<span style="width:${(v/totalCusto*100).toFixed(1)}%;background:${CATEGORIA_COR[cat]}" title="${CATEGORIA_LABEL[cat]}: ${fmtMoeda(v)}">${(v/totalCusto*100).toFixed(0)}%</span>`
+  ).join('') : '';
+
+  wrap.innerHTML = `
+    <div class="dre-linha"><span>(+) Receita Bruta (Vendas)</span><span class="pos">${fmtMoeda(totalReceita)}</span></div>
+    ${Object.entries(porCategoria).map(([cat,v])=> v>0 ? `<div class="dre-linha"><span>(−) ${CATEGORIA_LABEL[cat]}</span><span class="neg">${fmtMoeda(v)}</span></div>` : '').join('')}
+    <div class="dre-linha total"><span>${margem>=0?'(=) Margem do Projeto':'(=) Prejuízo do Projeto'}</span><span class="${margem>=0?'pos':'neg'}">${fmtMoeda(margem)} (${margemPct.toFixed(1)}%)</span></div>
+    <div class="dre-cat-barra">${barraHtml || '<span style="width:100%;background:var(--bd);color:var(--mu)">Sem custos lançados ainda</span>'}</div>
+    <p class="sub" style="margin-top:14px">${receitas.length} título(s) a receber vinculados · ${custosDoProjeto.length} lançamento(s) de custo · Categoria "Mão de obra" inclui o que foi importado automaticamente do RDO.</p>
+  `;
+}
+
+/* ── INICIALIZAÇÃO ───────────────────────────────────────── */
+(async function init(){
+  await Promise.all([carregarProjetos(), carregarClientes(), carregarFuncionarios(), carregarReceber(), carregarPagar(), carregarCustos()]);
+  renderizarDashboard();
+})();
+</script>
+</body>
+</html>
