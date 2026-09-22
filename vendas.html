@@ -146,6 +146,17 @@ a{color:inherit;}
 .item-produto .rm{cursor:pointer;color:#fca5a5;text-align:center;font-weight:900;}
 .totais-box{background:var(--s2);border-radius:8px;padding:12px 16px;margin-top:10px;display:flex;justify-content:space-between;font-size:13px;font-weight:800;}
 
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:900;display:flex;align-items:center;justify-content:center;padding:20px;}
+.modal-box{background:var(--s1);border:1.5px solid var(--laranja);border-radius:var(--rad);max-width:560px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,.5);}
+.modal-head{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--bd);}
+.modal-head h3{margin:0;font-size:15px;}
+.modal-head .fechar{cursor:pointer;font-size:20px;color:var(--mu);background:none;border:none;line-height:1;}
+.modal-body{padding:18px 20px;}
+.modal-foot{padding:14px 20px;border-top:1px solid var(--bd);display:flex;gap:8px;justify-content:flex-end;}
+.credito-barra{height:8px;background:var(--bd);border-radius:10px;overflow:hidden;margin-top:6px;}
+.credito-barra i{display:block;height:100%;}
+
 /* ── FORMULÁRIO ── */
 .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
 .form-grid.full{grid-template-columns:1fr;}
@@ -315,6 +326,11 @@ a{color:inherit;}
           <div class="fld"><label>Contato — Telefone</label><input type="text" id="fClienteContatoTel"></div>
           <div class="fld"><label>Contato — E-mail</label><input type="email" id="fClienteContatoEmail"></div>
           <div class="fld"><label>Limite de Crédito (R$)</label><input type="number" id="fClienteLimite" step="0.01" value="0"></div>
+          <div class="fld" id="wrapCreditoUso" style="display:none">
+            <label>Crédito em uso</label>
+            <div style="font-size:13px;font-weight:700" id="txtCreditoUso">—</div>
+            <div class="credito-barra"><i id="barraCreditoUso" style="width:0%;background:#16a34a"></i></div>
+          </div>
         </div>
         <div style="margin-top:16px;display:flex;gap:8px">
           <button class="btn" onclick="salvarCliente()">💾 Salvar</button>
@@ -409,6 +425,64 @@ a{color:inherit;}
 
 <div class="toast" id="toast"></div>
 
+<!-- ═══════════ MODAL: NOVA ATIVIDADE ═══════════ -->
+<div class="modal-overlay hidden" id="modalAtividade">
+  <div class="modal-box">
+    <div class="modal-head"><h3>📋 Registrar Atividade</h3><button class="fechar" onclick="fecharModal('modalAtividade')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="fld"><label>Tipo</label>
+          <select id="maTipo">
+            <option value="ligacao">📞 Ligação</option>
+            <option value="visita">🚗 Visita</option>
+            <option value="email">✉️ E-mail</option>
+            <option value="reuniao">👥 Reunião</option>
+            <option value="outro">📌 Outro</option>
+          </select>
+        </div>
+        <div class="fld"><label>Data/hora prevista</label><input type="datetime-local" id="maData"></div>
+        <div class="fld" style="grid-column:1/-1"><label>Descrição</label><textarea id="maDescricao" placeholder="O que precisa ser feito ou o que foi tratado..."></textarea></div>
+        <div class="fld"><label><input type="checkbox" id="maConcluida" style="width:auto;margin-right:6px"> Já foi concluída</label></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost btn-sm" onclick="fecharModal('modalAtividade')">Cancelar</button>
+      <button class="btn btn-sm" onclick="salvarAtividade()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ MODAL: NOVA PROPOSTA (com itens, igual o pedido) ═══════════ -->
+<div class="modal-overlay hidden" id="modalProposta">
+  <div class="modal-box" style="max-width:720px">
+    <div class="modal-head"><h3>📄 Gerar Proposta Comercial</h3><button class="fechar" onclick="fecharModal('modalProposta')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="fld"><label>Validade da proposta</label><input type="date" id="mpValidade"></div>
+        <div class="fld"><label>Condição de pagamento</label><input type="text" id="mpCondicao" placeholder="Ex: 28/42/56 dias"></div>
+      </div>
+      <h2 style="font-size:13px;margin:16px 0 8px">Itens</h2>
+      <div id="mpItens"></div>
+      <button class="btn btn-sm btn-ghost" onclick="adicionarItemProposta()">➕ Adicionar Item</button>
+      <div class="totais-box"><span>Total da proposta</span><span id="mpTotalDisplay">R$ 0,00</span></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost btn-sm" onclick="fecharModal('modalProposta')">Cancelar</button>
+      <button class="btn btn-sm" onclick="salvarProposta()">💾 Gerar Proposta</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ MODAL: NOVA REVISÃO DE PROPOSTA ═══════════ -->
+<div class="modal-overlay hidden" id="modalRevisaoInfo">
+  <div class="modal-box">
+    <div class="modal-head"><h3>🔁 Comparar Versões</h3><button class="fechar" onclick="fecharModal('modalRevisaoInfo')">✕</button></div>
+    <div class="modal-body" id="corpoRevisaoInfo"></div>
+    <div class="modal-foot"><button class="btn btn-ghost btn-sm" onclick="fecharModal('modalRevisaoInfo')">Fechar</button></div>
+  </div>
+</div>
+
+
 <script>
 /* ── CONEXÃO ─────────────────────────────────────────────── */
 const SUPABASE_URL = 'https://bddjdpyfypsiwnirbyhv.supabase.co';
@@ -418,6 +492,11 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
 /* ── ESTADO ──────────────────────────────────────────────── */
 let OPORTUNIDADES = [], CLIENTES = [], VENDEDORES = [], PEDIDOS = [];
 let oportunidadeAtualId = null, pedidoAtualId = null, itensPedidoAtual = [];
+let itensPropostaAtual = [], propostasDaOportunidade = [];
+
+/* ── MODAL ─────────────────────────────────────────────────── */
+function abrirModal(id){ document.getElementById(id).classList.remove('hidden'); }
+function fecharModal(id){ document.getElementById(id).classList.add('hidden'); }
 
 const FASES = ['prospeccao','qualificacao','proposta','negociacao','ganho','perdido'];
 const FASE_LABEL = {prospeccao:'Prospecção', qualificacao:'Qualificação', proposta:'Proposta', negociacao:'Negociação', ganho:'Ganho', perdido:'Perdido'};
@@ -592,24 +671,94 @@ async function carregarPropostasDaOportunidade(oportId){
   try{
     const{data,error} = await supabaseClient.from('crm_propostas').select('*').eq('oportunidade_id', oportId).order('numero_versao',{ascending:false});
     if(error) throw error;
+    propostasDaOportunidade = data || [];
     const wrap = document.getElementById('listaPropostas');
-    wrap.innerHTML = (data&&data.length) ? data.map(p=>`
+    wrap.innerHTML = propostasDaOportunidade.length ? propostasDaOportunidade.map(p=>`
       <div class="item-linha">
-        <div><div class="principal">Versão ${p.numero_versao}</div><div class="sec">${fmtMoeda(p.valor_total)} · Validade: ${fmtData(p.validade)}</div></div>
-        <span class="status-pill status-${p.status}">${p.status}</span>
+        <div><div class="principal">Versão ${p.numero_versao} · ${(p.itens||[]).length} ${(p.itens||[]).length===1?'item':'itens'}</div><div class="sec">${fmtMoeda(p.valor_total)} · Validade: ${fmtData(p.validade)}</div></div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span class="status-pill status-${p.status}">${p.status}</span>
+          <button class="btn btn-sm btn-ghost" onclick="novaRevisaoProposta('${p.id}')" title="Cria uma nova versão a partir desta">🔁 Revisar</button>
+        </div>
       </div>`).join('') : '<div class="vazio">Nenhuma proposta ainda.</div>';
   }catch(e){ console.error(e); }
 }
-async function gerarProposta(){
-  const validade = prompt('Validade da proposta (AAAA-MM-DD):');
-  const valor = parseFloat(prompt('Valor total da proposta (R$):'));
-  if(isNaN(valor)) return;
+
+function adicionarItemProposta(){
+  itensPropostaAtual.push({descricao:'', quantidade:1, preco_lista:0, desconto_pct:0});
+  renderizarItensProposta();
+}
+function removerItemProposta(idx){ itensPropostaAtual.splice(idx,1); renderizarItensProposta(); }
+function atualizarItemProposta(idx, campo, valor){
+  itensPropostaAtual[idx][campo] = campo==='descricao' ? valor : parseFloat(valor)||0;
+  renderizarItensProposta();
+}
+function renderizarItensProposta(){
+  const wrap = document.getElementById('mpItens');
+  wrap.innerHTML = itensPropostaAtual.map((it,idx)=>{
+    const praticado = it.preco_lista * (1 - it.desconto_pct/100);
+    return `<div class="item-produto">
+      <input placeholder="Descrição" value="${it.descricao}" onchange="atualizarItemProposta(${idx},'descricao',this.value)">
+      <input type="number" placeholder="Qtd" value="${it.quantidade}" onchange="atualizarItemProposta(${idx},'quantidade',this.value)">
+      <input type="number" placeholder="Preço lista" value="${it.preco_lista}" onchange="atualizarItemProposta(${idx},'preco_lista',this.value)">
+      <input type="number" placeholder="Desc %" value="${it.desconto_pct}" onchange="atualizarItemProposta(${idx},'desconto_pct',this.value)">
+      <span style="font-size:11.5px;color:var(--azul-claro);font-weight:700">${fmtMoeda(praticado*it.quantidade)}</span>
+      <span class="rm" onclick="removerItemProposta(${idx})">✕</span>
+    </div>`;
+  }).join('');
+  const total = itensPropostaAtual.reduce((s,it)=> s + it.preco_lista*(1-it.desconto_pct/100)*it.quantidade, 0);
+  document.getElementById('mpTotalDisplay').textContent = fmtMoeda(total);
+}
+
+function gerarProposta(){
+  itensPropostaAtual = [];
+  document.getElementById('mpValidade').value = '';
+  document.getElementById('mpCondicao').value = '';
+  delete document.getElementById('modalProposta').dataset.versaoAnteriorId;
+  delete document.getElementById('modalProposta').dataset.numeroVersao;
+  renderizarItensProposta();
+  abrirModal('modalProposta');
+}
+
+/* Nova Revisão: clona a proposta escolhida como uma versão NOVA, mantendo
+   a antiga intacta e congelada — nunca sobrescreve, exatamente como o
+   Protheus trata revisão de proposta. */
+function novaRevisaoProposta(propostaBaseId){
+  const base = propostasDaOportunidade.find(p=>p.id===propostaBaseId);
+  if(!base) return;
+  itensPropostaAtual = JSON.parse(JSON.stringify(base.itens||[]));
+  document.getElementById('mpValidade').value = base.validade || '';
+  document.getElementById('mpCondicao').value = base.condicao_pagamento || '';
+  renderizarItensProposta();
+  document.getElementById('modalProposta').dataset.versaoAnteriorId = propostaBaseId;
+  document.getElementById('modalProposta').dataset.numeroVersao = (base.numero_versao||1) + 1;
+  abrirModal('modalProposta');
+}
+
+async function salvarProposta(){
+  const modalEl = document.getElementById('modalProposta');
+  const versaoAnteriorId = modalEl.dataset.versaoAnteriorId || null;
+  const numeroVersao = modalEl.dataset.numeroVersao ? parseInt(modalEl.dataset.numeroVersao) : 1;
+  if(!itensPropostaAtual.length){ toast('Adiciona pelo menos um item.','#dc2626'); return; }
+  const total = itensPropostaAtual.reduce((s,it)=> s + it.preco_lista*(1-it.desconto_pct/100)*it.quantidade, 0);
   try{
-    const{error} = await supabaseClient.from('crm_propostas').insert({oportunidade_id:oportunidadeAtualId, validade, valor_total:valor, status:'enviada', numero_versao:1});
+    const{error} = await supabaseClient.from('crm_propostas').insert({
+      oportunidade_id: oportunidadeAtualId,
+      numero_versao: numeroVersao,
+      versao_anterior_id: versaoAnteriorId,
+      validade: document.getElementById('mpValidade').value || null,
+      condicao_pagamento: document.getElementById('mpCondicao').value || null,
+      itens: itensPropostaAtual,
+      valor_total: total,
+      status: 'enviada',
+    });
     if(error) throw error;
-    toast('✓ Proposta gerada.','#16a34a');
+    toast(versaoAnteriorId ? '✓ Nova revisão criada — a versão anterior continua salva.' : '✓ Proposta gerada.', '#16a34a');
+    fecharModal('modalProposta');
+    delete modalEl.dataset.versaoAnteriorId;
+    delete modalEl.dataset.numeroVersao;
     carregarPropostasDaOportunidade(oportunidadeAtualId);
-  }catch(e){ console.error(e); toast('Não foi possível gerar.','#dc2626'); }
+  }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
 }
 
 async function carregarAtividades(oportId){
@@ -625,13 +774,23 @@ async function carregarAtividades(oportId){
   }catch(e){ console.error(e); }
 }
 async function abrirNovaAtividade(){
-  const tipo = prompt('Tipo (ligacao / visita / email / reuniao):', 'ligacao');
-  if(!tipo) return;
-  const descricao = prompt('Descrição:');
+  document.getElementById('maTipo').value = 'ligacao';
+  document.getElementById('maData').value = '';
+  document.getElementById('maDescricao').value = '';
+  document.getElementById('maConcluida').checked = false;
+  abrirModal('modalAtividade');
+}
+async function salvarAtividade(){
+  const tipo = document.getElementById('maTipo').value;
+  const descricao = document.getElementById('maDescricao').value.trim();
+  const dataPrevista = document.getElementById('maData').value || null;
+  const concluida = document.getElementById('maConcluida').checked;
+  if(!descricao){ toast('Descreve a atividade.','#dc2626'); return; }
   try{
-    const{error} = await supabaseClient.from('crm_atividades').insert({oportunidade_id:oportunidadeAtualId, tipo, descricao});
+    const{error} = await supabaseClient.from('crm_atividades').insert({oportunidade_id:oportunidadeAtualId, tipo, descricao, data_prevista:dataPrevista, concluida});
     if(error) throw error;
     toast('✓ Atividade registrada.','#16a34a');
+    fecharModal('modalAtividade');
     carregarAtividades(oportunidadeAtualId);
   }catch(e){ console.error(e); toast('Não foi possível registrar.','#dc2626'); }
 }
@@ -655,6 +814,7 @@ function abrirNovoCliente(){
   document.getElementById('tituloFormCliente').textContent = 'Novo Cliente';
   ['fClienteId','fClienteNome','fClienteDoc','fClienteRegiao','fClienteContatoNome','fClienteContatoTel','fClienteContatoEmail'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('fClienteLimite').value = '0';
+  document.getElementById('wrapCreditoUso').style.display = 'none';
   mudarView('novoCliente');
 }
 function editarCliente(id){
@@ -669,6 +829,14 @@ function editarCliente(id){
   document.getElementById('fClienteContatoTel').value = c.contato_telefone||'';
   document.getElementById('fClienteContatoEmail').value = c.contato_email||'';
   document.getElementById('fClienteLimite').value = c.limite_credito||0;
+
+  const usoPct = c.limite_credito>0 ? Math.min(100, Math.round((c.credito_usado/c.limite_credito)*100)) : 0;
+  document.getElementById('wrapCreditoUso').style.display = '';
+  document.getElementById('txtCreditoUso').textContent = `${fmtMoeda(c.credito_usado)} de ${fmtMoeda(c.limite_credito)} (${usoPct}%)`;
+  const barra = document.getElementById('barraCreditoUso');
+  barra.style.width = usoPct + '%';
+  barra.style.background = usoPct >= 90 ? '#dc2626' : usoPct >= 70 ? '#e8a33d' : '#16a34a';
+
   mudarView('novoCliente');
 }
 async function salvarCliente(){
