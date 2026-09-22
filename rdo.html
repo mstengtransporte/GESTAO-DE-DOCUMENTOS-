@@ -155,6 +155,11 @@ textarea.hrs.falta,textarea.hrs.cedo,textarea.hrs.integracao,textarea.hrs.aguard
   /* A faixa de "instalar app" também não pode mais cobrir a lista —
      mesmo erro que já corrigi na Escala com a barra do WhatsApp. */
   #faixa-instalar-pwa{ left:172px !important; }
+  /* Mesmo problema: o aviso amarelo e o banner panorâmico ficam FORA do
+     #rdo-page (que já tem a margem certa), então também precisam da
+     própria margem pra não ficarem atrás da barra lateral fixa. */
+  #aviso-operacional{ margin-left:172px; }
+  #rdo-banner-topo{ margin-left:172px; }
 }
 .btn{
   padding:6px 10px;border:1.5px solid rgba(255,255,255,.15);cursor:pointer;
@@ -1790,7 +1795,7 @@ body.dark #workers-body tr:hover{background-color:rgba(58,110,232,.08)}
 <div id="aviso-operacional" class="no-print" style="background:#fef3c7;color:#7c5a00;border-bottom:2px solid #fd8a14;padding:7px 14px;font-size:12px;font-weight:800;text-align:center">
   ⚠️ Atenção: O RDO só será transmitido ao sistema após clicar em "Salvar e Enviar".
 </div>
-<div class="no-print" style="width:100%;max-width:960px;margin:12px auto 0;border-radius:16px;overflow:hidden;height:150px;background:#061224">
+<div id="rdo-banner-topo" class="no-print" style="width:100%;max-width:960px;margin:12px auto 0;border-radius:16px;overflow:hidden;height:150px;background:#061224">
   <img src="esf-banner-panoramico.png" alt="ESF ERP — Sistema de Gestão" style="width:100%;height:100%;object-fit:cover;object-position:center center">
 </div>
 
