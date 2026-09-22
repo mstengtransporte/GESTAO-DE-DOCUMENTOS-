@@ -398,7 +398,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
 
       <div class="sidebar-nav">
       <div class="nav-group-label">Visão geral</div>
-      <button class="nav-item btn-ghost" id="tabDashBtn"><span data-icone-marca="dashboard" data-icone-tamanho="30" style="display:inline-flex"></span>Dashboard</button>
+      <button class="nav-item btn-ghost" id="tabDashBtn"><img src="icone-dashboard.png" alt="" style="width:22px;height:22px;object-fit:contain">Dashboard</button>
       <button class="nav-item btn-ghost" id="tabBuscaBtn"><span data-icone-marca="pesquisar" data-icone-tamanho="30" style="display:inline-flex"></span>Ficha Completa</button>
 
       <div class="nav-group-label">Cadastro</div>
@@ -449,6 +449,13 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
     </div>
     <button class="btn-ghost" id="voltarBtn" style="margin-bottom:14px;display:none"><svg class="icon" data-lucide="arrow-left"></svg>Voltar</button>
     <div id="appStatus" class="status"></div>
+
+    <!-- Banner fixo, fora da troca de abas — aparece em TODAS as telas,
+         não só no Dashboard (correção 2026-09-22: antes só existia dentro
+         da aba Dashboard, sumia em Funcionários/RH e em todas as outras). -->
+    <div class="esf-banner-topo">
+      <img src="esf-banner-panoramico.png" alt="ESF ERP — Sistema de Gestão">
+    </div>
 
     <!-- ============ ABA: FUNCIONÁRIOS ============ -->
     <!-- ============ ABA: FICHA COMPLETA (busca tudo de um funcionário) ============ -->
@@ -945,9 +952,6 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
 
     <!-- ============ ABA: DASHBOARD ============ -->
     <div id="tabDash" class="hidden">
-      <div class="esf-banner-topo">
-        <img src="esf-banner-panoramico.png" alt="ESF ERP — Sistema de Gestão">
-      </div>
       <div class="card">
         <div class="topbar" style="margin-bottom:2px">
           <h1 style="font-size:15px">🗺️ Mapa completo do ESF ERP</h1>
