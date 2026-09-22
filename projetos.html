@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESF ERP · Projetos</title>
+<link rel="icon" type="image/png" href="/mod-projetos.png">
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+:root{
+  --azul-claro:#00b5fe; --azul-escuro:#102b65; --laranja:#fd8a14;
+  --bg:#0a1220; --s1:#0e1a30; --s2:#132038; --bd:#1e2e48;
+  --tx:#e7eefc; --mu:#8fa3c4; --verde:#16a34a; --vermelho:#dc2626; --amarelo:#e8a33d; --roxo:#8b5cf6;
+  --rad:12px; --rad-sm:8px;
+}
+*{box-sizing:border-box;}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--tx);}
+a{color:inherit;}
+
+/* ── LAYOUT ── */
+.app-shell{display:flex;min-height:100vh;}
+.sidebar{
+  width:230px;flex-shrink:0;background:#081020;border-right:1px solid var(--bd);
+  padding:16px 12px;display:flex;flex-direction:column;
+  position:fixed;top:0;left:0;bottom:0;overflow-y:auto;z-index:100;
+}
+.main{flex:1;margin-left:230px;padding:20px 26px 60px;max-width:1400px;}
+@media (max-width:860px){
+  .sidebar{position:fixed;left:-240px;transition:left .2s ease;width:230px;}
+  .sidebar.open{left:0;}
+  .main{margin-left:0;padding:16px;}
+}
+
+/* ── SIDEBAR ── */
+.sidebar-logo{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+.sidebar-logo img{width:44px;height:44px;object-fit:contain;flex-shrink:0;}
+.sidebar-logo .tt{font-size:15px;font-weight:900;}
+.sidebar-logo .tt b{color:var(--azul-claro);}
+.sidebar-logo .st{font-size:9.5px;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+.voltar-hub{
+  display:block;margin:10px 0 14px;font-size:11px;font-weight:700;text-align:center;
+  border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:6px 10px;text-decoration:none;
+  color:#fff;opacity:.8;
+}
+.nav-lbl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--mu);padding:10px 6px 6px;}
+.nav-item{
+  display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  padding:10px 12px;border-radius:10px;font-size:13px;font-weight:700;
+  background:linear-gradient(180deg,var(--azul-claro) 0%,var(--azul-escuro) 30%,var(--azul-escuro) 100%);
+  border:1.5px solid var(--laranja);color:#fff;margin-bottom:6px;
+  cursor:pointer;box-shadow:2px 2px 0 rgba(0,0,0,.3);transition:all .16s ease;
+  text-decoration:none;
+}
+.nav-item .ic{font-size:16px;flex:none;width:18px;text-align:center;}
+.nav-item:hover{filter:brightness(1.15);transform:translate(-2px,-2px) scale(1.02);box-shadow:4px 4px 0 rgba(0,0,0,.3),0 0 12px rgba(253,138,20,.5);}
+.nav-item.active{border-color:#fff;box-shadow:0 0 8px rgba(253,138,20,.7),0 0 16px rgba(253,138,20,.4);}
+.sidebar-foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--bd);font-size:10.5px;color:var(--mu);}
+
+/* ── BANNER ── */
+.banner-topo{width:100%;max-width:960px;margin:0 auto 18px;border-radius:16px;overflow:hidden;height:170px;background:#061224;}
+.banner-topo img{width:100%;height:100%;object-fit:cover;object-position:center center;}
+
+/* ── HEADER DE PÁGINA ── */
+.pg-head{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:18px;}
+.pg-head h1{font-size:21px;margin:0 0 3px;}
+.pg-head p{margin:0;color:var(--mu);font-size:12.5px;}
+
+/* ── BOTÕES ── */
+.btn{
+  display:inline-flex;align-items:center;gap:7px;padding:10px 16px;border-radius:10px;
+  font-size:12.5px;font-weight:800;cursor:pointer;border:1.5px solid var(--laranja);
+  background:linear-gradient(180deg,var(--azul-claro) 0%,var(--azul-escuro) 30%,var(--azul-escuro) 100%);
+  color:#fff;box-shadow:2px 2px 0 rgba(0,0,0,.3);transition:all .16s ease;
+}
+.btn:hover{filter:brightness(1.15);transform:translate(-2px,-2px);box-shadow:4px 4px 0 rgba(0,0,0,.3),0 0 12px rgba(253,138,20,.5);}
+.btn-ghost{background:var(--s2);border-color:var(--bd);}
+.btn-sm{padding:6px 11px;font-size:11.5px;}
+.btn-danger{background:linear-gradient(180deg,#ef4444,#7f1d1d);border-color:#ef4444;}
+
+/* ── CARDS / KPI ── */
+.grid-kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:20px;}
+.kpi{background:var(--s1);border:1px solid var(--bd);border-radius:var(--rad);padding:16px;position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--cor,var(--azul-claro));}
+.kpi .n{font-size:26px;font-weight:900;}
+.kpi .l{font-size:11.5px;color:var(--mu);font-weight:700;}
+
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--rad);padding:18px;margin-bottom:18px;}
+.card h2{font-size:15px;margin:0 0 4px;}
+.card .sub{font-size:12px;color:var(--mu);margin:0 0 14px;}
+
+/* ── TABELA / LISTA DE PROJETOS ── */
+.proj-lista{display:flex;flex-direction:column;gap:10px;}
+.proj-card{
+  background:var(--s2);border:1px solid var(--bd);border-radius:var(--rad-sm);
+  padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;
+  transition:border-color .15s;
+}
+.proj-card:hover{border-color:var(--laranja);}
+.proj-card .cod{font-size:10.5px;font-weight:800;color:var(--azul-claro);}
+.proj-card .nome{font-size:14.5px;font-weight:800;margin:2px 0 4px;}
+.proj-card .meta{font-size:11.5px;color:var(--mu);}
+.proj-card .barra-wrap{flex-shrink:0;width:140px;}
+.proj-card .barra{height:7px;background:var(--bd);border-radius:10px;overflow:hidden;margin-bottom:4px;}
+.proj-card .barra i{display:block;height:100%;background:linear-gradient(90deg,var(--azul-claro),var(--laranja));}
+.status-pill{font-size:10px;font-weight:800;text-transform:uppercase;padding:4px 9px;border-radius:20px;white-space:nowrap;}
+.status-planejamento{background:rgba(139,92,246,.18);color:#c4b5fd;}
+.status-em_andamento{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-pausado{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-concluido{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-cancelado{background:rgba(220,38,38,.18);color:#fca5a5;}
+
+/* ── FORMULÁRIO ── */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
+.form-grid.full{grid-template-columns:1fr;}
+.fld{display:flex;flex-direction:column;gap:5px;}
+.fld label{font-size:11.5px;font-weight:700;color:var(--mu);}
+.fld input,.fld select,.fld textarea{
+  background:#0d1830;border:1px solid var(--bd);border-radius:8px;color:var(--tx);
+  padding:9px 11px;font-size:13px;font-family:inherit;
+}
+.fld input:focus,.fld select:focus,.fld textarea:focus{outline:none;border-color:var(--azul-claro);}
+.fld textarea{resize:vertical;min-height:70px;}
+
+/* ── ABAS DE DETALHE ── */
+.tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
+.tab-btn{
+  padding:8px 14px;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;
+  background:var(--s2);border:1px solid var(--bd);color:var(--mu);
+}
+.tab-btn.active{background:linear-gradient(180deg,var(--azul-claro),var(--azul-escuro));color:#fff;border-color:var(--laranja);}
+
+.item-linha{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--s2);border-radius:8px;margin-bottom:8px;border:1px solid var(--bd);}
+.item-linha .principal{font-size:13px;font-weight:700;}
+.item-linha .sec{font-size:11px;color:var(--mu);}
+
+.vazio{text-align:center;padding:40px 20px;color:var(--mu);font-size:13px;}
+
+.hidden{display:none !important;}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#102b65;border:1.5px solid var(--laranja);color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:700;z-index:9999;box-shadow:0 6px 20px rgba(0,0,0,.4);opacity:0;transition:opacity .2s;pointer-events:none;}
+.toast.show{opacity:1;}
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <img src="esf-logo-oficial.png" alt="ESF">
+      <div>
+        <div class="tt">ESF <b>ERP</b></div>
+        <div class="st">Projetos</div>
+      </div>
+    </div>
+    <a href="index.html" class="voltar-hub">← Sistema de Gestão</a>
+
+    <div class="nav-lbl">Navegação</div>
+    <button class="nav-item active" data-view="dashboard"><span class="ic">📊</span>Dashboard</button>
+    <button class="nav-item" data-view="novo"><span class="ic">➕</span>Novo Projeto</button>
+    <button class="nav-item" data-view="lista"><span class="ic">📁</span>Todos os Projetos</button>
+
+    <div class="sidebar-foot">
+      ESF · Projetos — v2026.09.22<br>
+      <span id="statusConexao">🟢 Online</span>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="banner-topo"><img src="esf-banner-panoramico.png" alt="ESF ERP — Sistema de Gestão"></div>
+
+    <!-- ═══════════ VIEW: DASHBOARD ═══════════ -->
+    <div id="viewDashboard">
+      <div class="pg-head">
+        <div>
+          <h1>Dashboard de Projetos</h1>
+          <p>Visão geral de todos os projetos cadastrados — status, prazo e orçamento.</p>
+        </div>
+        <button class="btn" onclick="mudarView('novo')">➕ Novo Projeto</button>
+      </div>
+
+      <div class="grid-kpi" id="kpiGrid">
+        <div class="kpi" style="--cor:#00b5fe"><div class="n" id="kpiAtivos">—</div><div class="l">Projetos ativos</div></div>
+        <div class="kpi" style="--cor:#e8a33d"><div class="n" id="kpiAtrasados">—</div><div class="l">Com prazo vencido</div></div>
+        <div class="kpi" style="--cor:#16a34a"><div class="n" id="kpiConcluidos">—</div><div class="l">Concluídos (últimos 90 dias)</div></div>
+        <div class="kpi" style="--cor:#8b5cf6"><div class="n" id="kpiOrcamento">—</div><div class="l">Orçamento total em andamento</div></div>
+      </div>
+
+      <div class="card">
+        <h2>Projetos em andamento</h2>
+        <p class="sub">Clique num projeto pra ver detalhes, equipe, marcos e horas apontadas no RDO.</p>
+        <div class="proj-lista" id="listaDashboard"><div class="vazio">Carregando...</div></div>
+      </div>
+    </div>
+
+    <!-- ═══════════ VIEW: LISTA COMPLETA ═══════════ -->
+    <div id="viewLista" class="hidden">
+      <div class="pg-head">
+        <div>
+          <h1>Todos os Projetos</h1>
+          <p>Lista completa, com filtro por status.</p>
+        </div>
+        <button class="btn" onclick="mudarView('novo')">➕ Novo Projeto</button>
+      </div>
+      <div class="card">
+        <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+          <select id="filtroStatus" onchange="renderizarLista()" style="background:#0d1830;border:1px solid var(--bd);border-radius:8px;color:var(--tx);padding:8px 12px;font-size:12.5px">
+            <option value="">Todos os status</option>
+            <option value="planejamento">Planejamento</option>
+            <option value="em_andamento">Em andamento</option>
+            <option value="pausado">Pausado</option>
+            <option value="concluido">Concluído</option>
+            <option value="cancelado">Cancelado</option>
+          </select>
+          <input type="text" id="filtroBusca" oninput="renderizarLista()" placeholder="Buscar por nome ou código..." style="flex:1;min-width:180px;background:#0d1830;border:1px solid var(--bd);border-radius:8px;color:var(--tx);padding:8px 12px;font-size:12.5px">
+        </div>
+        <div class="proj-lista" id="listaCompleta"><div class="vazio">Carregando...</div></div>
+      </div>
+    </div>
+
+    <!-- ═══════════ VIEW: NOVO / EDITAR PROJETO ═══════════ -->
+    <div id="viewNovo" class="hidden">
+      <div class="pg-head">
+        <div>
+          <h1 id="tituloForm">Novo Projeto</h1>
+          <p>Preencha os dados principais — o resto (equipe, marcos, custos) você adiciona depois de criar.</p>
+        </div>
+      </div>
+      <div class="card">
+        <input type="hidden" id="fProjetoId">
+        <div class="form-grid">
+          <div class="fld" style="grid-column:1/-1">
+            <label>Nome do projeto *</label>
+            <input type="text" id="fNome" placeholder="Ex: Reforma Tanque TQ-104">
+          </div>
+          <div class="fld">
+            <label>Obra / Cliente</label>
+            <select id="fObraId"><option value="">— Selecione —</option></select>
+          </div>
+          <div class="fld">
+            <label>Responsável</label>
+            <select id="fResponsavelId"><option value="">— Selecione —</option></select>
+          </div>
+          <div class="fld">
+            <label>Status</label>
+            <select id="fStatus">
+              <option value="planejamento">Planejamento</option>
+              <option value="em_andamento">Em andamento</option>
+              <option value="pausado">Pausado</option>
+              <option value="concluido">Concluído</option>
+              <option value="cancelado">Cancelado</option>
+            </select>
+          </div>
+          <div class="fld">
+            <label>Prioridade</label>
+            <select id="fPrioridade">
+              <option value="baixa">Baixa</option>
+              <option value="media" selected>Média</option>
+              <option value="alta">Alta</option>
+              <option value="critica">Crítica</option>
+            </select>
+          </div>
+          <div class="fld">
+            <label>Data início prevista</label>
+            <input type="date" id="fDataInicioPrevista">
+          </div>
+          <div class="fld">
+            <label>Data fim prevista</label>
+            <input type="date" id="fDataFimPrevista">
+          </div>
+          <div class="fld">
+            <label>Orçamento previsto (R$)</label>
+            <input type="number" id="fOrcamento" step="0.01" placeholder="0,00">
+          </div>
+          <div class="fld">
+            <label>% concluído</label>
+            <input type="number" id="fPercentual" min="0" max="100" value="0">
+          </div>
+          <div class="fld" style="grid-column:1/-1">
+            <label>Descrição</label>
+            <textarea id="fDescricao" placeholder="Escopo, observações..."></textarea>
+          </div>
+        </div>
+        <div style="margin-top:16px;display:flex;gap:8px">
+          <button class="btn" onclick="salvarProjeto()">💾 Salvar Projeto</button>
+          <button class="btn btn-ghost" onclick="mudarView('lista')">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ VIEW: DETALHE DO PROJETO ═══════════ -->
+    <div id="viewDetalhe" class="hidden">
+      <div class="pg-head">
+        <div>
+          <div style="font-size:11px;color:var(--azul-claro);font-weight:800" id="dCodigo">PRJ-0000</div>
+          <h1 id="dNome">—</h1>
+          <p id="dMeta">—</p>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" onclick="editarProjeto()">✏️ Editar</button>
+          <button class="btn btn-danger btn-sm" onclick="excluirProjeto()">🗑️ Excluir</button>
+        </div>
+      </div>
+
+      <div class="grid-kpi">
+        <div class="kpi" style="--cor:#00b5fe"><div class="n" id="dPercentual">—</div><div class="l">Concluído</div></div>
+        <div class="kpi" style="--cor:#8b5cf6"><div class="n" id="dOrcamento">—</div><div class="l">Orçamento previsto</div></div>
+        <div class="kpi" style="--cor:#16a34a"><div class="n" id="dCustoReal">—</div><div class="l">Custo realizado</div></div>
+        <div class="kpi" style="--cor:#fd8a14"><div class="n" id="dHorasRdo">—</div><div class="l">Horas apontadas (RDO)</div></div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="marcos" onclick="trocarAba('marcos')">🗓️ Marcos / Cronograma</button>
+        <button class="tab-btn" data-tab="equipe" onclick="trocarAba('equipe')">👥 Equipe</button>
+        <button class="tab-btn" data-tab="custos" onclick="trocarAba('custos')">💰 Custos</button>
+        <button class="tab-btn" data-tab="horas" onclick="trocarAba('horas')">⏱️ Horas do RDO</button>
+      </div>
+
+      <div class="card" id="painelMarcos">
+        <h2>Marcos do projeto</h2>
+        <p class="sub">As etapas principais, com data prevista e status.</p>
+        <div id="listaMarcos"></div>
+        <button class="btn btn-sm" onclick="abrirNovoMarco()">➕ Adicionar Marco</button>
+      </div>
+
+      <div class="card hidden" id="painelEquipe">
+        <h2>Equipe alocada</h2>
+        <p class="sub">Quem está trabalhando neste projeto.</p>
+        <div id="listaEquipe"></div>
+        <button class="btn btn-sm" onclick="abrirNovoMembro()">➕ Adicionar Pessoa</button>
+      </div>
+
+      <div class="card hidden" id="painelCustos">
+        <h2>Custos — previsto x realizado</h2>
+        <p class="sub">Lançamentos de custo, por categoria.</p>
+        <div id="listaCustos"></div>
+        <button class="btn btn-sm" onclick="abrirNovoCusto()">➕ Lançar Custo</button>
+      </div>
+
+      <div class="card hidden" id="painelHoras">
+        <h2>Horas apontadas no RDO</h2>
+        <p class="sub">Somado automaticamente dos RDOs que citam esse projeto (por nome) — não precisa lançar de novo aqui.</p>
+        <div id="listaHorasRdo"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── CONEXÃO COM O ERP (Supabase) ────────────────────────────── */
+const SUPABASE_URL = 'https://bddjdpyfypsiwnirbyhv.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkZGpkcHlmeXBzaXduaXJieWh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NDk1MjgsImV4cCI6MjEwMDQyNTUyOH0.0HnH7caYH6sLp5n68izQXqbCJ-cLqTyxELl1EqoHHww';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ── ESTADO ────────────────────────────────────────────────── */
+let PROJETOS = [];
+let OBRAS = [];
+let FUNCIONARIOS = [];
+let projetoAtualId = null;
+
+/* ── UTILITÁRIOS ──────────────────────────────────────────── */
+function toast(msg, cor){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.borderColor = cor || '#fd8a14';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 3200);
+}
+function fmtMoeda(v){
+  if(v === null || v === undefined || isNaN(v)) return 'R$ 0,00';
+  return 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function fmtData(d){
+  if(!d) return '—';
+  const [ano,mes,dia] = d.split('-');
+  return `${dia}/${mes}/${ano}`;
+}
+function normalizar(str){
+  if(!str) return '';
+  return str.toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
+}
+const STATUS_LABEL = {planejamento:'Planejamento', em_andamento:'Em andamento', pausado:'Pausado', concluido:'Concluído', cancelado:'Cancelado'};
+
+/* ── NAVEGAÇÃO ENTRE TELAS ───────────────────────────────── */
+function mudarView(nome){
+  ['Dashboard','Lista','Novo','Detalhe'].forEach(v=>{
+    document.getElementById('view'+v).classList.toggle('hidden', v.toLowerCase() !== nome);
+  });
+  document.querySelectorAll('.nav-item[data-view]').forEach(b=>{
+    b.classList.toggle('active', b.dataset.view === nome);
+  });
+  if(nome === 'novo' && !document.getElementById('fProjetoId').value){
+    limparFormulario();
+  }
+  if(nome === 'dashboard') renderizarDashboard();
+  if(nome === 'lista') renderizarLista();
+}
+document.querySelectorAll('.nav-item[data-view]').forEach(b=>{
+  b.addEventListener('click', ()=>mudarView(b.dataset.view));
+});
+
+/* ── CARREGAMENTO DE DADOS ───────────────────────────────── */
+async function carregarObras(){
+  try{
+    const{data,error} = await supabaseClient.from('obras').select('id,nome').order('nome');
+    if(error) throw error;
+    OBRAS = data || [];
+    const sel = document.getElementById('fObraId');
+    sel.innerHTML = '<option value="">— Selecione —</option>' + OBRAS.map(o=>`<option value="${o.id}">${o.nome}</option>`).join('');
+  }catch(e){ console.error('Falha ao carregar obras:', e); }
+}
+async function carregarFuncionarios(){
+  try{
+    const{data,error} = await supabaseClient.from('funcionarios').select('id,nome').order('nome');
+    if(error) throw error;
+    FUNCIONARIOS = data || [];
+    const sel = document.getElementById('fResponsavelId');
+    sel.innerHTML = '<option value="">— Selecione —</option>' + FUNCIONARIOS.map(f=>`<option value="${f.id}">${f.nome}</option>`).join('');
+  }catch(e){ console.error('Falha ao carregar funcionários:', e); }
+}
+async function carregarProjetos(){
+  try{
+    const{data,error} = await supabaseClient.from('projetos').select('*').order('created_at', {ascending:false});
+    if(error) throw error;
+    PROJETOS = data || [];
+  }catch(e){
+    console.error('Falha ao carregar projetos:', e);
+    toast('Não foi possível carregar os projetos. Confira a internet.', '#dc2626');
+  }
+}
+
+/* ── DASHBOARD ────────────────────────────────────────────── */
+function renderizarDashboard(){
+  const ativos = PROJETOS.filter(p => p.status === 'em_andamento' || p.status === 'planejamento');
+  const hoje = new Date().toISOString().slice(0,10);
+  const atrasados = PROJETOS.filter(p => p.status !== 'concluido' && p.status !== 'cancelado' && p.data_fim_prevista && p.data_fim_prevista < hoje);
+  const limite90 = new Date(Date.now() - 90*24*60*60*1000).toISOString().slice(0,10);
+  const concluidosRecente = PROJETOS.filter(p => p.status === 'concluido' && p.data_fim_real >= limite90);
+  const orcamentoAtivos = ativos.reduce((s,p)=> s + (Number(p.orcamento_previsto)||0), 0);
+
+  document.getElementById('kpiAtivos').textContent = ativos.length;
+  document.getElementById('kpiAtrasados').textContent = atrasados.length;
+  document.getElementById('kpiConcluidos').textContent = concluidosRecente.length;
+  document.getElementById('kpiOrcamento').textContent = fmtMoeda(orcamentoAtivos);
+
+  const wrap = document.getElementById('listaDashboard');
+  if(!ativos.length){
+    wrap.innerHTML = '<div class="vazio">Nenhum projeto em andamento ainda. Clique em "Novo Projeto" pra começar.</div>';
+    return;
+  }
+  wrap.innerHTML = ativos.slice(0,8).map(renderizarCardProjeto).join('');
+}
+
+function renderizarCardProjeto(p){
+  const atrasado = p.status !== 'concluido' && p.status !== 'cancelado' && p.data_fim_prevista && p.data_fim_prevista < new Date().toISOString().slice(0,10);
+  return `
+    <div class="proj-card" onclick="abrirDetalhe('${p.id}')">
+      <div style="flex:1;min-width:0">
+        <div class="cod">${p.codigo || '—'}</div>
+        <div class="nome">${p.nome}${atrasado ? ' ⚠️' : ''}</div>
+        <div class="meta">${p.cliente || (OBRAS.find(o=>o.id===p.obra_id)?.nome) || 'Sem obra vinculada'} · Prazo: ${fmtData(p.data_fim_prevista)}</div>
+      </div>
+      <div class="barra-wrap">
+        <div class="barra"><i style="width:${p.percentual_concluido||0}%"></i></div>
+        <div class="meta" style="text-align:right">${p.percentual_concluido||0}%</div>
+      </div>
+      <span class="status-pill status-${p.status}">${STATUS_LABEL[p.status]||p.status}</span>
+    </div>`;
+}
+
+/* ── LISTA COMPLETA ───────────────────────────────────────── */
+function renderizarLista(){
+  const filtroStatus = document.getElementById('filtroStatus').value;
+  const busca = normalizar(document.getElementById('filtroBusca').value);
+  let filtrados = PROJETOS;
+  if(filtroStatus) filtrados = filtrados.filter(p => p.status === filtroStatus);
+  if(busca) filtrados = filtrados.filter(p => normalizar(p.nome).includes(busca) || normalizar(p.codigo).includes(busca));
+
+  const wrap = document.getElementById('listaCompleta');
+  if(!filtrados.length){
+    wrap.innerHTML = '<div class="vazio">Nenhum projeto encontrado.</div>';
+    return;
+  }
+  wrap.innerHTML = filtrados.map(renderizarCardProjeto).join('');
+}
+
+/* ── FORMULÁRIO (criar / editar) ─────────────────────────── */
+function limparFormulario(){
+  document.getElementById('tituloForm').textContent = 'Novo Projeto';
+  document.getElementById('fProjetoId').value = '';
+  document.getElementById('fNome').value = '';
+  document.getElementById('fObraId').value = '';
+  document.getElementById('fResponsavelId').value = '';
+  document.getElementById('fStatus').value = 'planejamento';
+  document.getElementById('fPrioridade').value = 'media';
+  document.getElementById('fDataInicioPrevista').value = '';
+  document.getElementById('fDataFimPrevista').value = '';
+  document.getElementById('fOrcamento').value = '';
+  document.getElementById('fPercentual').value = '0';
+  document.getElementById('fDescricao').value = '';
+}
+
+async function salvarProjeto(){
+  const nome = document.getElementById('fNome').value.trim();
+  if(!nome){ toast('Preenche o nome do projeto.', '#dc2626'); return; }
+
+  const linha = {
+    nome,
+    obra_id: document.getElementById('fObraId').value || null,
+    responsavel_id: document.getElementById('fResponsavelId').value || null,
+    status: document.getElementById('fStatus').value,
+    prioridade: document.getElementById('fPrioridade').value,
+    data_inicio_prevista: document.getElementById('fDataInicioPrevista').value || null,
+    data_fim_prevista: document.getElementById('fDataFimPrevista').value || null,
+    orcamento_previsto: parseFloat(document.getElementById('fOrcamento').value) || null,
+    percentual_concluido: parseInt(document.getElementById('fPercentual').value) || 0,
+    descricao: document.getElementById('fDescricao').value.trim() || null,
+  };
+
+  const id = document.getElementById('fProjetoId').value;
+  try{
+    if(id){
+      const{error} = await supabaseClient.from('projetos').update(linha).eq('id', id);
+      if(error) throw error;
+      toast('✓ Projeto atualizado.', '#16a34a');
+    }else{
+      const{error} = await supabaseClient.from('projetos').insert(linha);
+      if(error) throw error;
+      toast('✓ Projeto criado.', '#16a34a');
+    }
+    await carregarProjetos();
+    mudarView('lista');
+  }catch(e){
+    console.error(e);
+    toast('Não foi possível salvar. Confira a internet.', '#dc2626');
+  }
+}
+
+function editarProjeto(){
+  const p = PROJETOS.find(x=>x.id===projetoAtualId);
+  if(!p) return;
+  document.getElementById('tituloForm').textContent = 'Editar Projeto';
+  document.getElementById('fProjetoId').value = p.id;
+  document.getElementById('fNome').value = p.nome || '';
+  document.getElementById('fObraId').value = p.obra_id || '';
+  document.getElementById('fResponsavelId').value = p.responsavel_id || '';
+  document.getElementById('fStatus').value = p.status || 'planejamento';
+  document.getElementById('fPrioridade').value = p.prioridade || 'media';
+  document.getElementById('fDataInicioPrevista').value = p.data_inicio_prevista || '';
+  document.getElementById('fDataFimPrevista').value = p.data_fim_prevista || '';
+  document.getElementById('fOrcamento').value = p.orcamento_previsto || '';
+  document.getElementById('fPercentual').value = p.percentual_concluido || 0;
+  document.getElementById('fDescricao').value = p.descricao || '';
+  mudarView('novo');
+}
+
+async function excluirProjeto(){
+  if(!confirm('Excluir esse projeto e tudo dentro dele (marcos, equipe, custos)? Não dá pra desfazer.')) return;
+  try{
+    const{error} = await supabaseClient.from('projetos').delete().eq('id', projetoAtualId);
+    if(error) throw error;
+    toast('Projeto excluído.', '#dc2626');
+    await carregarProjetos();
+    mudarView('lista');
+  }catch(e){
+    console.error(e);
+    toast('Não foi possível excluir.', '#dc2626');
+  }
+}
+
+/* ── DETALHE DO PROJETO ──────────────────────────────────── */
+async function abrirDetalhe(id){
+  projetoAtualId = id;
+  const p = PROJETOS.find(x=>x.id===id);
+  if(!p) return;
+
+  document.getElementById('dCodigo').textContent = p.codigo || '—';
+  document.getElementById('dNome').textContent = p.nome;
+  const obraNome = OBRAS.find(o=>o.id===p.obra_id)?.nome || p.cliente || 'Sem obra vinculada';
+  document.getElementById('dMeta').textContent = `${obraNome} · ${fmtData(p.data_inicio_prevista)} → ${fmtData(p.data_fim_prevista)}`;
+  document.getElementById('dPercentual').textContent = (p.percentual_concluido||0) + '%';
+  document.getElementById('dOrcamento').textContent = fmtMoeda(p.orcamento_previsto);
+
+  mudarView('detalhe');
+  trocarAba('marcos');
+  carregarMarcos(id);
+  carregarEquipe(id);
+  carregarCustos(id);
+  carregarHorasRdo(p.nome);
+}
+
+function trocarAba(nome){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===nome));
+  ['Marcos','Equipe','Custos','Horas'].forEach(n=>{
+    document.getElementById('painel'+n).classList.toggle('hidden', n.toLowerCase()!==nome);
+  });
+}
+
+async function carregarMarcos(projetoId){
+  try{
+    const{data,error} = await supabaseClient.from('projeto_marcos').select('*').eq('projeto_id', projetoId).order('ordem');
+    if(error) throw error;
+    const wrap = document.getElementById('listaMarcos');
+    if(!data || !data.length){ wrap.innerHTML = '<div class="vazio">Nenhum marco cadastrado ainda.</div>'; return; }
+    wrap.innerHTML = data.map(m => `
+      <div class="item-linha">
+        <div><div class="principal">${m.nome}</div><div class="sec">Previsto: ${fmtData(m.data_prevista)}${m.data_conclusao ? ' · Concluído: '+fmtData(m.data_conclusao) : ''}</div></div>
+        <span class="status-pill status-${m.status==='concluido'?'concluido':m.status==='atrasado'?'cancelado':'planejamento'}">${m.status}</span>
+      </div>`).join('');
+  }catch(e){ console.error(e); }
+}
+
+async function carregarEquipe(projetoId){
+  try{
+    const{data,error} = await supabaseClient.from('projeto_equipe').select('*, funcionarios(nome)').eq('projeto_id', projetoId);
+    if(error) throw error;
+    const wrap = document.getElementById('listaEquipe');
+    if(!data || !data.length){ wrap.innerHTML = '<div class="vazio">Ninguém alocado ainda.</div>'; return; }
+    wrap.innerHTML = data.map(e => `
+      <div class="item-linha">
+        <div><div class="principal">${e.funcionarios?.nome || '—'}</div><div class="sec">${e.papel || 'Sem papel definido'} · ${e.alocacao_percentual||100}% alocado</div></div>
+      </div>`).join('');
+  }catch(e){ console.error(e); }
+}
+
+async function carregarCustos(projetoId){
+  try{
+    const{data,error} = await supabaseClient.from('projeto_custos').select('*').eq('projeto_id', projetoId).order('data', {ascending:false});
+    if(error) throw error;
+    const wrap = document.getElementById('listaCustos');
+    const realizado = (data||[]).filter(c=>c.tipo==='realizado').reduce((s,c)=>s+Number(c.valor),0);
+    document.getElementById('dCustoReal').textContent = fmtMoeda(realizado);
+    if(!data || !data.length){ wrap.innerHTML = '<div class="vazio">Nenhum custo lançado ainda.</div>'; return; }
+    wrap.innerHTML = data.map(c => `
+      <div class="item-linha">
+        <div><div class="principal">${c.descricao}</div><div class="sec">${c.categoria||'—'} · ${fmtData(c.data)}</div></div>
+        <div style="text-align:right"><div class="principal">${fmtMoeda(c.valor)}</div><div class="sec">${c.tipo}</div></div>
+      </div>`).join('');
+  }catch(e){ console.error(e); }
+}
+
+/* ── HORAS DO RDO — busca de verdade no Supabase, por nome
+   normalizado do projeto (mesma técnica que o próprio RDO usa
+   internamente, só que lendo do banco compartilhado, não do
+   navegador de um aparelho só). ── */
+async function carregarHorasRdo(nomeProjeto){
+  const wrap = document.getElementById('listaHorasRdo');
+  const alvo = normalizar(nomeProjeto);
+  try{
+    const{data:osesCandidatas, error} = await supabaseClient.from('rdo_oses').select('rdo_id,ose_numero,nome,status,rdos(nrdo,data,obra,encarregado)').ilike('nome', `%${nomeProjeto}%`);
+    if(error) throw error;
+    const oses = (osesCandidatas||[]).filter(o => normalizar(o.nome) === alvo);
+
+    if(!oses.length){
+      document.getElementById('dHorasRdo').textContent = '0h';
+      wrap.innerHTML = '<div class="vazio">Nenhum RDO encontrado citando esse projeto pelo nome ainda. Isso é normal se o projeto acabou de ser criado — assim que um encarregado lançar um RDO com esse nome exato na Ordem de Serviço, aparece aqui.</div>';
+      return;
+    }
+
+    let totalHoras = 0;
+    const linhas = [];
+    for(const ose of oses){
+      const{data:workers} = await supabaseClient.from('rdo_workers').select('hrs').eq('rdo_id', ose.rdo_id);
+      const idx = (ose.ose_numero||1) - 1;
+      let horasDessaOse = 0;
+      (workers||[]).forEach(w=>{
+        const v = parseFloat((w.hrs||[])[idx]) || 0;
+        horasDessaOse += v;
+      });
+      totalHoras += horasDessaOse;
+      linhas.push({nrdo:ose.rdos?.nrdo, data:ose.rdos?.data, obra:ose.rdos?.obra, encarregado:ose.rdos?.encarregado, horas:horasDessaOse});
+    }
+
+    document.getElementById('dHorasRdo').textContent = totalHoras.toFixed(0) + 'h';
+    wrap.innerHTML = linhas.map(r => `
+      <div class="item-linha">
+        <div><div class="principal">RDO ${r.nrdo || '—'}</div><div class="sec">${fmtData(r.data)} · ${r.obra||'—'} · Encarregado: ${r.encarregado||'—'}</div></div>
+        <div class="principal">${r.horas.toFixed(1)}h</div>
+      </div>`).join('');
+  }catch(e){
+    console.error('Falha ao buscar horas do RDO:', e);
+    wrap.innerHTML = '<div class="vazio">Não foi possível buscar as horas do RDO agora. Confira a internet.</div>';
+  }
+}
+
+/* ── ADICIONAR MARCO / MEMBRO / CUSTO (formulário simples via prompt,
+   pra manter a v1 enxuta — pode virar modal mais elaborado depois) ── */
+async function abrirNovoMarco(){
+  const nome = prompt('Nome do marco:');
+  if(!nome) return;
+  const data = prompt('Data prevista (AAAA-MM-DD):');
+  try{
+    const{error} = await supabaseClient.from('projeto_marcos').insert({projeto_id:projetoAtualId, nome, data_prevista:data||null});
+    if(error) throw error;
+    carregarMarcos(projetoAtualId);
+    toast('✓ Marco adicionado.', '#16a34a');
+  }catch(e){ toast('Não foi possível adicionar.', '#dc2626'); }
+}
+async function abrirNovoMembro(){
+  const nomes = FUNCIONARIOS.map((f,i)=>`${i+1}. ${f.nome}`).join('\n');
+  const escolha = prompt('Digite o número do funcionário:\n' + nomes);
+  const idx = parseInt(escolha) - 1;
+  if(!FUNCIONARIOS[idx]) return;
+  const papel = prompt('Papel no projeto (ex: Soldador, Encarregado):') || null;
+  try{
+    const{error} = await supabaseClient.from('projeto_equipe').insert({projeto_id:projetoAtualId, funcionario_id:FUNCIONARIOS[idx].id, papel});
+    if(error) throw error;
+    carregarEquipe(projetoAtualId);
+    toast('✓ Pessoa adicionada.', '#16a34a');
+  }catch(e){ toast('Não foi possível adicionar.', '#dc2626'); }
+}
+async function abrirNovoCusto(){
+  const descricao = prompt('Descrição do custo:');
+  if(!descricao) return;
+  const valor = parseFloat(prompt('Valor (R$):'));
+  if(isNaN(valor)) return;
+  const tipo = confirm('Já foi realizado (OK) ou é só previsto (Cancelar)?') ? 'realizado' : 'previsto';
+  try{
+    const{error} = await supabaseClient.from('projeto_custos').insert({projeto_id:projetoAtualId, descricao, valor, tipo});
+    if(error) throw error;
+    carregarCustos(projetoAtualId);
+    toast('✓ Custo lançado.', '#16a34a');
+  }catch(e){ toast('Não foi possível lançar.', '#dc2626'); }
+}
+
+/* ── INICIALIZAÇÃO ───────────────────────────────────────── */
+(async function init(){
+  await Promise.all([carregarObras(), carregarFuncionarios(), carregarProjetos()]);
+  renderizarDashboard();
+})();
+</script>
+</body>
+</html>
