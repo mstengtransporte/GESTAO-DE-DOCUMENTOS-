@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESF ERP · Vendas / CRM</title>
+<link rel="icon" type="image/png" href="/mod-vendas_crm.png">
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+:root{
+  --azul-claro:#00b5fe; --azul-escuro:#102b65; --laranja:#fd8a14;
+  --bg:#0a1220; --s1:#0e1a30; --s2:#132038; --bd:#1e2e48;
+  --tx:#e7eefc; --mu:#8fa3c4; --verde:#16a34a; --vermelho:#dc2626; --amarelo:#e8a33d; --roxo:#8b5cf6;
+  --rad:12px; --rad-sm:8px;
+}
+*{box-sizing:border-box;}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--tx);}
+a{color:inherit;}
+
+/* ── LAYOUT ── */
+.app-shell{display:flex;min-height:100vh;}
+.sidebar{
+  width:230px;flex-shrink:0;background:#081020;border-right:1px solid var(--bd);
+  padding:16px 12px;display:flex;flex-direction:column;
+  position:fixed;top:0;left:0;bottom:0;overflow-y:auto;z-index:100;
+}
+.main{flex:1;margin-left:230px;padding:20px 26px 60px;max-width:1400px;}
+@media (max-width:860px){
+  .sidebar{position:fixed;left:-240px;transition:left .2s ease;width:230px;}
+  .sidebar.open{left:0;}
+  .main{margin-left:0;padding:16px;}
+}
+
+/* ── SIDEBAR ── */
+.sidebar-logo{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+.sidebar-logo img{width:44px;height:44px;object-fit:contain;flex-shrink:0;}
+.sidebar-logo .tt{font-size:15px;font-weight:900;}
+.sidebar-logo .tt b{color:var(--azul-claro);}
+.sidebar-logo .st{font-size:9.5px;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+.voltar-hub{
+  display:block;margin:10px 0 14px;font-size:11px;font-weight:700;text-align:center;
+  border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:6px 10px;text-decoration:none;
+  color:#fff;opacity:.8;
+}
+.nav-lbl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--mu);padding:10px 6px 6px;}
+.nav-item{
+  display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  padding:10px 12px;border-radius:10px;font-size:13px;font-weight:700;
+  background:linear-gradient(180deg,var(--azul-claro) 0%,var(--azul-escuro) 30%,var(--azul-escuro) 100%);
+  border:1.5px solid var(--laranja);color:#fff;margin-bottom:6px;
+  cursor:pointer;box-shadow:2px 2px 0 rgba(0,0,0,.3);transition:all .16s ease;
+  text-decoration:none;
+}
+.nav-item .ic{font-size:16px;flex:none;width:18px;text-align:center;}
+.nav-item:hover{filter:brightness(1.15);transform:translate(-2px,-2px) scale(1.02);box-shadow:4px 4px 0 rgba(0,0,0,.3),0 0 12px rgba(253,138,20,.5);}
+.nav-item.active{border-color:#fff;box-shadow:0 0 8px rgba(253,138,20,.7),0 0 16px rgba(253,138,20,.4);}
+.sidebar-foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--bd);font-size:10.5px;color:var(--mu);}
+
+/* ── BANNER ── */
+.banner-topo{width:100%;max-width:960px;margin:0 auto 18px;border-radius:16px;overflow:hidden;height:170px;background:#061224;}
+.banner-topo img{width:100%;height:100%;object-fit:cover;object-position:center center;}
+
+/* ── HEADER DE PÁGINA ── */
+.pg-head{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:18px;}
+.pg-head h1{font-size:21px;margin:0 0 3px;}
+.pg-head p{margin:0;color:var(--mu);font-size:12.5px;}
+
+/* ── BOTÕES ── */
+.btn{
+  display:inline-flex;align-items:center;gap:7px;padding:10px 16px;border-radius:10px;
+  font-size:12.5px;font-weight:800;cursor:pointer;border:1.5px solid var(--laranja);
+  background:linear-gradient(180deg,var(--azul-claro) 0%,var(--azul-escuro) 30%,var(--azul-escuro) 100%);
+  color:#fff;box-shadow:2px 2px 0 rgba(0,0,0,.3);transition:all .16s ease;
+}
+.btn:hover{filter:brightness(1.15);transform:translate(-2px,-2px);box-shadow:4px 4px 0 rgba(0,0,0,.3),0 0 12px rgba(253,138,20,.5);}
+.btn-ghost{background:var(--s2);border-color:var(--bd);}
+.btn-sm{padding:6px 11px;font-size:11.5px;}
+.btn-danger{background:linear-gradient(180deg,#ef4444,#7f1d1d);border-color:#ef4444;}
+
+/* ── CARDS / KPI ── */
+.grid-kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:20px;}
+.kpi{background:var(--s1);border:1px solid var(--bd);border-radius:var(--rad);padding:16px;position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--cor,var(--azul-claro));}
+.kpi .n{font-size:26px;font-weight:900;}
+.kpi .l{font-size:11.5px;color:var(--mu);font-weight:700;}
+
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--rad);padding:18px;margin-bottom:18px;}
+.card h2{font-size:15px;margin:0 0 4px;}
+.card .sub{font-size:12px;color:var(--mu);margin:0 0 14px;}
+
+/* ── TABELA / LISTA DE PROJETOS ── */
+.proj-lista{display:flex;flex-direction:column;gap:10px;}
+.proj-card{
+  background:var(--s2);border:1px solid var(--bd);border-radius:var(--rad-sm);
+  padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;
+  transition:border-color .15s;
+}
+.proj-card:hover{border-color:var(--laranja);}
+.proj-card .cod{font-size:10.5px;font-weight:800;color:var(--azul-claro);}
+.proj-card .nome{font-size:14.5px;font-weight:800;margin:2px 0 4px;}
+.proj-card .meta{font-size:11.5px;color:var(--mu);}
+.proj-card .barra-wrap{flex-shrink:0;width:140px;}
+.proj-card .barra{height:7px;background:var(--bd);border-radius:10px;overflow:hidden;margin-bottom:4px;}
+.proj-card .barra i{display:block;height:100%;background:linear-gradient(90deg,var(--azul-claro),var(--laranja));}
+.status-pill{font-size:10px;font-weight:800;text-transform:uppercase;padding:4px 9px;border-radius:20px;white-space:nowrap;}
+.status-planejamento{background:rgba(139,92,246,.18);color:#c4b5fd;}
+.status-em_andamento{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-pausado{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-concluido{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-cancelado{background:rgba(220,38,38,.18);color:#fca5a5;}
+
+/* Status específicos do CRM */
+.status-prospeccao{background:rgba(139,92,246,.18);color:#c4b5fd;}
+.status-qualificacao{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-proposta{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-negociacao{background:rgba(253,138,20,.18);color:#fdba74;}
+.status-ganho{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-perdido{background:rgba(220,38,38,.18);color:#fca5a5;}
+.status-aberto{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-bloqueado_credito{background:rgba(220,38,38,.18);color:#fca5a5;}
+.status-bloqueado_margem{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-liberado{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-faturando{background:rgba(139,92,246,.18);color:#c4b5fd;}
+.status-rascunho{background:rgba(143,163,196,.18);color:#c3d0e8;}
+.status-enviada{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-aprovada{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-recusada{background:rgba(220,38,38,.18);color:#fca5a5;}
+
+/* Funil de vendas (kanban) */
+.funil-wrap{display:flex;gap:12px;overflow-x:auto;padding-bottom:10px;}
+.funil-col{flex:0 0 240px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rad-sm);padding:10px;}
+.funil-col h3{font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;margin:0 0 10px;padding-bottom:8px;border-bottom:2px solid var(--cor,var(--azul-claro));color:var(--mu);}
+.funil-card{background:var(--s1);border:1px solid var(--bd);border-radius:8px;padding:10px;margin-bottom:8px;cursor:pointer;transition:border-color .15s;}
+.funil-card:hover{border-color:var(--laranja);}
+.funil-card .tit{font-size:12.5px;font-weight:800;margin-bottom:4px;}
+.funil-card .val{font-size:12px;color:var(--azul-claro);font-weight:700;}
+.funil-card .cli{font-size:10.5px;color:var(--mu);margin-top:3px;}
+
+/* Bloco de alerta de bloqueio */
+.alerta-bloqueio{background:rgba(220,38,38,.12);border:1.5px solid #dc2626;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:12.5px;color:#fca5a5;font-weight:700;}
+.alerta-bloqueio.margem{background:rgba(232,163,61,.12);border-color:#e8a33d;color:#fbbf24;}
+
+/* Itens de pedido/proposta */
+.item-produto{display:grid;grid-template-columns:2fr 90px 100px 90px 100px 40px;gap:8px;align-items:center;padding:8px;background:var(--s2);border-radius:8px;margin-bottom:6px;}
+.item-produto input{background:#0d1830;border:1px solid var(--bd);border-radius:6px;color:var(--tx);padding:6px 8px;font-size:12px;width:100%;}
+.item-produto .rm{cursor:pointer;color:#fca5a5;text-align:center;font-weight:900;}
+.totais-box{background:var(--s2);border-radius:8px;padding:12px 16px;margin-top:10px;display:flex;justify-content:space-between;font-size:13px;font-weight:800;}
+
+/* ── FORMULÁRIO ── */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
+.form-grid.full{grid-template-columns:1fr;}
+.fld{display:flex;flex-direction:column;gap:5px;}
+.fld label{font-size:11.5px;font-weight:700;color:var(--mu);}
+.fld input,.fld select,.fld textarea{
+  background:#0d1830;border:1px solid var(--bd);border-radius:8px;color:var(--tx);
+  padding:9px 11px;font-size:13px;font-family:inherit;
+}
+.fld input:focus,.fld select:focus,.fld textarea:focus{outline:none;border-color:var(--azul-claro);}
+.fld textarea{resize:vertical;min-height:70px;}
+
+/* ── ABAS DE DETALHE ── */
+.tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
+.tab-btn{
+  padding:8px 14px;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;
+  background:var(--s2);border:1px solid var(--bd);color:var(--mu);
+}
+.tab-btn.active{background:linear-gradient(180deg,var(--azul-claro),var(--azul-escuro));color:#fff;border-color:var(--laranja);}
+
+.item-linha{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--s2);border-radius:8px;margin-bottom:8px;border:1px solid var(--bd);}
+.item-linha .principal{font-size:13px;font-weight:700;}
+.item-linha .sec{font-size:11px;color:var(--mu);}
+
+.vazio{text-align:center;padding:40px 20px;color:var(--mu);font-size:13px;}
+
+.hidden{display:none !important;}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#102b65;border:1.5px solid var(--laranja);color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:700;z-index:9999;box-shadow:0 6px 20px rgba(0,0,0,.4);opacity:0;transition:opacity .2s;pointer-events:none;}
+.toast.show{opacity:1;}
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <img src="esf-logo-oficial.png" alt="ESF">
+      <div>
+        <div class="tt">ESF <b>ERP</b></div>
+        <div class="st">Vendas / CRM</div>
+      </div>
+    </div>
+    <a href="index.html" class="voltar-hub">← Sistema de Gestão</a>
+
+    <div class="nav-lbl">CRM</div>
+    <button class="nav-item active" data-view="dashboard"><span class="ic">📊</span>Dashboard</button>
+    <button class="nav-item" data-view="funil"><span class="ic">🔀</span>Funil de Vendas</button>
+    <button class="nav-item" data-view="oportunidades"><span class="ic">🎯</span>Oportunidades</button>
+
+    <div class="nav-lbl">Vendas</div>
+    <button class="nav-item" data-view="clientes"><span class="ic">🏢</span>Clientes</button>
+    <button class="nav-item" data-view="pedidos"><span class="ic">📦</span>Pedidos de Venda</button>
+    <button class="nav-item" data-view="aprovacoes"><span class="ic">✅</span>Aprovações</button>
+
+    <div class="sidebar-foot">
+      ESF · Vendas/CRM — v2026.09.22<br>
+      <span id="statusConexao">🟢 Online</span>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="banner-topo"><img src="esf-banner-panoramico.png" alt="ESF ERP — Sistema de Gestão"></div>
+
+    <!-- ═══════════ DASHBOARD ═══════════ -->
+    <div id="viewDashboard">
+      <div class="pg-head">
+        <div><h1>Dashboard de Vendas</h1><p>Visão geral do funil, pedidos e pendências de aprovação.</p></div>
+      </div>
+      <div class="grid-kpi">
+        <div class="kpi" style="--cor:#00b5fe"><div class="n" id="kpiOportAbertas">—</div><div class="l">Oportunidades abertas</div></div>
+        <div class="kpi" style="--cor:#8b5cf6"><div class="n" id="kpiValorPipeline">—</div><div class="l">Valor em pipeline</div></div>
+        <div class="kpi" style="--cor:#dc2626"><div class="n" id="kpiPedidosBloqueados">—</div><div class="l">Pedidos bloqueados</div></div>
+        <div class="kpi" style="--cor:#16a34a"><div class="n" id="kpiVendasMes">—</div><div class="l">Vendas liberadas (mês)</div></div>
+      </div>
+      <div class="card">
+        <h2>Pedidos aguardando aprovação</h2>
+        <p class="sub">Precisam de liberação de crédito ou margem antes de seguir.</p>
+        <div id="listaDashPedidosBloqueados"><div class="vazio">Carregando...</div></div>
+      </div>
+      <div class="card">
+        <h2>Oportunidades perto de fechar</h2>
+        <p class="sub">Fase "Negociação", ordenadas pela previsão de fechamento mais próxima.</p>
+        <div id="listaDashOportunidades"><div class="vazio">Carregando...</div></div>
+      </div>
+    </div>
+
+    <!-- ═══════════ FUNIL DE VENDAS (KANBAN) ═══════════ -->
+    <div id="viewFunil" class="hidden">
+      <div class="pg-head">
+        <div><h1>Funil de Vendas</h1><p>Arraste conceitualmente — clique numa oportunidade pra mudar de fase.</p></div>
+        <button class="btn" onclick="abrirNovaOportunidade()">➕ Nova Oportunidade</button>
+      </div>
+      <div class="funil-wrap" id="funilWrap"></div>
+    </div>
+
+    <!-- ═══════════ LISTA DE OPORTUNIDADES ═══════════ -->
+    <div id="viewOportunidades" class="hidden">
+      <div class="pg-head">
+        <div><h1>Oportunidades</h1><p>Lista completa, com filtro por fase.</p></div>
+        <button class="btn" onclick="abrirNovaOportunidade()">➕ Nova Oportunidade</button>
+      </div>
+      <div class="card">
+        <select id="filtroFaseOport" onchange="renderizarOportunidades()" style="background:#0d1830;border:1px solid var(--bd);border-radius:8px;color:var(--tx);padding:8px 12px;font-size:12.5px;margin-bottom:14px">
+          <option value="">Todas as fases</option>
+          <option value="prospeccao">Prospecção</option>
+          <option value="qualificacao">Qualificação</option>
+          <option value="proposta">Proposta</option>
+          <option value="negociacao">Negociação</option>
+          <option value="ganho">Ganho</option>
+          <option value="perdido">Perdido</option>
+        </select>
+        <div class="proj-lista" id="listaOportunidades"><div class="vazio">Carregando...</div></div>
+      </div>
+    </div>
+
+    <!-- ═══════════ DETALHE DA OPORTUNIDADE ═══════════ -->
+    <div id="viewDetalheOport" class="hidden">
+      <div class="pg-head">
+        <div>
+          <div style="font-size:11px;color:var(--azul-claro);font-weight:800" id="doCodigo">—</div>
+          <h1 id="doTitulo">—</h1>
+          <p id="doMeta">—</p>
+        </div>
+        <span class="status-pill" id="doFasePill">—</span>
+      </div>
+
+      <div class="card">
+        <h2>Mudar de fase</h2>
+        <div style="display:flex;gap:6px;flex-wrap:wrap" id="botoesFase"></div>
+      </div>
+
+      <div class="card">
+        <h2>Propostas</h2>
+        <div id="listaPropostas"></div>
+        <button class="btn btn-sm" onclick="gerarProposta()">➕ Gerar Proposta</button>
+      </div>
+
+      <div class="card">
+        <h2>Atividades</h2>
+        <div id="listaAtividades"></div>
+        <button class="btn btn-sm" onclick="abrirNovaAtividade()">➕ Registrar Atividade</button>
+      </div>
+    </div>
+
+    <!-- ═══════════ CLIENTES ═══════════ -->
+    <div id="viewClientes" class="hidden">
+      <div class="pg-head">
+        <div><h1>Clientes</h1><p>Cadastro comercial, com limite de crédito.</p></div>
+        <button class="btn" onclick="abrirNovoCliente()">➕ Novo Cliente</button>
+      </div>
+      <div class="card">
+        <input type="text" id="buscaCliente" oninput="renderizarClientes()" placeholder="Buscar por nome..." style="width:100%;margin-bottom:14px;background:#0d1830;border:1px solid var(--bd);border-radius:8px;color:var(--tx);padding:9px 12px;font-size:13px">
+        <div class="proj-lista" id="listaClientes"><div class="vazio">Carregando...</div></div>
+      </div>
+    </div>
+
+    <!-- ═══════════ NOVO/EDITAR CLIENTE ═══════════ -->
+    <div id="viewNovoCliente" class="hidden">
+      <div class="pg-head"><div><h1 id="tituloFormCliente">Novo Cliente</h1></div></div>
+      <div class="card">
+        <input type="hidden" id="fClienteId">
+        <div class="form-grid">
+          <div class="fld" style="grid-column:1/-1"><label>Nome / Razão Social *</label><input type="text" id="fClienteNome"></div>
+          <div class="fld"><label>CNPJ / CPF</label><input type="text" id="fClienteDoc"></div>
+          <div class="fld"><label>Região</label><input type="text" id="fClienteRegiao"></div>
+          <div class="fld"><label>Contato — Nome</label><input type="text" id="fClienteContatoNome"></div>
+          <div class="fld"><label>Contato — Telefone</label><input type="text" id="fClienteContatoTel"></div>
+          <div class="fld"><label>Contato — E-mail</label><input type="email" id="fClienteContatoEmail"></div>
+          <div class="fld"><label>Limite de Crédito (R$)</label><input type="number" id="fClienteLimite" step="0.01" value="0"></div>
+        </div>
+        <div style="margin-top:16px;display:flex;gap:8px">
+          <button class="btn" onclick="salvarCliente()">💾 Salvar</button>
+          <button class="btn btn-ghost" onclick="mudarView('clientes')">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ PEDIDOS DE VENDA ═══════════ -->
+    <div id="viewPedidos" class="hidden">
+      <div class="pg-head">
+        <div><h1>Pedidos de Venda</h1><p>Lista completa, com status de liberação.</p></div>
+        <button class="btn" onclick="abrirNovoPedido()">➕ Novo Pedido</button>
+      </div>
+      <div class="card">
+        <select id="filtroStatusPedido" onchange="renderizarPedidos()" style="background:#0d1830;border:1px solid var(--bd);border-radius:8px;color:var(--tx);padding:8px 12px;font-size:12.5px;margin-bottom:14px">
+          <option value="">Todos os status</option>
+          <option value="aberto">Aberto</option>
+          <option value="bloqueado_credito">Bloqueado — Crédito</option>
+          <option value="bloqueado_margem">Bloqueado — Margem</option>
+          <option value="liberado">Liberado</option>
+          <option value="faturando">Faturando</option>
+          <option value="cancelado">Cancelado</option>
+        </select>
+        <div class="proj-lista" id="listaPedidos"><div class="vazio">Carregando...</div></div>
+      </div>
+    </div>
+
+    <!-- ═══════════ NOVO PEDIDO ═══════════ -->
+    <div id="viewNovoPedido" class="hidden">
+      <div class="pg-head"><div><h1>Novo Pedido de Venda</h1><p>Ao salvar, o sistema já confere crédito e margem sozinho.</p></div></div>
+      <div class="card">
+        <div class="form-grid">
+          <div class="fld"><label>Cliente *</label><select id="pCliente"><option value="">— Selecione —</option></select></div>
+          <div class="fld"><label>Vendedor</label><select id="pVendedor"><option value="">— Selecione —</option></select></div>
+          <div class="fld"><label>Condição de Pagamento</label><input type="text" id="pCondicao" placeholder="Ex: 28/42/56 dias"></div>
+          <div class="fld"><label>Tipo de Frete</label><select id="pFrete"><option value="CIF">CIF</option><option value="FOB">FOB</option></select></div>
+          <div class="fld"><label>Valor do Frete (R$)</label><input type="number" id="pValorFrete" step="0.01" value="0"></div>
+        </div>
+
+        <h2 style="margin-top:20px;font-size:14px">Itens</h2>
+        <div id="itensPedido"></div>
+        <button class="btn btn-sm btn-ghost" onclick="adicionarItemPedido()">➕ Adicionar Item</button>
+
+        <div class="totais-box">
+          <span>Total do pedido</span>
+          <span id="totalPedidoDisplay">R$ 0,00</span>
+        </div>
+
+        <div style="margin-top:16px;display:flex;gap:8px">
+          <button class="btn" onclick="salvarPedido()">💾 Salvar Pedido</button>
+          <button class="btn btn-ghost" onclick="mudarView('pedidos')">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ DETALHE DO PEDIDO ═══════════ -->
+    <div id="viewDetalhePedido" class="hidden">
+      <div class="pg-head">
+        <div>
+          <div style="font-size:11px;color:var(--azul-claro);font-weight:800" id="dpNumero">—</div>
+          <h1 id="dpCliente">—</h1>
+          <p id="dpMeta">—</p>
+        </div>
+        <span class="status-pill" id="dpStatusPill">—</span>
+      </div>
+
+      <div id="dpAlertaBloqueio"></div>
+
+      <div class="card">
+        <h2>Itens do pedido</h2>
+        <div id="dpItens"></div>
+        <div class="totais-box"><span>Total</span><span id="dpTotal">—</span></div>
+      </div>
+
+      <div class="card" id="dpPainelAprovacao">
+        <h2>Ação</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap" id="dpBotoesAcao"></div>
+      </div>
+    </div>
+
+    <!-- ═══════════ APROVAÇÕES ═══════════ -->
+    <div id="viewAprovacoes" class="hidden">
+      <div class="pg-head"><div><h1>Aprovações Pendentes</h1><p>Pedidos travados por crédito ou margem, esperando liberação.</p></div></div>
+      <div class="card">
+        <div class="proj-lista" id="listaAprovacoes"><div class="vazio">Carregando...</div></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── CONEXÃO ─────────────────────────────────────────────── */
+const SUPABASE_URL = 'https://bddjdpyfypsiwnirbyhv.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkZGpkcHlmeXBzaXduaXJieWh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NDk1MjgsImV4cCI6MjEwMDQyNTUyOH0.0HnH7caYH6sLp5n68izQXqbCJ-cLqTyxELl1EqoHHww';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ── ESTADO ──────────────────────────────────────────────── */
+let OPORTUNIDADES = [], CLIENTES = [], VENDEDORES = [], PEDIDOS = [];
+let oportunidadeAtualId = null, pedidoAtualId = null, itensPedidoAtual = [];
+
+const FASES = ['prospeccao','qualificacao','proposta','negociacao','ganho','perdido'];
+const FASE_LABEL = {prospeccao:'Prospecção', qualificacao:'Qualificação', proposta:'Proposta', negociacao:'Negociação', ganho:'Ganho', perdido:'Perdido'};
+const STATUS_PEDIDO_LABEL = {aberto:'Aberto', bloqueado_credito:'Bloqueado — Crédito', bloqueado_margem:'Bloqueado — Margem', liberado:'Liberado', faturando:'Faturando', cancelado:'Cancelado'};
+
+/* ── UTILITÁRIOS ─────────────────────────────────────────── */
+function toast(msg, cor){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.borderColor = cor || '#fd8a14';
+  t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 3200);
+}
+function fmtMoeda(v){ if(v===null||v===undefined||isNaN(v)) return 'R$ 0,00'; return 'R$ ' + Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtData(d){ if(!d) return '—'; const p=d.split('T')[0].split('-'); return `${p[2]}/${p[1]}/${p[0]}`; }
+function normalizar(s){ return (s||'').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim(); }
+
+/* ── NAVEGAÇÃO ───────────────────────────────────────────── */
+function mudarView(nome){
+  const views = ['dashboard','funil','oportunidades','detalheOport','clientes','novoCliente','pedidos','novoPedido','detalhePedido','aprovacoes'];
+  views.forEach(v=>{
+    const el = document.getElementById('view'+v.charAt(0).toUpperCase()+v.slice(1));
+    if(el) el.classList.toggle('hidden', v !== nome);
+  });
+  document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.classList.toggle('active', b.dataset.view===nome));
+  if(nome==='dashboard') renderizarDashboard();
+  if(nome==='funil') renderizarFunil();
+  if(nome==='oportunidades') renderizarOportunidades();
+  if(nome==='clientes') renderizarClientes();
+  if(nome==='pedidos') renderizarPedidos();
+  if(nome==='aprovacoes') renderizarAprovacoes();
+}
+document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.addEventListener('click', ()=>mudarView(b.dataset.view)));
+
+/* ── CARREGAMENTO ────────────────────────────────────────── */
+async function carregarClientes(){
+  try{
+    const{data,error} = await supabaseClient.from('crm_clientes').select('*').order('nome');
+    if(error) throw error;
+    CLIENTES = data||[];
+    document.getElementById('pCliente').innerHTML = '<option value="">— Selecione —</option>' + CLIENTES.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  }catch(e){ console.error(e); }
+}
+async function carregarVendedores(){
+  try{
+    const{data,error} = await supabaseClient.from('crm_vendedores').select('*').order('nome');
+    if(error) throw error;
+    VENDEDORES = data||[];
+    document.getElementById('pVendedor').innerHTML = '<option value="">— Selecione —</option>' + VENDEDORES.map(v=>`<option value="${v.id}">${v.nome}</option>`).join('');
+  }catch(e){ console.error(e); }
+}
+async function carregarOportunidades(){
+  try{
+    const{data,error} = await supabaseClient.from('crm_oportunidades').select('*, crm_clientes(nome)').order('created_at',{ascending:false});
+    if(error) throw error;
+    OPORTUNIDADES = data||[];
+  }catch(e){ console.error(e); toast('Falha ao carregar oportunidades.','#dc2626'); }
+}
+async function carregarPedidos(){
+  try{
+    const{data,error} = await supabaseClient.from('crm_pedidos').select('*, crm_clientes(nome)').order('created_at',{ascending:false});
+    if(error) throw error;
+    PEDIDOS = data||[];
+  }catch(e){ console.error(e); toast('Falha ao carregar pedidos.','#dc2626'); }
+}
+
+/* ── DASHBOARD ───────────────────────────────────────────── */
+function renderizarDashboard(){
+  const abertas = OPORTUNIDADES.filter(o=>o.fase!=='ganho' && o.fase!=='perdido');
+  const valorPipeline = abertas.reduce((s,o)=>s+(Number(o.valor_estimado)||0),0);
+  const bloqueados = PEDIDOS.filter(p=>p.status==='bloqueado_credito'||p.status==='bloqueado_margem');
+  const inicioMes = new Date(); inicioMes.setDate(1);
+  const vendasMes = PEDIDOS.filter(p=>p.status==='liberado' && p.liberado_em && new Date(p.liberado_em) >= inicioMes)
+    .reduce((s,p)=>s+(Number(p.valor_total)||0),0);
+
+  document.getElementById('kpiOportAbertas').textContent = abertas.length;
+  document.getElementById('kpiValorPipeline').textContent = fmtMoeda(valorPipeline);
+  document.getElementById('kpiPedidosBloqueados').textContent = bloqueados.length;
+  document.getElementById('kpiVendasMes').textContent = fmtMoeda(vendasMes);
+
+  const wrapB = document.getElementById('listaDashPedidosBloqueados');
+  wrapB.innerHTML = bloqueados.length ? bloqueados.slice(0,5).map(renderizarCardPedido).join('') : '<div class="vazio">Nenhum pedido bloqueado agora. 🎉</div>';
+
+  const negociacao = OPORTUNIDADES.filter(o=>o.fase==='negociacao').sort((a,b)=>(a.previsao_fechamento||'9999')>(b.previsao_fechamento||'9999')?1:-1);
+  const wrapO = document.getElementById('listaDashOportunidades');
+  wrapO.innerHTML = negociacao.length ? negociacao.slice(0,5).map(renderizarCardOportunidade).join('') : '<div class="vazio">Nenhuma oportunidade em negociação agora.</div>';
+}
+
+/* ── FUNIL (KANBAN) ──────────────────────────────────────── */
+function renderizarFunil(){
+  const wrap = document.getElementById('funilWrap');
+  wrap.innerHTML = FASES.map(fase => {
+    const doFase = OPORTUNIDADES.filter(o=>o.fase===fase);
+    const cor = {prospeccao:'#8b5cf6',qualificacao:'#00b5fe',proposta:'#e8a33d',negociacao:'#fd8a14',ganho:'#16a34a',perdido:'#dc2626'}[fase];
+    return `<div class="funil-col" style="--cor:${cor}">
+      <h3>${FASE_LABEL[fase]} (${doFase.length})</h3>
+      ${doFase.map(o=>`
+        <div class="funil-card" onclick="abrirDetalheOportunidade('${o.id}')">
+          <div class="tit">${o.titulo}</div>
+          <div class="val">${fmtMoeda(o.valor_estimado)}</div>
+          <div class="cli">${o.crm_clientes?.nome || 'Sem cliente vinculado'}</div>
+        </div>`).join('') || '<div style="font-size:11px;color:var(--mu);padding:8px 0">Vazio</div>'}
+    </div>`;
+  }).join('');
+}
+
+/* ── LISTA DE OPORTUNIDADES ──────────────────────────────── */
+function renderizarCardOportunidade(o){
+  return `<div class="proj-card" onclick="abrirDetalheOportunidade('${o.id}')">
+    <div style="flex:1;min-width:0">
+      <div class="cod">${o.codigo||'—'}</div>
+      <div class="nome">${o.titulo}</div>
+      <div class="meta">${o.crm_clientes?.nome || 'Sem cliente'} · Previsão: ${fmtData(o.previsao_fechamento)}</div>
+    </div>
+    <div class="meta" style="text-align:right">${fmtMoeda(o.valor_estimado)}</div>
+    <span class="status-pill status-${o.fase}">${FASE_LABEL[o.fase]}</span>
+  </div>`;
+}
+function renderizarOportunidades(){
+  const filtro = document.getElementById('filtroFaseOport').value;
+  const lista = filtro ? OPORTUNIDADES.filter(o=>o.fase===filtro) : OPORTUNIDADES;
+  const wrap = document.getElementById('listaOportunidades');
+  wrap.innerHTML = lista.length ? lista.map(renderizarCardOportunidade).join('') : '<div class="vazio">Nenhuma oportunidade encontrada.</div>';
+}
+
+async function abrirNovaOportunidade(){
+  const titulo = prompt('Título da oportunidade:');
+  if(!titulo) return;
+  const valor = parseFloat(prompt('Valor estimado (R$):')) || null;
+  try{
+    const{error} = await supabaseClient.from('crm_oportunidades').insert({titulo, valor_estimado:valor, fase:'prospeccao'});
+    if(error) throw error;
+    toast('✓ Oportunidade criada.','#16a34a');
+    await carregarOportunidades();
+    renderizarFunil(); renderizarOportunidades(); renderizarDashboard();
+  }catch(e){ console.error(e); toast('Não foi possível criar.','#dc2626'); }
+}
+
+async function abrirDetalheOportunidade(id){
+  oportunidadeAtualId = id;
+  const o = OPORTUNIDADES.find(x=>x.id===id);
+  if(!o) return;
+  document.getElementById('doCodigo').textContent = o.codigo;
+  document.getElementById('doTitulo').textContent = o.titulo;
+  document.getElementById('doMeta').textContent = `${o.crm_clientes?.nome||'Sem cliente'} · ${fmtMoeda(o.valor_estimado)} · Previsão: ${fmtData(o.previsao_fechamento)}`;
+  document.getElementById('doFasePill').className = 'status-pill status-'+o.fase;
+  document.getElementById('doFasePill').textContent = FASE_LABEL[o.fase];
+
+  document.getElementById('botoesFase').innerHTML = FASES.map(f =>
+    `<button class="btn btn-sm ${f===o.fase?'':'btn-ghost'}" onclick="mudarFaseOportunidade('${f}')">${FASE_LABEL[f]}</button>`
+  ).join('');
+
+  mudarView('detalheOport');
+  carregarPropostasDaOportunidade(id);
+  carregarAtividades(id);
+}
+
+async function mudarFaseOportunidade(novaFase){
+  let motivoPerda = null;
+  if(novaFase === 'perdido'){
+    motivoPerda = prompt('Motivo da perda:');
+    if(!motivoPerda) return;
+  }
+  try{
+    const{error} = await supabaseClient.from('crm_oportunidades').update({fase:novaFase, motivo_perda:motivoPerda}).eq('id', oportunidadeAtualId);
+    if(error) throw error;
+    toast('✓ Fase atualizada.','#16a34a');
+    await carregarOportunidades();
+    abrirDetalheOportunidade(oportunidadeAtualId);
+  }catch(e){ console.error(e); toast('Não foi possível mudar de fase.','#dc2626'); }
+}
+
+async function carregarPropostasDaOportunidade(oportId){
+  try{
+    const{data,error} = await supabaseClient.from('crm_propostas').select('*').eq('oportunidade_id', oportId).order('numero_versao',{ascending:false});
+    if(error) throw error;
+    const wrap = document.getElementById('listaPropostas');
+    wrap.innerHTML = (data&&data.length) ? data.map(p=>`
+      <div class="item-linha">
+        <div><div class="principal">Versão ${p.numero_versao}</div><div class="sec">${fmtMoeda(p.valor_total)} · Validade: ${fmtData(p.validade)}</div></div>
+        <span class="status-pill status-${p.status}">${p.status}</span>
+      </div>`).join('') : '<div class="vazio">Nenhuma proposta ainda.</div>';
+  }catch(e){ console.error(e); }
+}
+async function gerarProposta(){
+  const validade = prompt('Validade da proposta (AAAA-MM-DD):');
+  const valor = parseFloat(prompt('Valor total da proposta (R$):'));
+  if(isNaN(valor)) return;
+  try{
+    const{error} = await supabaseClient.from('crm_propostas').insert({oportunidade_id:oportunidadeAtualId, validade, valor_total:valor, status:'enviada', numero_versao:1});
+    if(error) throw error;
+    toast('✓ Proposta gerada.','#16a34a');
+    carregarPropostasDaOportunidade(oportunidadeAtualId);
+  }catch(e){ console.error(e); toast('Não foi possível gerar.','#dc2626'); }
+}
+
+async function carregarAtividades(oportId){
+  try{
+    const{data,error} = await supabaseClient.from('crm_atividades').select('*').eq('oportunidade_id', oportId).order('data_prevista',{ascending:false});
+    if(error) throw error;
+    const wrap = document.getElementById('listaAtividades');
+    wrap.innerHTML = (data&&data.length) ? data.map(a=>`
+      <div class="item-linha">
+        <div><div class="principal">${a.tipo}</div><div class="sec">${a.descricao||''} · ${fmtData(a.data_prevista)}</div></div>
+        <span class="status-pill ${a.concluida?'status-ganho':'status-proposta'}">${a.concluida?'Concluída':'Pendente'}</span>
+      </div>`).join('') : '<div class="vazio">Nenhuma atividade registrada.</div>';
+  }catch(e){ console.error(e); }
+}
+async function abrirNovaAtividade(){
+  const tipo = prompt('Tipo (ligacao / visita / email / reuniao):', 'ligacao');
+  if(!tipo) return;
+  const descricao = prompt('Descrição:');
+  try{
+    const{error} = await supabaseClient.from('crm_atividades').insert({oportunidade_id:oportunidadeAtualId, tipo, descricao});
+    if(error) throw error;
+    toast('✓ Atividade registrada.','#16a34a');
+    carregarAtividades(oportunidadeAtualId);
+  }catch(e){ console.error(e); toast('Não foi possível registrar.','#dc2626'); }
+}
+
+/* ── CLIENTES ────────────────────────────────────────────── */
+function renderizarCardCliente(c){
+  const usoPercentual = c.limite_credito > 0 ? Math.round((c.credito_usado/c.limite_credito)*100) : 0;
+  return `<div class="proj-card" onclick="editarCliente('${c.id}')">
+    <div style="flex:1;min-width:0">
+      <div class="nome">${c.nome}${c.bloqueado?' 🔒':''}</div>
+      <div class="meta">${c.regiao||'Sem região'} · Crédito: ${fmtMoeda(c.credito_usado)} / ${fmtMoeda(c.limite_credito)} (${usoPercentual}%)</div>
+    </div>
+  </div>`;
+}
+function renderizarClientes(){
+  const busca = normalizar(document.getElementById('buscaCliente').value);
+  const lista = busca ? CLIENTES.filter(c=>normalizar(c.nome).includes(busca)) : CLIENTES;
+  document.getElementById('listaClientes').innerHTML = lista.length ? lista.map(renderizarCardCliente).join('') : '<div class="vazio">Nenhum cliente encontrado.</div>';
+}
+function abrirNovoCliente(){
+  document.getElementById('tituloFormCliente').textContent = 'Novo Cliente';
+  ['fClienteId','fClienteNome','fClienteDoc','fClienteRegiao','fClienteContatoNome','fClienteContatoTel','fClienteContatoEmail'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fClienteLimite').value = '0';
+  mudarView('novoCliente');
+}
+function editarCliente(id){
+  const c = CLIENTES.find(x=>x.id===id);
+  if(!c) return;
+  document.getElementById('tituloFormCliente').textContent = 'Editar Cliente';
+  document.getElementById('fClienteId').value = c.id;
+  document.getElementById('fClienteNome').value = c.nome||'';
+  document.getElementById('fClienteDoc').value = c.cnpj_cpf||'';
+  document.getElementById('fClienteRegiao').value = c.regiao||'';
+  document.getElementById('fClienteContatoNome').value = c.contato_nome||'';
+  document.getElementById('fClienteContatoTel').value = c.contato_telefone||'';
+  document.getElementById('fClienteContatoEmail').value = c.contato_email||'';
+  document.getElementById('fClienteLimite').value = c.limite_credito||0;
+  mudarView('novoCliente');
+}
+async function salvarCliente(){
+  const nome = document.getElementById('fClienteNome').value.trim();
+  if(!nome){ toast('Preenche o nome.','#dc2626'); return; }
+  const linha = {
+    nome, cnpj_cpf: document.getElementById('fClienteDoc').value||null,
+    regiao: document.getElementById('fClienteRegiao').value||null,
+    contato_nome: document.getElementById('fClienteContatoNome').value||null,
+    contato_telefone: document.getElementById('fClienteContatoTel').value||null,
+    contato_email: document.getElementById('fClienteContatoEmail').value||null,
+    limite_credito: parseFloat(document.getElementById('fClienteLimite').value)||0,
+  };
+  const id = document.getElementById('fClienteId').value;
+  try{
+    if(id){ const{error}=await supabaseClient.from('crm_clientes').update(linha).eq('id',id); if(error) throw error; }
+    else{ const{error}=await supabaseClient.from('crm_clientes').insert(linha); if(error) throw error; }
+    toast('✓ Cliente salvo.','#16a34a');
+    await carregarClientes();
+    mudarView('clientes');
+  }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
+}
+
+/* ── PEDIDOS DE VENDA ────────────────────────────────────── */
+function renderizarCardPedido(p){
+  return `<div class="proj-card" onclick="abrirDetalhePedido('${p.id}')">
+    <div style="flex:1;min-width:0">
+      <div class="cod">${p.numero_pedido}</div>
+      <div class="nome">${p.crm_clientes?.nome||'—'}</div>
+      <div class="meta">${fmtData(p.created_at)}</div>
+    </div>
+    <div class="meta" style="text-align:right">${fmtMoeda(p.valor_total)}</div>
+    <span class="status-pill status-${p.status}">${STATUS_PEDIDO_LABEL[p.status]}</span>
+  </div>`;
+}
+function renderizarPedidos(){
+  const filtro = document.getElementById('filtroStatusPedido').value;
+  const lista = filtro ? PEDIDOS.filter(p=>p.status===filtro) : PEDIDOS;
+  document.getElementById('listaPedidos').innerHTML = lista.length ? lista.map(renderizarCardPedido).join('') : '<div class="vazio">Nenhum pedido encontrado.</div>';
+}
+function renderizarAprovacoes(){
+  const bloqueados = PEDIDOS.filter(p=>p.status==='bloqueado_credito'||p.status==='bloqueado_margem');
+  document.getElementById('listaAprovacoes').innerHTML = bloqueados.length ? bloqueados.map(renderizarCardPedido).join('') : '<div class="vazio">Nenhum pedido esperando aprovação. 🎉</div>';
+}
+
+function abrirNovoPedido(){
+  itensPedidoAtual = [];
+  document.getElementById('pCliente').value = '';
+  document.getElementById('pVendedor').value = '';
+  document.getElementById('pCondicao').value = '';
+  document.getElementById('pValorFrete').value = '0';
+  renderizarItensPedido();
+  mudarView('novoPedido');
+}
+function adicionarItemPedido(){
+  itensPedidoAtual.push({descricao:'', quantidade:1, preco_lista:0, desconto_pct:0});
+  renderizarItensPedido();
+}
+function removerItemPedido(idx){
+  itensPedidoAtual.splice(idx,1);
+  renderizarItensPedido();
+}
+function atualizarItemPedido(idx, campo, valor){
+  itensPedidoAtual[idx][campo] = campo==='descricao' ? valor : parseFloat(valor)||0;
+  renderizarItensPedido();
+}
+function renderizarItensPedido(){
+  const wrap = document.getElementById('itensPedido');
+  wrap.innerHTML = itensPedidoAtual.map((it,idx)=>{
+    const precoPraticado = it.preco_lista * (1 - it.desconto_pct/100);
+    return `<div class="item-produto">
+      <input placeholder="Descrição" value="${it.descricao}" onchange="atualizarItemPedido(${idx},'descricao',this.value)">
+      <input type="number" placeholder="Qtd" value="${it.quantidade}" onchange="atualizarItemPedido(${idx},'quantidade',this.value)">
+      <input type="number" placeholder="Preço lista" value="${it.preco_lista}" onchange="atualizarItemPedido(${idx},'preco_lista',this.value)">
+      <input type="number" placeholder="Desc %" value="${it.desconto_pct}" onchange="atualizarItemPedido(${idx},'desconto_pct',this.value)">
+      <span style="font-size:11.5px;color:var(--azul-claro);font-weight:700">${fmtMoeda(precoPraticado*it.quantidade)}</span>
+      <span class="rm" onclick="removerItemPedido(${idx})">✕</span>
+    </div>`;
+  }).join('');
+  const total = itensPedidoAtual.reduce((s,it)=> s + it.preco_lista*(1-it.desconto_pct/100)*it.quantidade, 0) + (parseFloat(document.getElementById('pValorFrete').value)||0);
+  document.getElementById('totalPedidoDisplay').textContent = fmtMoeda(total);
+}
+document.getElementById('pValorFrete').addEventListener('input', renderizarItensPedido);
+
+async function salvarPedido(){
+  const clienteId = document.getElementById('pCliente').value;
+  if(!clienteId){ toast('Escolhe o cliente.','#dc2626'); return; }
+  if(!itensPedidoAtual.length){ toast('Adiciona pelo menos um item.','#dc2626'); return; }
+
+  const valorProdutos = itensPedidoAtual.reduce((s,it)=> s + it.preco_lista*(1-it.desconto_pct/100)*it.quantidade, 0);
+  const valorFrete = parseFloat(document.getElementById('pValorFrete').value)||0;
+  const descontoMedio = itensPedidoAtual.reduce((s,it)=>s+it.desconto_pct,0) / itensPedidoAtual.length;
+
+  const linha = {
+    cliente_id: clienteId,
+    vendedor_id: document.getElementById('pVendedor').value || null,
+    condicao_pagamento: document.getElementById('pCondicao').value || null,
+    tipo_frete: document.getElementById('pFrete').value,
+    valor_frete: valorFrete,
+    itens: itensPedidoAtual,
+    valor_produtos: valorProdutos,
+    valor_total: valorProdutos + valorFrete,
+    desconto_percentual_medio: descontoMedio,
+  };
+  try{
+    const{data,error} = await supabaseClient.from('crm_pedidos').insert(linha).select().single();
+    if(error) throw error;
+    await carregarPedidos();
+    if(data.status==='bloqueado_credito' || data.status==='bloqueado_margem'){
+      toast('⚠️ Pedido criado, mas ficou BLOQUEADO: ' + data.motivo_bloqueio, '#e8a33d');
+    }else{
+      toast('✓ Pedido criado.','#16a34a');
+    }
+    abrirDetalhePedido(data.id);
+  }catch(e){ console.error(e); toast('Não foi possível salvar o pedido.','#dc2626'); }
+}
+
+async function abrirDetalhePedido(id){
+  pedidoAtualId = id;
+  const p = PEDIDOS.find(x=>x.id===id) || (await supabaseClient.from('crm_pedidos').select('*,crm_clientes(nome)').eq('id',id).single()).data;
+  if(!p) return;
+
+  document.getElementById('dpNumero').textContent = p.numero_pedido;
+  document.getElementById('dpCliente').textContent = p.crm_clientes?.nome || '—';
+  document.getElementById('dpMeta').textContent = `${fmtData(p.created_at)} · ${p.condicao_pagamento||'Sem condição definida'}`;
+  document.getElementById('dpStatusPill').className = 'status-pill status-'+p.status;
+  document.getElementById('dpStatusPill').textContent = STATUS_PEDIDO_LABEL[p.status];
+  document.getElementById('dpTotal').textContent = fmtMoeda(p.valor_total);
+
+  document.getElementById('dpItens').innerHTML = (p.itens||[]).map(it=>`
+    <div class="item-linha"><div><div class="principal">${it.descricao}</div><div class="sec">${it.quantidade}x ${fmtMoeda(it.preco_lista)} (${it.desconto_pct}% desc)</div></div>
+    <div class="principal">${fmtMoeda(it.preco_lista*(1-it.desconto_pct/100)*it.quantidade)}</div></div>`).join('');
+
+  const alertaWrap = document.getElementById('dpAlertaBloqueio');
+  if(p.status==='bloqueado_credito' || p.status==='bloqueado_margem'){
+    alertaWrap.innerHTML = `<div class="alerta-bloqueio ${p.status==='bloqueado_margem'?'margem':''}">🚫 ${p.motivo_bloqueio}</div>`;
+  }else{ alertaWrap.innerHTML = ''; }
+
+  const botoesWrap = document.getElementById('dpBotoesAcao');
+  let botoes = '';
+  if(p.status==='bloqueado_credito' || p.status==='bloqueado_margem'){
+    botoes += `<button class="btn btn-sm" onclick="liberarPedido()">✅ Liberar (Supervisor)</button>`;
+  }
+  if(p.status==='aberto'){
+    botoes += `<button class="btn btn-sm" onclick="liberarPedido()">✅ Liberar Pedido</button>`;
+  }
+  if(p.status!=='cancelado' && p.status!=='liberado' && p.status!=='faturando'){
+    botoes += `<button class="btn btn-sm btn-danger" onclick="cancelarPedido()">✕ Cancelar</button>`;
+  }
+  botoesWrap.innerHTML = botoes || '<span style="color:var(--mu);font-size:12.5px">Nenhuma ação disponível — pedido ' + STATUS_PEDIDO_LABEL[p.status].toLowerCase() + '.</span>';
+
+  mudarView('detalhePedido');
+}
+async function liberarPedido(){
+  try{
+    const{error} = await supabaseClient.from('crm_pedidos').update({status:'liberado', liberado_em:new Date().toISOString(), motivo_bloqueio:null}).eq('id', pedidoAtualId);
+    if(error) throw error;
+    toast('✓ Pedido liberado.','#16a34a');
+    await carregarPedidos();
+    abrirDetalhePedido(pedidoAtualId);
+  }catch(e){ console.error(e); toast('Não foi possível liberar.','#dc2626'); }
+}
+async function cancelarPedido(){
+  const motivo = prompt('Motivo do cancelamento:');
+  if(!motivo) return;
+  try{
+    const{error} = await supabaseClient.from('crm_pedidos').update({status:'cancelado', motivo_cancelamento:motivo}).eq('id', pedidoAtualId);
+    if(error) throw error;
+    toast('Pedido cancelado.','#dc2626');
+    await carregarPedidos();
+    abrirDetalhePedido(pedidoAtualId);
+  }catch(e){ console.error(e); toast('Não foi possível cancelar.','#dc2626'); }
+}
+
+/* ── INICIALIZAÇÃO ───────────────────────────────────────── */
+(async function init(){
+  await Promise.all([carregarClientes(), carregarVendedores(), carregarOportunidades(), carregarPedidos()]);
+  renderizarDashboard();
+})();
+</script>
+</body>
+</html>
