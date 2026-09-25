@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESF ERP · Compras e Cotação</title>
+<link rel="icon" type="image/png" href="/mod-compras.png">
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+:root{
+  --azul-claro:#00b5fe; --azul-escuro:#102b65; --laranja:#fd8a14;
+  --bg:#0a1220; --s1:#0e1a30; --s2:#132038; --bd:#1e2e48;
+  --tx:#e7eefc; --mu:#8fa3c4; --verde:#16a34a; --vermelho:#dc2626; --amarelo:#e8a33d; --roxo:#8b5cf6;
+  --rad:12px; --rad-sm:8px;
+}
+*{box-sizing:border-box;}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--tx);}
+a{color:inherit;}
+
+/* ── LAYOUT ── */
+.app-shell{display:flex;min-height:100vh;}
+.sidebar{
+  width:230px;flex-shrink:0;background:#081020;border-right:1px solid var(--bd);
+  padding:16px 12px;display:flex;flex-direction:column;
+  position:fixed;top:0;left:0;bottom:0;overflow-y:auto;z-index:100;
+}
+.main{flex:1;margin-left:230px;padding:20px 26px 60px;max-width:1400px;}
+@media (max-width:860px){
+  .sidebar{position:fixed;left:-240px;transition:left .2s ease;width:230px;}
+  .sidebar.open{left:0;}
+  .main{margin-left:0;padding:16px;}
+}
+
+/* ── SIDEBAR ── */
+.sidebar-logo{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+.sidebar-logo img{width:44px;height:44px;object-fit:contain;flex-shrink:0;}
+.sidebar-logo .tt{font-size:15px;font-weight:900;}
+.sidebar-logo .tt b{color:var(--azul-claro);}
+.sidebar-logo .st{font-size:9.5px;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+.voltar-hub{
+  display:block;margin:10px 0 14px;font-size:11px;font-weight:700;text-align:center;
+  border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:6px 10px;text-decoration:none;
+  color:#fff;opacity:.8;
+}
+.nav-lbl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--mu);padding:10px 6px 6px;}
+.nav-item{
+  display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  padding:10px 12px;border-radius:10px;font-size:13px;font-weight:700;
+  background:linear-gradient(180deg,var(--azul-claro) 0%,var(--azul-escuro) 30%,var(--azul-escuro) 100%);
+  border:1.5px solid var(--laranja);color:#fff;margin-bottom:6px;
+  cursor:pointer;box-shadow:2px 2px 0 rgba(0,0,0,.3);transition:all .16s ease;
+  text-decoration:none;
+}
+.nav-item .ic{font-size:16px;flex:none;width:18px;text-align:center;}
+.nav-item:hover{filter:brightness(1.15);transform:translate(-2px,-2px) scale(1.02);box-shadow:4px 4px 0 rgba(0,0,0,.3),0 0 12px rgba(253,138,20,.5);}
+.nav-item.active{border-color:#fff;box-shadow:0 0 8px rgba(253,138,20,.7),0 0 16px rgba(253,138,20,.4);}
+.sidebar-foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--bd);font-size:10.5px;color:var(--mu);}
+
+/* ── BANNER ── */
+.banner-topo{width:100%;max-width:960px;margin:0 auto 18px;border-radius:16px;overflow:hidden;height:170px;background:#061224;}
+.banner-topo img{width:100%;height:100%;object-fit:cover;object-position:center center;}
+
+/* ── HEADER DE PÁGINA ── */
+.pg-head{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:18px;}
+.pg-head h1{font-size:21px;margin:0 0 3px;}
+.pg-head p{margin:0;color:var(--mu);font-size:12.5px;}
+
+/* ── BOTÕES ── */
+.btn{
+  display:inline-flex;align-items:center;gap:7px;padding:10px 16px;border-radius:10px;
+  font-size:12.5px;font-weight:800;cursor:pointer;border:1.5px solid var(--laranja);
+  background:linear-gradient(180deg,var(--azul-claro) 0%,var(--azul-escuro) 30%,var(--azul-escuro) 100%);
+  color:#fff;box-shadow:2px 2px 0 rgba(0,0,0,.3);transition:all .16s ease;
+}
+.btn:hover{filter:brightness(1.15);transform:translate(-2px,-2px);box-shadow:4px 4px 0 rgba(0,0,0,.3),0 0 12px rgba(253,138,20,.5);}
+.btn-ghost{background:var(--s2);border-color:var(--bd);}
+.btn-sm{padding:6px 11px;font-size:11.5px;}
+.btn-danger{background:linear-gradient(180deg,#ef4444,#7f1d1d);border-color:#ef4444;}
+
+/* ── CARDS / KPI ── */
+.grid-kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:20px;}
+.kpi{background:var(--s1);border:1px solid var(--bd);border-radius:var(--rad);padding:16px;position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--cor,var(--azul-claro));}
+.kpi .n{font-size:26px;font-weight:900;}
+.kpi .l{font-size:11.5px;color:var(--mu);font-weight:700;}
+
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--rad);padding:18px;margin-bottom:18px;}
+.card h2{font-size:15px;margin:0 0 4px;}
+.card .sub{font-size:12px;color:var(--mu);margin:0 0 14px;}
+
+/* ── TABELA / LISTA DE PROJETOS ── */
+.proj-lista{display:flex;flex-direction:column;gap:10px;}
+.proj-card{
+  background:var(--s2);border:1px solid var(--bd);border-radius:var(--rad-sm);
+  padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;
+  transition:border-color .15s;
+}
+.proj-card:hover{border-color:var(--laranja);}
+.proj-card .cod{font-size:10.5px;font-weight:800;color:var(--azul-claro);}
+.proj-card .nome{font-size:14.5px;font-weight:800;margin:2px 0 4px;}
+.proj-card .meta{font-size:11.5px;color:var(--mu);}
+.proj-card .barra-wrap{flex-shrink:0;width:140px;}
+.proj-card .barra{height:7px;background:var(--bd);border-radius:10px;overflow:hidden;margin-bottom:4px;}
+.proj-card .barra i{display:block;height:100%;background:linear-gradient(90deg,var(--azul-claro),var(--laranja));}
+.status-pill{font-size:10px;font-weight:800;text-transform:uppercase;padding:4px 9px;border-radius:20px;white-space:nowrap;}
+.status-planejamento{background:rgba(139,92,246,.18);color:#c4b5fd;}
+.status-em_andamento{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-pausado{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-concluido{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-cancelado{background:rgba(220,38,38,.18);color:#fca5a5;}
+
+/* Status específicos do CRM */
+.status-prospeccao{background:rgba(139,92,246,.18);color:#c4b5fd;}
+.status-qualificacao{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-proposta{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-negociacao{background:rgba(253,138,20,.18);color:#fdba74;}
+.status-ganho{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-perdido{background:rgba(220,38,38,.18);color:#fca5a5;}
+.status-aberto{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-bloqueado_credito{background:rgba(220,38,38,.18);color:#fca5a5;}
+.status-bloqueado_margem{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-liberado{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-faturando{background:rgba(139,92,246,.18);color:#c4b5fd;}
+.status-rascunho{background:rgba(143,163,196,.18);color:#c3d0e8;}
+.status-enviada{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-aprovada{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-recusada{background:rgba(220,38,38,.18);color:#fca5a5;}
+
+/* Funil de vendas (kanban) */
+.funil-wrap{display:flex;gap:12px;overflow-x:auto;padding-bottom:10px;}
+.funil-col{flex:0 0 240px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rad-sm);padding:10px;}
+.funil-col h3{font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;margin:0 0 10px;padding-bottom:8px;border-bottom:2px solid var(--cor,var(--azul-claro));color:var(--mu);}
+.funil-card{background:var(--s1);border:1px solid var(--bd);border-radius:8px;padding:10px;margin-bottom:8px;cursor:pointer;transition:border-color .15s;}
+.funil-card:hover{border-color:var(--laranja);}
+.funil-card .tit{font-size:12.5px;font-weight:800;margin-bottom:4px;}
+.funil-card .val{font-size:12px;color:var(--azul-claro);font-weight:700;}
+.funil-card .cli{font-size:10.5px;color:var(--mu);margin-top:3px;}
+
+/* Bloco de alerta de bloqueio */
+.alerta-bloqueio{background:rgba(220,38,38,.12);border:1.5px solid #dc2626;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:12.5px;color:#fca5a5;font-weight:700;}
+.alerta-bloqueio.margem{background:rgba(232,163,61,.12);border-color:#e8a33d;color:#fbbf24;}
+
+/* Itens de pedido/proposta */
+.item-produto{display:grid;grid-template-columns:2fr 90px 100px 90px 100px 40px;gap:8px;align-items:center;padding:8px;background:var(--s2);border-radius:8px;margin-bottom:6px;}
+.item-produto input{background:#0d1830;border:1px solid var(--bd);border-radius:6px;color:var(--tx);padding:6px 8px;font-size:12px;width:100%;}
+.item-produto .rm{cursor:pointer;color:#fca5a5;text-align:center;font-weight:900;}
+.totais-box{background:var(--s2);border-radius:8px;padding:12px 16px;margin-top:10px;display:flex;justify-content:space-between;font-size:13px;font-weight:800;}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:900;display:flex;align-items:center;justify-content:center;padding:20px;}
+.modal-box{background:var(--s1);border:1.5px solid var(--laranja);border-radius:var(--rad);max-width:560px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,.5);}
+.modal-head{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--bd);}
+.modal-head h3{margin:0;font-size:15px;}
+.modal-head .fechar{cursor:pointer;font-size:20px;color:var(--mu);background:none;border:none;line-height:1;}
+.modal-body{padding:18px 20px;}
+.modal-foot{padding:14px 20px;border-top:1px solid var(--bd);display:flex;gap:8px;justify-content:flex-end;}
+.credito-barra{height:8px;background:var(--bd);border-radius:10px;overflow:hidden;margin-top:6px;}
+.credito-barra i{display:block;height:100%;}
+
+/* ── FORMULÁRIO ── */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
+.form-grid.full{grid-template-columns:1fr;}
+.fld{display:flex;flex-direction:column;gap:5px;}
+.fld label{font-size:11.5px;font-weight:700;color:var(--mu);}
+.fld input,.fld select,.fld textarea{
+  background:#0d1830;border:1px solid var(--bd);border-radius:8px;color:var(--tx);
+  padding:9px 11px;font-size:13px;font-family:inherit;
+}
+.fld input:focus,.fld select:focus,.fld textarea:focus{outline:none;border-color:var(--azul-claro);}
+.fld textarea{resize:vertical;min-height:70px;}
+
+/* ── ABAS DE DETALHE ── */
+.tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
+.tab-btn{
+  padding:8px 14px;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;
+  background:var(--s2);border:1px solid var(--bd);color:var(--mu);
+}
+.tab-btn.active{background:linear-gradient(180deg,var(--azul-claro),var(--azul-escuro));color:#fff;border-color:var(--laranja);}
+
+.item-linha{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--s2);border-radius:8px;margin-bottom:8px;border:1px solid var(--bd);}
+.item-linha .principal{font-size:13px;font-weight:700;}
+.item-linha .sec{font-size:11px;color:var(--mu);}
+
+.vazio{text-align:center;padding:40px 20px;color:var(--mu);font-size:13px;}
+
+.hidden{display:none !important;}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#102b65;border:1.5px solid var(--laranja);color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:700;z-index:9999;box-shadow:0 6px 20px rgba(0,0,0,.4);opacity:0;transition:opacity .2s;pointer-events:none;}
+.toast.show{opacity:1;}
+
+/* ── FINANCEIRO específico ── */
+.saldo-hero{background:linear-gradient(135deg,#0a1e42,#102b65);border:1.5px solid var(--laranja);border-radius:var(--rad);padding:22px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;}
+.saldo-hero .lbl{font-size:11.5px;color:var(--mu);font-weight:700;text-transform:uppercase;}
+.saldo-hero .val{font-size:30px;font-weight:900;}
+.saldo-hero .val.pos{color:#4ade80;} .saldo-hero .val.neg{color:#fca5a5;}
+
+.titulo-linha{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rad-sm);margin-bottom:8px;cursor:pointer;transition:border-color .15s;}
+.titulo-linha:hover{border-color:var(--laranja);}
+.titulo-linha .num{font-size:10px;font-weight:800;color:var(--azul-claro);}
+.titulo-linha .desc{font-size:13.5px;font-weight:700;margin:2px 0;}
+.titulo-linha .meta{font-size:11px;color:var(--mu);}
+.titulo-linha .val{font-size:14px;font-weight:800;text-align:right;flex-shrink:0;min-width:110px;}
+
+.status-aberto{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-parcial{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-pago{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-vencido{background:rgba(220,38,38,.18);color:#fca5a5;}
+.status-cancelado{background:rgba(143,163,196,.18);color:#c3d0e8;}
+.status-aguardando_aprovacao{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-aprovado{background:rgba(0,181,254,.18);color:#7dd3fc;}
+
+/* DRE */
+.dre-linha{display:flex;justify-content:space-between;padding:9px 4px;border-bottom:1px solid var(--bd);font-size:13px;}
+.dre-linha.total{font-weight:900;font-size:14.5px;border-bottom:none;border-top:2px solid var(--laranja);padding-top:12px;margin-top:4px;}
+.dre-linha .neg{color:#fca5a5;}
+.dre-linha .pos{color:#4ade80;}
+.dre-cat-barra{display:flex;height:26px;border-radius:6px;overflow:hidden;margin:10px 0;}
+.dre-cat-barra span{display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:800;color:#fff;}
+
+/* ── FISCAL específico ── */
+.nota-linha{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rad-sm);margin-bottom:8px;cursor:pointer;transition:border-color .15s;}
+.nota-linha:hover{border-color:var(--laranja);}
+.nota-linha .num{font-size:10px;font-weight:800;color:var(--azul-claro);}
+.nota-linha .desc{font-size:13.5px;font-weight:700;margin:2px 0;}
+.nota-linha .meta{font-size:11px;color:var(--mu);}
+.nota-linha .val{font-size:14px;font-weight:800;text-align:right;flex-shrink:0;min-width:110px;}
+
+.status-rascunho{background:rgba(143,163,196,.18);color:#c3d0e8;}
+.status-emitida{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-cancelada{background:rgba(220,38,38,.18);color:#fca5a5;}
+.status-com_erro{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-pendente{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-ciencia{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-confirmado{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-aberta{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-guia_gerada{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-paga{background:rgba(22,163,74,.18);color:#4ade80;}
+
+/* ── ESTOQUE específico ── */
+.item-estoque{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rad-sm);margin-bottom:8px;}
+.item-estoque.baixo{border-color:#dc2626;}
+.item-estoque .cod{font-size:10px;font-weight:800;color:var(--azul-claro);}
+.item-estoque .desc{font-size:13.5px;font-weight:700;margin:2px 0;}
+.item-estoque .meta{font-size:11px;color:var(--mu);}
+.item-estoque .qtd{font-size:16px;font-weight:900;text-align:right;min-width:90px;}
+.item-estoque .qtd.baixo{color:#fca5a5;}
+
+.badge-tipo{font-size:10px;font-weight:800;text-transform:uppercase;padding:4px 9px;border-radius:20px;white-space:nowrap;}
+.badge-ENTRADA{background:rgba(22,163,74,.18);color:#4ade80;}
+.badge-SAIDA{background:rgba(232,163,61,.18);color:#fbbf24;}
+.badge-CONSUMO{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.badge-AJUSTE{background:rgba(139,92,246,.18);color:#c4b5fd;}
+.badge-PERDA{background:rgba(220,38,38,.18);color:#fca5a5;}
+
+.alerta-reposicao{background:rgba(220,38,38,.1);border:1.5px solid #dc2626;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:#fca5a5;}
+
+/* ── COMPRAS específico ── */
+.status-Pendente{background:rgba(143,163,196,.18);color:#c3d0e8;}
+.status-Em_Cotação{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-Comprado{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-Recebido{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-aguardando_entrega{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-entregue{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-cancelado{background:rgba(220,38,38,.18);color:#fca5a5;}
+
+.cotacao-card{background:var(--s2);border:1.5px solid var(--bd);border-radius:var(--rad-sm);padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+.cotacao-card.melhor{border-color:#16a34a;background:rgba(22,163,74,.08);}
+.cotacao-card .forn{font-size:13.5px;font-weight:800;}
+.cotacao-card .det{font-size:11px;color:var(--mu);margin-top:2px;}
+.cotacao-card .preco{font-size:16px;font-weight:900;color:var(--azul-claro);}
+.selo-melhor{background:#16a34a;color:#fff;font-size:9px;font-weight:800;padding:3px 8px;border-radius:10px;margin-left:8px;}
+
+.retencoes-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin:12px 0;}
+.retencao-item{background:var(--s2);border-radius:8px;padding:9px 11px;text-align:center;}
+.retencao-item .lbl{font-size:9.5px;color:var(--mu);text-transform:uppercase;font-weight:700;}
+.retencao-item .val{font-size:13px;font-weight:800;margin-top:2px;}
+
+.aviso-integracao{background:rgba(232,163,61,.1);border:1.5px solid #e8a33d;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:#fbbf24;line-height:1.5;}
+
+/* ── PONTO / RH específico ── */
+.status-normal{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-inconsistente{background:rgba(220,38,38,.18);color:#fca5a5;}
+.status-ajustado{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-abonado{background:rgba(0,181,254,.18);color:#7dd3fc;}
+
+.tabela-ponto{width:100%;border-collapse:collapse;font-size:12px;}
+.tabela-ponto th{background:var(--s2);padding:7px 6px;text-align:center;font-size:10px;text-transform:uppercase;color:var(--mu);border-bottom:1.5px solid var(--laranja);}
+.tabela-ponto td{padding:6px;text-align:center;border-bottom:1px solid var(--bd);}
+.tabela-ponto tr:hover td{background:var(--s2);}
+.tabela-ponto td.dia-nome{color:var(--mu);font-size:10.5px;}
+.tabela-ponto td.domingo{color:#fca5a5;}
+.tabela-ponto input{width:64px;background:#0d1830;border:1px solid var(--bd);border-radius:5px;color:var(--tx);padding:4px 5px;font-size:11.5px;text-align:center;}
+.marca-ajuste{color:#fbbf24;font-weight:900;}
+
+.banco-horas-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;font-size:13px;font-weight:800;}
+.banco-horas-badge.pos{background:rgba(22,163,74,.18);color:#4ade80;}
+.banco-horas-badge.neg{background:rgba(220,38,38,.18);color:#fca5a5;}
+
+/* ── ESPELHO DE PONTO — layout A4, pensado pra caber numa folha só ── */
+.folha-a4{
+  background:#fff;color:#111;width:210mm;min-height:297mm;margin:0 auto;
+  padding:10mm 12mm;font-family:Arial,Helvetica,sans-serif;font-size:9.5px;box-sizing:border-box;
+}
+.folha-a4 .cab-a4{display:flex;justify-content:space-between;border-bottom:2px solid #111;padding-bottom:5mm;margin-bottom:4mm;}
+.folha-a4 .cab-a4 h2{font-size:13px;margin:0 0 2mm;}
+.folha-a4 .cab-a4 .col{font-size:9px;line-height:1.5;}
+.folha-a4 table.espelho-tabela{width:100%;border-collapse:collapse;font-size:8px;}
+.folha-a4 table.espelho-tabela th{background:#eee;border:1px solid #999;padding:1mm;font-size:7px;text-transform:uppercase;}
+.folha-a4 table.espelho-tabela td{border:1px solid #ccc;padding:0.8mm 1mm;text-align:center;height:5.5mm;}
+.folha-a4 .rodape-a4{margin-top:4mm;display:flex;gap:10mm;}
+.folha-a4 .totais-a4{flex:1;border:1px solid #999;padding:2mm;font-size:8px;}
+.folha-a4 .totais-a4 div{display:flex;justify-content:space-between;padding:0.6mm 0;}
+.folha-a4 .legenda-a4{flex:1;border:1px solid #999;padding:2mm;font-size:7.5px;line-height:1.5;}
+.folha-a4 .assinaturas-a4{display:flex;justify-content:space-around;margin-top:8mm;}
+.folha-a4 .assinaturas-a4 div{text-align:center;font-size:8px;width:70mm;border-top:1px solid #111;padding-top:1.5mm;}
+
+@media print{
+  body *{visibility:hidden;}
+  .folha-a4, .folha-a4 *{visibility:visible;}
+  .folha-a4{position:absolute;top:0;left:0;margin:0;box-shadow:none;}
+  @page{size:A4;margin:0;}
+}
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <img src="esf-logo-oficial.png" alt="ESF">
+      <div><div class="tt">ESF <b>ERP</b></div><div class="st">Compras e Cotação</div></div>
+    </div>
+    <a href="index.html" class="voltar-hub">← Sistema de Gestão</a>
+
+    <div class="nav-lbl">Visão Geral</div>
+    <button class="nav-item active" data-view="dashboard"><span class="ic"><img src="icone-dashboard.png" alt="" style="width:17px;height:17px;object-fit:contain;vertical-align:middle"></span>Dashboard</button>
+
+    <div class="nav-lbl">Compras</div>
+    <button class="nav-item" data-view="pendentes"><span class="ic">📋</span>Solicitações Pendentes</button>
+    <button class="nav-item" data-view="pedidos"><span class="ic">📦</span>Pedidos de Compra</button>
+    <button class="nav-item" data-view="fornecedores"><span class="ic">🏭</span>Fornecedores</button>
+
+    <div class="sidebar-foot">
+      ESF · Compras — v2026.09.25<br>
+      <span id="statusConexao">🟢 Online</span>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="banner-topo"><img src="esf-banner-panoramico.png" alt="ESF ERP — Sistema de Gestão"></div>
+
+    <!-- ═══════════ DASHBOARD ═══════════ -->
+    <div id="viewDashboard">
+      <div class="pg-head"><div><h1>Dashboard de Compras</h1><p>Solicitações vindas da Requisição, esperando cotação ou compra.</p></div></div>
+
+      <div class="grid-kpi">
+        <div class="kpi" style="--cor:#8fa3c4"><div class="n" id="kpiPendentes">—</div><div class="l">Pendentes de cotação</div></div>
+        <div class="kpi" style="--cor:#e8a33d"><div class="n" id="kpiEmCotacao">—</div><div class="l">Em cotação</div></div>
+        <div class="kpi" style="--cor:#00b5fe"><div class="n" id="kpiAguardandoEntrega">—</div><div class="l">Aguardando entrega</div></div>
+        <div class="kpi" style="--cor:#16a34a"><div class="n" id="kpiValorMes">—</div><div class="l">Comprado no mês</div></div>
+      </div>
+
+      <div class="card">
+        <h2>Solicitações pendentes de cotação</h2>
+        <p class="sub">Vieram da Requisição de Materiais — o almoxarifado pediu, precisa cotar.</p>
+        <div id="listaDashPendentes"><div class="vazio">Carregando...</div></div>
+      </div>
+    </div>
+
+    <!-- ═══════════ SOLICITAÇÕES PENDENTES ═══════════ -->
+    <div id="viewPendentes" class="hidden">
+      <div class="pg-head"><div><h1>Solicitações Pendentes</h1><p>Tudo que a Requisição de Materiais pediu pra comprar — clique pra cotar.</p></div></div>
+      <div class="card"><div id="listaPendentes"><div class="vazio">Carregando...</div></div></div>
+    </div>
+
+    <!-- ═══════════ COTAÇÃO DE UMA SOLICITAÇÃO ═══════════ -->
+    <div id="viewCotacao" class="hidden">
+      <div class="pg-head">
+        <div><div style="font-size:11px;color:var(--azul-claro);font-weight:800" id="cotRequisicaoNum">—</div><h1 id="cotDescricao">—</h1><p id="cotMeta">—</p></div>
+      </div>
+      <div class="card">
+        <h2>Cotações recebidas</h2>
+        <p class="sub">Adicione uma por fornecedor consultado — a mais barata fica destacada.</p>
+        <div id="listaCotacoes"></div>
+        <button class="btn btn-sm btn-ghost" onclick="abrirNovaCotacao()">➕ Adicionar Cotação</button>
+      </div>
+      <div class="card">
+        <h2>Fechar pedido</h2>
+        <p class="sub">Escolhe uma cotação acima como vencedora, depois clica aqui.</p>
+        <div class="form-grid">
+          <div class="fld"><label>Projeto (centro de custo)</label><select id="fpProjeto"><option value="">— Selecione —</option></select></div>
+          <div class="fld"><label>Previsão de entrega</label><input type="date" id="fpPrevisao"></div>
+        </div>
+        <button class="btn btn-sm" style="margin-top:10px" onclick="fecharPedidoCompra()">✅ Gerar Pedido de Compra</button>
+      </div>
+    </div>
+
+    <!-- ═══════════ PEDIDOS DE COMPRA ═══════════ -->
+    <div id="viewPedidos" class="hidden">
+      <div class="pg-head"><div><h1>Pedidos de Compra</h1><p>O que já foi comprado, aguardando ou já entregue.</p></div></div>
+      <div class="card">
+        <select id="filtroStatusPedido" onchange="renderizarPedidos()" style="background:#0d1830;border:1px solid var(--bd);border-radius:8px;color:var(--tx);padding:8px 12px;font-size:12.5px;margin-bottom:14px">
+          <option value="">Todos os status</option>
+          <option value="aguardando_entrega">Aguardando entrega</option>
+          <option value="entregue">Entregue</option>
+          <option value="cancelado">Cancelado</option>
+        </select>
+        <div id="listaPedidosCompra"><div class="vazio">Carregando...</div></div>
+      </div>
+    </div>
+
+    <!-- ═══════════ FORNECEDORES ═══════════ -->
+    <div id="viewFornecedores" class="hidden">
+      <div class="pg-head">
+        <div><h1>Fornecedores</h1><p>Cadastro de quem você compra.</p></div>
+        <button class="btn" onclick="abrirNovoFornecedor()">➕ Novo Fornecedor</button>
+      </div>
+      <div class="card"><div id="listaFornecedores"><div class="vazio">Carregando...</div></div></div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════ MODAL: NOVA COTAÇÃO ═══════════ -->
+<div class="modal-overlay hidden" id="modalCotacao">
+  <div class="modal-box">
+    <div class="modal-head"><h3>💬 Adicionar Cotação</h3><button class="fechar" onclick="fecharModal('modalCotacao')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="fld" style="grid-column:1/-1"><label>Fornecedor *</label><select id="ctFornecedor"></select></div>
+        <div class="fld"><label>Preço unitário (R$) *</label><input type="number" id="ctPreco" step="0.01"></div>
+        <div class="fld"><label>Prazo de entrega (dias)</label><input type="number" id="ctPrazo"></div>
+        <div class="fld" style="grid-column:1/-1"><label>Condição de pagamento</label><input type="text" id="ctCondicao" placeholder="Ex: 28 dias, à vista..."></div>
+        <div class="fld" style="grid-column:1/-1"><label>Observação</label><input type="text" id="ctObservacao"></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost btn-sm" onclick="fecharModal('modalCotacao')">Cancelar</button><button class="btn btn-sm" onclick="salvarCotacao()">💾 Salvar</button></div>
+  </div>
+</div>
+
+<!-- ═══════════ MODAL: NOVO FORNECEDOR ═══════════ -->
+<div class="modal-overlay hidden" id="modalFornecedor">
+  <div class="modal-box">
+    <div class="modal-head"><h3>🏭 Novo Fornecedor</h3><button class="fechar" onclick="fecharModal('modalFornecedor')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="fld" style="grid-column:1/-1"><label>Nome *</label><input type="text" id="fnNome"></div>
+        <div class="fld"><label>CNPJ</label><input type="text" id="fnCnpj"></div>
+        <div class="fld"><label>Contato</label><input type="text" id="fnContato"></div>
+        <div class="fld"><label>Telefone</label><input type="text" id="fnTelefone"></div>
+        <div class="fld"><label>E-mail</label><input type="email" id="fnEmail"></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost btn-sm" onclick="fecharModal('modalFornecedor')">Cancelar</button><button class="btn btn-sm" onclick="salvarFornecedor()">💾 Salvar</button></div>
+  </div>
+</div>
+
+
+<script>
+/* ── CONEXÃO ─────────────────────────────────────────────── */
+const SUPABASE_URL = 'https://bddjdpyfypsiwnirbyhv.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkZGpkcHlmeXBzaXduaXJieWh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NDk1MjgsImV4cCI6MjEwMDQyNTUyOH0.0HnH7caYH6sLp5n68izQXqbCJ-cLqTyxELl1EqoHHww';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ── ESTADO ──────────────────────────────────────────────── */
+let REQUISICOES=[], FORNECEDORES=[], PEDIDOS_COMPRA=[], PROJETOS=[];
+let requisicaoAtualId = null, cotacoesAtuais = [];
+
+/* ── UTILITÁRIOS ─────────────────────────────────────────── */
+function toast(msg,cor){ const t=document.getElementById('toast'); t.textContent=msg; t.style.borderColor=cor||'#fd8a14'; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3200); }
+function fmtMoeda(v){ if(v===null||v===undefined||isNaN(v)) return 'R$ 0,00'; return 'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtData(d){ if(!d) return '—'; const p=d.split('T')[0].split('-'); return `${p[2]}/${p[1]}/${p[0]}`; }
+function abrirModal(id){ document.getElementById(id).classList.remove('hidden'); }
+function fecharModal(id){ document.getElementById(id).classList.add('hidden'); }
+function classeStatus(s){ return 'status-'+(s||'').replace(/ /g,'_'); }
+
+/* ── NAVEGAÇÃO ───────────────────────────────────────────── */
+function mudarView(nome){
+  const views=['dashboard','pendentes','cotacao','pedidos','fornecedores'];
+  views.forEach(v=>{ const el=document.getElementById('view'+v.charAt(0).toUpperCase()+v.slice(1)); if(el) el.classList.toggle('hidden', v!==nome); });
+  document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.classList.toggle('active', b.dataset.view===nome));
+  if(nome==='dashboard') renderizarDashboard();
+  if(nome==='pendentes') renderizarPendentes();
+  if(nome==='pedidos') renderizarPedidos();
+  if(nome==='fornecedores') renderizarFornecedores();
+}
+document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.addEventListener('click',()=>mudarView(b.dataset.view)));
+
+/* ── CARREGAMENTO ────────────────────────────────────────── */
+async function carregarProjetos(){
+  try{ const{data,error}=await supabaseClient.from('projetos').select('id,nome,codigo').order('nome'); if(error) throw error;
+    PROJETOS=data||[]; document.getElementById('fpProjeto').innerHTML='<option value="">— Selecione —</option>'+PROJETOS.map(p=>`<option value="${p.id}">${p.codigo} — ${p.nome}</option>`).join(''); }
+  catch(e){ console.error(e); }
+}
+async function carregarFornecedores(){
+  try{ const{data,error}=await supabaseClient.from('compras_fornecedores').select('*').eq('ativo',true).order('nome'); if(error) throw error;
+    FORNECEDORES=data||[]; document.getElementById('ctFornecedor').innerHTML='<option value="">— Selecione —</option>'+FORNECEDORES.map(f=>`<option value="${f.id}">${f.nome}</option>`).join(''); }
+  catch(e){ console.error(e); }
+}
+// Lê DIRETO da tabela que a Requisição de Materiais já usa — não duplica nada.
+async function carregarRequisicoes(){
+  try{ const{data,error}=await supabaseClient.from('requisicoes').select('*').order('created_at',{ascending:false}); if(error) throw error; REQUISICOES=data||[]; }
+  catch(e){ console.error(e); toast('Não foi possível carregar as solicitações da Requisição.','#dc2626'); }
+}
+async function carregarPedidosCompra(){
+  try{ const{data,error}=await supabaseClient.from('compras_pedidos').select('*, compras_fornecedores(nome), projetos(codigo)').order('created_at',{ascending:false}); if(error) throw error; PEDIDOS_COMPRA=data||[]; }
+  catch(e){ console.error(e); }
+}
+
+/* ── DASHBOARD ───────────────────────────────────────────── */
+function renderizarDashboard(){
+  const pendentes = REQUISICOES.filter(r=>r.status==='Pendente');
+  const emCotacao = REQUISICOES.filter(r=>r.status==='Em Cotação');
+  document.getElementById('kpiPendentes').textContent = pendentes.length;
+  document.getElementById('kpiEmCotacao').textContent = emCotacao.length;
+  document.getElementById('kpiAguardandoEntrega').textContent = PEDIDOS_COMPRA.filter(p=>p.status==='aguardando_entrega').length;
+  const inicioMes = new Date(); inicioMes.setDate(1);
+  const compradoMes = PEDIDOS_COMPRA.filter(p=>new Date(p.created_at)>=inicioMes).reduce((s,p)=>s+Number(p.valor_total),0);
+  document.getElementById('kpiValorMes').textContent = fmtMoeda(compradoMes);
+
+  document.getElementById('listaDashPendentes').innerHTML = pendentes.length ? pendentes.slice(0,6).map(renderizarLinhaRequisicao).join('') : '<div class="vazio">Nenhuma solicitação pendente. 🎉</div>';
+}
+
+/* ── SOLICITAÇÕES PENDENTES ──────────────────────────────── */
+function renderizarLinhaRequisicao(r){
+  return `<div class="item-linha" onclick="abrirCotacao('${r.id}')" style="cursor:pointer">
+    <div><div class="principal">${r.descricao_material} ${r.urgencia==='Urgente'?'🔴':''}</div><div class="sec">${r.quantidade} ${r.unidade||'UN'} · ${r.obra_texto||'Sem obra'} · Pedido por ${r.solicitante_texto||'—'}</div></div>
+    <span class="status-pill ${classeStatus(r.status)}">${r.status}</span>
+  </div>`;
+}
+function renderizarPendentes(){
+  const lista = REQUISICOES.filter(r=>r.status==='Pendente'||r.status==='Em Cotação');
+  document.getElementById('listaPendentes').innerHTML = lista.length ? lista.map(renderizarLinhaRequisicao).join('') : '<div class="vazio">Nada esperando cotação agora.</div>';
+}
+
+/* ── COTAÇÃO DE UMA SOLICITAÇÃO ──────────────────────────── */
+async function abrirCotacao(requisicaoId){
+  requisicaoAtualId = requisicaoId;
+  const r = REQUISICOES.find(x=>x.id===requisicaoId);
+  if(!r) return;
+
+  document.getElementById('cotRequisicaoNum').textContent = 'Requisição #'+(r.numero_legado||r.id.slice(0,8));
+  document.getElementById('cotDescricao').textContent = r.descricao_material;
+  document.getElementById('cotMeta').textContent = `${r.quantidade} ${r.unidade||'UN'} · ${r.obra_texto||'Sem obra'} · ${r.urgencia||'Normal'}`;
+
+  // Se ainda tava "Pendente", passa pra "Em Cotação" assim que alguém abre pra cotar
+  if(r.status==='Pendente'){
+    await supabaseClient.from('requisicoes').update({status:'Em Cotação'}).eq('id', requisicaoId);
+    r.status = 'Em Cotação';
+  }
+
+  await carregarCotacoesDaRequisicao(requisicaoId);
+  mudarView('cotacao');
+}
+
+async function carregarCotacoesDaRequisicao(requisicaoId){
+  try{
+    const{data,error}=await supabaseClient.from('compras_cotacoes').select('*, compras_fornecedores(nome)').eq('requisicao_id',requisicaoId).order('preco_unitario');
+    if(error) throw error;
+    cotacoesAtuais = data||[];
+    const menorPreco = cotacoesAtuais.length ? Math.min(...cotacoesAtuais.map(c=>Number(c.preco_unitario))) : null;
+    document.getElementById('listaCotacoes').innerHTML = cotacoesAtuais.length ? cotacoesAtuais.map(c=>`
+      <div class="cotacao-card ${Number(c.preco_unitario)===menorPreco?'melhor':''}">
+        <div><div class="forn">${c.compras_fornecedores?.nome||'—'}${Number(c.preco_unitario)===menorPreco?'<span class=\"selo-melhor\">MAIS BARATO</span>':''}</div><div class="det">Prazo: ${c.prazo_entrega_dias||'—'} dias · ${c.condicao_pagamento||'—'}</div></div>
+        <div style="display:flex;align-items:center;gap:10px"><span class="preco">${fmtMoeda(c.preco_unitario)}</span><input type="radio" name="cotacaoEscolhida" value="${c.id}" ${Number(c.preco_unitario)===menorPreco?'checked':''}></div>
+      </div>`).join('') : '<div class="vazio">Nenhuma cotação ainda — adiciona a primeira.</div>';
+  }catch(e){ console.error(e); }
+}
+
+function abrirNovaCotacao(){
+  document.getElementById('ctFornecedor').value=''; document.getElementById('ctPreco').value='';
+  document.getElementById('ctPrazo').value=''; document.getElementById('ctCondicao').value=''; document.getElementById('ctObservacao').value='';
+  abrirModal('modalCotacao');
+}
+async function salvarCotacao(){
+  const fornecedorId=document.getElementById('ctFornecedor').value;
+  const preco=parseFloat(document.getElementById('ctPreco').value);
+  if(!fornecedorId||isNaN(preco)){ toast('Escolhe o fornecedor e o preço.','#dc2626'); return; }
+  try{
+    const{error}=await supabaseClient.from('compras_cotacoes').insert({
+      requisicao_id:requisicaoAtualId, fornecedor_id:fornecedorId, preco_unitario:preco,
+      prazo_entrega_dias:parseInt(document.getElementById('ctPrazo').value)||null,
+      condicao_pagamento:document.getElementById('ctCondicao').value||null,
+      observacao:document.getElementById('ctObservacao').value||null,
+    });
+    if(error) throw error;
+    toast('✓ Cotação adicionada.','#16a34a');
+    fecharModal('modalCotacao');
+    carregarCotacoesDaRequisicao(requisicaoAtualId);
+  }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
+}
+
+async function fecharPedidoCompra(){
+  const escolhida = document.querySelector('input[name="cotacaoEscolhida"]:checked');
+  if(!escolhida){ toast('Escolhe uma cotação primeiro.','#dc2626'); return; }
+  const cotacao = cotacoesAtuais.find(c=>c.id===escolhida.value);
+  if(!cotacao) return;
+  const r = REQUISICOES.find(x=>x.id===requisicaoAtualId);
+
+  try{
+    const{error}=await supabaseClient.from('compras_pedidos').insert({
+      requisicao_id: requisicaoAtualId, cotacao_id: cotacao.id, fornecedor_id: cotacao.fornecedor_id,
+      projeto_id: document.getElementById('fpProjeto').value||null,
+      valor_total: Number(cotacao.preco_unitario) * Number(r?.quantidade||1),
+      data_prevista_entrega: document.getElementById('fpPrevisao').value||null,
+    });
+    if(error) throw error;
+    toast('✓ Pedido de compra gerado — a Requisição já mostra como "Comprado".','#16a34a');
+    await Promise.all([carregarRequisicoes(), carregarPedidosCompra()]);
+    mudarView('pendentes');
+  }catch(e){ console.error(e); toast('Não foi possível gerar o pedido.','#dc2626'); }
+}
+
+/* ── PEDIDOS DE COMPRA ───────────────────────────────────── */
+function renderizarLinhaPedido(p){
+  return `<div class="item-linha">
+    <div><div class="principal">${p.numero} — ${p.compras_fornecedores?.nome||'—'}</div><div class="sec">${p.projetos?.codigo||'Sem projeto'} · Previsão: ${fmtData(p.data_prevista_entrega)}</div></div>
+    <div style="display:flex;align-items:center;gap:10px"><b>${fmtMoeda(p.valor_total)}</b>
+    ${p.status==='aguardando_entrega' ? `<button class="btn btn-sm" onclick="marcarEntregue('${p.id}')">✅ Marcar Entregue</button>` : ''}
+    <span class="status-pill ${classeStatus(p.status)}">${p.status}</span></div>
+  </div>`;
+}
+function renderizarPedidos(){
+  const filtro=document.getElementById('filtroStatusPedido').value;
+  const lista=filtro?PEDIDOS_COMPRA.filter(p=>p.status===filtro):PEDIDOS_COMPRA;
+  document.getElementById('listaPedidosCompra').innerHTML = lista.length?lista.map(renderizarLinhaPedido).join(''):'<div class="vazio">Nenhum pedido de compra ainda.</div>';
+}
+async function marcarEntregue(id){
+  try{
+    const{error}=await supabaseClient.from('compras_pedidos').update({status:'entregue', data_entrega_real:new Date().toISOString().slice(0,10)}).eq('id',id);
+    if(error) throw error;
+    toast('✓ Marcado como entregue — a Requisição já mostra "Recebido".','#16a34a');
+    await Promise.all([carregarPedidosCompra(), carregarRequisicoes()]);
+    renderizarPedidos();
+  }catch(e){ console.error(e); toast('Não foi possível atualizar.','#dc2626'); }
+}
+
+/* ── FORNECEDORES ────────────────────────────────────────── */
+function renderizarFornecedores(){
+  document.getElementById('listaFornecedores').innerHTML = FORNECEDORES.length ? FORNECEDORES.map(f=>`
+    <div class="item-linha"><div><div class="principal">${f.nome}</div><div class="sec">${f.contato_nome||'—'} · ${f.contato_telefone||'—'} · ${f.contato_email||'—'}</div></div></div>`).join('') : '<div class="vazio">Nenhum fornecedor cadastrado ainda.</div>';
+}
+function abrirNovoFornecedor(){
+  ['fnNome','fnCnpj','fnContato','fnTelefone','fnEmail'].forEach(id=>document.getElementById(id).value='');
+  abrirModal('modalFornecedor');
+}
+async function salvarFornecedor(){
+  const nome=document.getElementById('fnNome').value.trim();
+  if(!nome){ toast('Preenche o nome.','#dc2626'); return; }
+  try{
+    const{error}=await supabaseClient.from('compras_fornecedores').insert({
+      nome, cnpj:document.getElementById('fnCnpj').value||null, contato_nome:document.getElementById('fnContato').value||null,
+      contato_telefone:document.getElementById('fnTelefone').value||null, contato_email:document.getElementById('fnEmail').value||null,
+    });
+    if(error) throw error;
+    toast('✓ Fornecedor cadastrado.','#16a34a');
+    fecharModal('modalFornecedor');
+    await carregarFornecedores(); renderizarFornecedores();
+  }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
+}
+
+/* ── INICIALIZAÇÃO ───────────────────────────────────────── */
+(async function init(){
+  await Promise.all([carregarProjetos(), carregarFornecedores(), carregarRequisicoes(), carregarPedidosCompra()]);
+  renderizarDashboard();
+})();
+</script>
+</body>
+</html>
