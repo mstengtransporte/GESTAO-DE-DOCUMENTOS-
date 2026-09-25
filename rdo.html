@@ -1756,6 +1756,7 @@ body.dark #workers-body tr:hover{background-color:rgba(58,110,232,.08)}
     <button class="btn btn-theme"   onclick="toggleTheme()">🌙 <span id="theme-label">Escuro</span></button>
     <button class="btn btn-save"    onclick="salvarRDO()" title="Salva neste aparelho E envia pro admin">💾 <span>Salvar e Enviar</span></button>
     <button class="btn" style="background:linear-gradient(180deg,#00b5fe 0%,#102b65 28%,#102b65 100%);border-color:#fd8a14;color:#fff" onclick="verificarEReenviarPendentes()" title="Confere se algum RDO seu ficou só neste aparelho sem chegar no admin, e reenvia">🔄 <span>Reenviar</span></button>
+    <button class="btn" style="background:linear-gradient(180deg,#00b5fe 0%,#102b65 28%,#102b65 100%);border-color:#fd8a14;color:#fff" onclick="abrirRecebimentoReembolso()" title="Confirmar entrega de material comprado, ou pedir reembolso de compra feita por fora">📷 <span>Recebimento/Reembolso</span></button>
     <button class="btn btn-new"     onclick="novoRDO()">📄 <span>Novo RDO</span></button>
     <button class="btn btn-search"  onclick="abrirBuscaRDO()">🔍 <span>Pesquisar RDOs</span></button>
     <button class="btn" id="btn-desfazer" style="background:linear-gradient(180deg,#00b5fe 0%,#102b65 28%,#102b65 100%);border-color:#fd8a14;color:#fff" onclick="desfazerUltimaAcao()" title="Desfazer: volta ao estado de antes da última ação (excluir funcionário, criar novo RDO)">↩️ <span>Desfazer</span></button>
@@ -13861,5 +13862,193 @@ window.addEventListener('beforeinstallprompt',(e)=>{
     </div>
   </div>
 </div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     RECEBIMENTO DE PEDIDO / REEMBOLSO — modal autocontido, com
+     estilo próprio (não depende das classes do resto do RDO),
+     acessível a qualquer encarregado, não só admin.
+     ═══════════════════════════════════════════════════════════ -->
+<style>
+  .rr-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;}
+  .rr-overlay.hidden{display:none;}
+  .rr-box{background:#0a1220;border:1.5px solid #fd8a14;border-radius:14px;max-width:480px;width:100%;max-height:90vh;overflow-y:auto;color:#e7eefc;font-family:inherit;}
+  .rr-head{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #1e2e48;}
+  .rr-head h3{margin:0;font-size:15px;color:#fff;}
+  .rr-head button{background:none;border:none;color:#8fa3c4;font-size:20px;cursor:pointer;}
+  .rr-body{padding:18px 20px;}
+  .rr-escolha{display:flex;flex-direction:column;gap:10px;}
+  .rr-escolha button{
+    display:flex;align-items:center;gap:12px;padding:16px;border-radius:10px;
+    background:linear-gradient(180deg,#00b5fe 0%,#102b65 30%,#102b65 100%);
+    border:1.5px solid #fd8a14;color:#fff;font-size:14px;font-weight:800;cursor:pointer;text-align:left;
+  }
+  .rr-escolha button span.emoji{font-size:24px;}
+  .rr-fld{margin-bottom:12px;}
+  .rr-fld label{display:block;font-size:11.5px;font-weight:700;color:#8fa3c4;margin-bottom:4px;}
+  .rr-fld input, .rr-fld select, .rr-fld textarea{
+    width:100%;box-sizing:border-box;background:#0d1830;border:1px solid #1e2e48;border-radius:8px;
+    color:#e7eefc;padding:9px 11px;font-size:13px;font-family:inherit;
+  }
+  .rr-fld textarea{resize:vertical;min-height:60px;}
+  .rr-btn{display:inline-flex;align-items:center;gap:7px;padding:10px 16px;border-radius:10px;font-size:12.5px;font-weight:800;cursor:pointer;border:1.5px solid #fd8a14;background:linear-gradient(180deg,#00b5fe 0%,#102b65 30%,#102b65 100%);color:#fff;}
+  .rr-btn.ghost{background:#132038;}
+  .rr-item-esperado{background:#132038;border:1px solid #1e2e48;border-radius:8px;padding:12px;margin-bottom:12px;font-size:12.5px;}
+  .rr-foto-preview{max-width:100%;border-radius:8px;margin-top:8px;display:none;}
+  .rr-voltar{background:none;border:none;color:#8fa3c4;font-size:12px;cursor:pointer;margin-bottom:10px;padding:0;}
+</style>
+<div class="rr-overlay hidden" id="rrOverlay">
+  <div class="rr-box">
+    <div class="rr-head"><h3 id="rrTitulo">Recebimento / Reembolso</h3><button onclick="fecharRR()">✕</button></div>
+    <div class="rr-body">
+
+      <!-- TELA 1: escolha -->
+      <div id="rrTelaEscolha">
+        <div class="rr-escolha">
+          <button onclick="mostrarTelaRR('recebimento')"><span class="emoji">📦</span> Recebi um Pedido<br><small style="font-weight:400;opacity:.8">Material que o Compras já comprou chegou</small></button>
+          <button onclick="mostrarTelaRR('reembolso')"><span class="emoji">🧾</span> Comprei numa Loja<br><small style="font-weight:400;opacity:.8">Pedir reembolso de compra feita por fora</small></button>
+        </div>
+      </div>
+
+      <!-- TELA 2A: recebimento de pedido -->
+      <div id="rrTelaRecebimento" style="display:none">
+        <button class="rr-voltar" onclick="mostrarTelaRR('escolha')">← Voltar</button>
+        <div class="rr-fld"><label>Código do pedido (6 dígitos)</label><input type="text" id="rrCodigoPedido" maxlength="6" style="text-transform:uppercase" placeholder="Ex: A1B2C3"></div>
+        <button class="rr-btn ghost" onclick="buscarPedidoRR()">🔍 Buscar Pedido</button>
+        <div id="rrPedidoEncontrado" style="display:none;margin-top:14px">
+          <div class="rr-item-esperado" id="rrItemEsperado"></div>
+          <div class="rr-fld"><label>Quantidade recebida</label><input type="number" id="rrQtdRecebida" step="0.01"></div>
+          <div class="rr-fld"><label>Foto do material/nota (opcional)</label><input type="file" accept="image/*" capture="environment" id="rrFotoRecebimento" onchange="preverFotoRR('rrFotoRecebimento','rrPreviewRecebimento')"><img class="rr-foto-preview" id="rrPreviewRecebimento"></div>
+          <div class="rr-fld"><label>Observação</label><input type="text" id="rrObsRecebimento" placeholder="Veio quebrado, faltou peça, etc. (opcional)"></div>
+          <button class="rr-btn" onclick="confirmarRecebimentoRR()">✅ Confirmar Recebimento</button>
+        </div>
+      </div>
+
+      <!-- TELA 2B: reembolso -->
+      <div id="rrTelaReembolso" style="display:none">
+        <button class="rr-voltar" onclick="mostrarTelaRR('escolha')">← Voltar</button>
+        <div class="rr-fld"><label>Foto do comprovante *</label><input type="file" accept="image/*" capture="environment" id="rrFotoReembolso" onchange="preverFotoRR('rrFotoReembolso','rrPreviewReembolso')"><img class="rr-foto-preview" id="rrPreviewReembolso"></div>
+        <div class="rr-fld"><label>O que foi comprado *</label><input type="text" id="rrItemReembolso" placeholder="Ex: Parafuso M8, 50 unidades"></div>
+        <div class="rr-fld"><label>Valor (R$) *</label><input type="number" id="rrValorReembolso" step="0.01"></div>
+        <div class="rr-fld"><label>Quem precisa do reembolso *</label><select id="rrFuncionarioReembolso" onchange="preencherPixRR()"></select></div>
+        <div class="rr-fld"><label>Chave PIX</label><input type="text" id="rrPixReembolso" placeholder="Preenche sozinho, pode editar"></div>
+        <div class="rr-fld"><label>Obra / Projeto</label><select id="rrProjetoReembolso"></select></div>
+        <button class="rr-btn" onclick="confirmarReembolsoRR()">✅ Enviar Reembolso</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── RECEBIMENTO / REEMBOLSO — autocontido ────────────────── */
+let rrPedidoAtual = null;
+
+function abrirRecebimentoReembolso(){
+  document.getElementById('rrOverlay').classList.remove('hidden');
+  mostrarTelaRR('escolha');
+  carregarListasRR();
+}
+function fecharRR(){ document.getElementById('rrOverlay').classList.add('hidden'); }
+function mostrarTelaRR(tela){
+  document.getElementById('rrTelaEscolha').style.display = tela==='escolha' ? '' : 'none';
+  document.getElementById('rrTelaRecebimento').style.display = tela==='recebimento' ? '' : 'none';
+  document.getElementById('rrTelaReembolso').style.display = tela==='reembolso' ? '' : 'none';
+  document.getElementById('rrTitulo').textContent = tela==='escolha' ? 'Recebimento / Reembolso' : tela==='recebimento' ? '📦 Recebimento de Pedido' : '🧾 Reembolso';
+}
+
+async function carregarListasRR(){
+  try{
+    const{data:funcs} = await getSupabaseClient().from('funcionarios').select('id,nome,chave_pix').order('nome');
+    const selFunc = document.getElementById('rrFuncionarioReembolso');
+    selFunc.innerHTML = '<option value="">— Selecione —</option>' + (funcs||[]).map(f=>`<option value="${f.id}" data-pix="${f.chave_pix||''}">${f.nome}</option>`).join('');
+  }catch(e){ console.error(e); }
+  try{
+    const{data:projs} = await getSupabaseClient().from('projetos').select('id,nome,codigo').order('nome');
+    const selProj = document.getElementById('rrProjetoReembolso');
+    selProj.innerHTML = '<option value="">— Selecione —</option>' + (projs||[]).map(p=>`<option value="${p.id}">${p.codigo} — ${p.nome}</option>`).join('');
+  }catch(e){ console.error(e); }
+}
+function preencherPixRR(){
+  const sel = document.getElementById('rrFuncionarioReembolso');
+  const opt = sel.options[sel.selectedIndex];
+  document.getElementById('rrPixReembolso').value = opt?.dataset?.pix || '';
+}
+
+/* Comprime a foto antes de guardar (evita payload gigante em base64) */
+function preverFotoRR(inputId, previewId){
+  const input = document.getElementById(inputId);
+  const preview = document.getElementById(previewId);
+  if(!input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const img = new Image();
+    img.onload = function(){
+      const canvas = document.createElement('canvas');
+      const maxLado = 1000;
+      let w = img.width, h = img.height;
+      if(w > h && w > maxLado){ h = h*(maxLado/w); w = maxLado; }
+      else if(h > maxLado){ w = w*(maxLado/h); h = maxLado; }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const dataUri = canvas.toDataURL('image/jpeg', 0.72);
+      input.dataset.comprimida = dataUri;
+      preview.src = dataUri;
+      preview.style.display = 'block';
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+async function buscarPedidoRR(){
+  const codigo = document.getElementById('rrCodigoPedido').value.trim().toUpperCase();
+  if(!codigo){ alert('Digita o código do pedido.'); return; }
+  try{
+    const{data,error} = await getSupabaseClient().from('compras_pedidos').select('*, requisicoes(descricao_material,quantidade,unidade)').eq('codigo_recebimento', codigo).single();
+    if(error || !data){ alert('Não achei nenhum pedido com esse código.'); return; }
+    rrPedidoAtual = data;
+    document.getElementById('rrItemEsperado').innerHTML = `<b>${data.requisicoes?.descricao_material||'—'}</b><br>Quantidade esperada: ${data.requisicoes?.quantidade||'—'} ${data.requisicoes?.unidade||''}`;
+    document.getElementById('rrQtdRecebida').value = data.requisicoes?.quantidade || '';
+    document.getElementById('rrPedidoEncontrado').style.display = '';
+  }catch(e){ console.error(e); alert('Não foi possível buscar o pedido.'); }
+}
+
+async function confirmarRecebimentoRR(){
+  const qtd = parseFloat(document.getElementById('rrQtdRecebida').value);
+  if(!rrPedidoAtual || isNaN(qtd)){ alert('Confere a quantidade recebida.'); return; }
+  const fotoInput = document.getElementById('rrFotoRecebimento');
+  try{
+    await getSupabaseClient().from('compras_recebimentos').insert({
+      pedido_id: rrPedidoAtual.id, quantidade_recebida: qtd,
+      foto_url: fotoInput.dataset.comprimida || null,
+      observacao: document.getElementById('rrObsRecebimento').value || null,
+      local: 'obra',
+    });
+    await getSupabaseClient().from('compras_pedidos').update({status:'entregue', data_entrega_real: new Date().toISOString().slice(0,10)}).eq('id', rrPedidoAtual.id);
+    alert('✓ Recebimento confirmado! O Compras e a Requisição já foram avisados.');
+    fecharRR();
+  }catch(e){ console.error(e); alert('Não foi possível confirmar. Confere a internet.'); }
+}
+
+async function confirmarReembolsoRR(){
+  const item = document.getElementById('rrItemReembolso').value.trim();
+  const valor = parseFloat(document.getElementById('rrValorReembolso').value);
+  const funcId = document.getElementById('rrFuncionarioReembolso').value;
+  const fotoInput = document.getElementById('rrFotoReembolso');
+  if(!item || isNaN(valor) || !funcId){ alert('Preenche o item, o valor e quem recebe o reembolso.'); return; }
+  if(!fotoInput.dataset.comprimida){ alert('A foto do comprovante é obrigatória.'); return; }
+  try{
+    await getSupabaseClient().from('compras_reembolsos').insert({
+      funcionario_id: funcId, item_descricao: item, valor,
+      projeto_id: document.getElementById('rrProjetoReembolso').value || null,
+      foto_comprovante_url: fotoInput.dataset.comprimida,
+      chave_pix: document.getElementById('rrPixReembolso').value || null,
+    });
+    alert('✓ Reembolso enviado! Vai aparecer no Compras — se estiver dentro da alçada, já sai aprovado sozinho.');
+    fecharRR();
+  }catch(e){ console.error(e); alert('Não foi possível enviar. Confere a internet.'); }
+}
+</script>
+
 </body>
 </html>

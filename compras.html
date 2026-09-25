@@ -261,6 +261,7 @@ a{color:inherit;}
 .status-aguardando_entrega{background:rgba(232,163,61,.18);color:#fbbf24;}
 .status-entregue{background:rgba(22,163,74,.18);color:#4ade80;}
 .status-cancelado{background:rgba(220,38,38,.18);color:#fca5a5;}
+.status-rejeitado{background:rgba(220,38,38,.18);color:#fca5a5;}
 
 .cotacao-card{background:var(--s2);border:1.5px solid var(--bd);border-radius:var(--rad-sm);padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
 .cotacao-card.melhor{border-color:#16a34a;background:rgba(22,163,74,.08);}
@@ -337,6 +338,7 @@ a{color:inherit;}
     <button class="nav-item" data-view="pendentes"><span class="ic">📋</span>Solicitações Pendentes</button>
     <button class="nav-item" data-view="pedidos"><span class="ic">📦</span>Pedidos de Compra</button>
     <button class="nav-item" data-view="fornecedores"><span class="ic">🏭</span>Fornecedores</button>
+    <button class="nav-item" data-view="reembolsos"><span class="ic">🧾</span>Reembolsos</button>
 
     <div class="sidebar-foot">
       ESF · Compras — v2026.09.25<br>
@@ -416,6 +418,12 @@ a{color:inherit;}
       <div class="card"><div id="listaFornecedores"><div class="vazio">Carregando...</div></div></div>
     </div>
 
+    <!-- ═══════════ REEMBOLSOS ═══════════ -->
+    <div id="viewReembolsos" class="hidden">
+      <div class="pg-head"><div><h1>Reembolsos</h1><p>Compras feitas por fora — enviadas pelo RDO, direto do campo.</p></div></div>
+      <div class="card"><div id="listaReembolsos"><div class="vazio">Carregando...</div></div></div>
+    </div>
+
   </main>
 </div>
 
@@ -476,13 +484,14 @@ function classeStatus(s){ return 'status-'+(s||'').replace(/ /g,'_'); }
 
 /* ── NAVEGAÇÃO ───────────────────────────────────────────── */
 function mudarView(nome){
-  const views=['dashboard','pendentes','cotacao','pedidos','fornecedores'];
+  const views=['dashboard','pendentes','cotacao','pedidos','fornecedores','reembolsos'];
   views.forEach(v=>{ const el=document.getElementById('view'+v.charAt(0).toUpperCase()+v.slice(1)); if(el) el.classList.toggle('hidden', v!==nome); });
   document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.classList.toggle('active', b.dataset.view===nome));
   if(nome==='dashboard') renderizarDashboard();
   if(nome==='pendentes') renderizarPendentes();
   if(nome==='pedidos') renderizarPedidos();
   if(nome==='fornecedores') renderizarFornecedores();
+  if(nome==='reembolsos') renderizarReembolsos();
 }
 document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.addEventListener('click',()=>mudarView(b.dataset.view)));
 
@@ -657,6 +666,41 @@ async function salvarFornecedor(){
     fecharModal('modalFornecedor');
     await carregarFornecedores(); renderizarFornecedores();
   }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
+}
+
+/* ── REEMBOLSOS (enviados pelo RDO) ─────────────────────── */
+async function renderizarReembolsos(){
+  try{
+    const{data,error}=await supabaseClient.from('compras_reembolsos').select('*, funcionarios(nome), projetos(codigo)').order('created_at',{ascending:false});
+    if(error) throw error;
+    const wrap = document.getElementById('listaReembolsos');
+    wrap.innerHTML = (data&&data.length) ? data.map(r=>`
+      <div class="item-linha">
+        <div><div class="principal">${r.numero} — ${r.funcionarios?.nome||r.nome_livre||'—'}</div><div class="sec">${r.item_descricao} · ${r.projetos?.codigo||'Sem projeto'} · ${fmtMoeda(r.valor)}</div></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          ${r.status==='aguardando_aprovacao' ? `<button class="btn btn-sm" onclick="aprovarReembolso('${r.id}')">✅ Aprovar</button><button class="btn btn-sm btn-danger" onclick="rejeitarReembolso('${r.id}')">✕ Rejeitar</button>` : ''}
+          <span class="status-pill ${classeStatus(r.status)}">${r.status.replace(/_/g,' ')}</span>
+        </div>
+      </div>`).join('') : '<div class="vazio">Nenhum reembolso enviado ainda.</div>';
+  }catch(e){ console.error(e); }
+}
+async function aprovarReembolso(id){
+  try{
+    const{error}=await supabaseClient.from('compras_reembolsos').update({status:'aprovado'}).eq('id',id);
+    if(error) throw error;
+    toast('✓ Reembolso aprovado — Título a Pagar gerado no Financeiro.','#16a34a');
+    renderizarReembolsos();
+  }catch(e){ console.error(e); toast('Não foi possível aprovar.','#dc2626'); }
+}
+async function rejeitarReembolso(id){
+  const motivo = prompt('Motivo da rejeição:');
+  if(!motivo) return;
+  try{
+    const{error}=await supabaseClient.from('compras_reembolsos').update({status:'rejeitado', motivo_rejeicao:motivo}).eq('id',id);
+    if(error) throw error;
+    toast('Reembolso rejeitado.','#dc2626');
+    renderizarReembolsos();
+  }catch(e){ console.error(e); toast('Não foi possível rejeitar.','#dc2626'); }
 }
 
 /* ── INICIALIZAÇÃO ───────────────────────────────────────── */
