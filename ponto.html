@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESF ERP · Ponto Eletrônico e Custo de Pessoal</title>
+<link rel="icon" type="image/png" href="/mod-escala_rh.png">
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+:root{
+  --azul-claro:#00b5fe; --azul-escuro:#102b65; --laranja:#fd8a14;
+  --bg:#0a1220; --s1:#0e1a30; --s2:#132038; --bd:#1e2e48;
+  --tx:#e7eefc; --mu:#8fa3c4; --verde:#16a34a; --vermelho:#dc2626; --amarelo:#e8a33d; --roxo:#8b5cf6;
+  --rad:12px; --rad-sm:8px;
+}
+*{box-sizing:border-box;}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--tx);}
+a{color:inherit;}
+
+/* ── LAYOUT ── */
+.app-shell{display:flex;min-height:100vh;}
+.sidebar{
+  width:230px;flex-shrink:0;background:#081020;border-right:1px solid var(--bd);
+  padding:16px 12px;display:flex;flex-direction:column;
+  position:fixed;top:0;left:0;bottom:0;overflow-y:auto;z-index:100;
+}
+.main{flex:1;margin-left:230px;padding:20px 26px 60px;max-width:1400px;}
+@media (max-width:860px){
+  .sidebar{position:fixed;left:-240px;transition:left .2s ease;width:230px;}
+  .sidebar.open{left:0;}
+  .main{margin-left:0;padding:16px;}
+}
+
+/* ── SIDEBAR ── */
+.sidebar-logo{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+.sidebar-logo img{width:44px;height:44px;object-fit:contain;flex-shrink:0;}
+.sidebar-logo .tt{font-size:15px;font-weight:900;}
+.sidebar-logo .tt b{color:var(--azul-claro);}
+.sidebar-logo .st{font-size:9.5px;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+.voltar-hub{
+  display:block;margin:10px 0 14px;font-size:11px;font-weight:700;text-align:center;
+  border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:6px 10px;text-decoration:none;
+  color:#fff;opacity:.8;
+}
+.nav-lbl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--mu);padding:10px 6px 6px;}
+.nav-item{
+  display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  padding:10px 12px;border-radius:10px;font-size:13px;font-weight:700;
+  background:linear-gradient(180deg,var(--azul-claro) 0%,var(--azul-escuro) 30%,var(--azul-escuro) 100%);
+  border:1.5px solid var(--laranja);color:#fff;margin-bottom:6px;
+  cursor:pointer;box-shadow:2px 2px 0 rgba(0,0,0,.3);transition:all .16s ease;
+  text-decoration:none;
+}
+.nav-item .ic{font-size:16px;flex:none;width:18px;text-align:center;}
+.nav-item:hover{filter:brightness(1.15);transform:translate(-2px,-2px) scale(1.02);box-shadow:4px 4px 0 rgba(0,0,0,.3),0 0 12px rgba(253,138,20,.5);}
+.nav-item.active{border-color:#fff;box-shadow:0 0 8px rgba(253,138,20,.7),0 0 16px rgba(253,138,20,.4);}
+.sidebar-foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--bd);font-size:10.5px;color:var(--mu);}
+
+/* ── BANNER ── */
+.banner-topo{width:100%;max-width:960px;margin:0 auto 18px;border-radius:16px;overflow:hidden;height:170px;background:#061224;}
+.banner-topo img{width:100%;height:100%;object-fit:cover;object-position:center center;}
+
+/* ── HEADER DE PÁGINA ── */
+.pg-head{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:18px;}
+.pg-head h1{font-size:21px;margin:0 0 3px;}
+.pg-head p{margin:0;color:var(--mu);font-size:12.5px;}
+
+/* ── BOTÕES ── */
+.btn{
+  display:inline-flex;align-items:center;gap:7px;padding:10px 16px;border-radius:10px;
+  font-size:12.5px;font-weight:800;cursor:pointer;border:1.5px solid var(--laranja);
+  background:linear-gradient(180deg,var(--azul-claro) 0%,var(--azul-escuro) 30%,var(--azul-escuro) 100%);
+  color:#fff;box-shadow:2px 2px 0 rgba(0,0,0,.3);transition:all .16s ease;
+}
+.btn:hover{filter:brightness(1.15);transform:translate(-2px,-2px);box-shadow:4px 4px 0 rgba(0,0,0,.3),0 0 12px rgba(253,138,20,.5);}
+.btn-ghost{background:var(--s2);border-color:var(--bd);}
+.btn-sm{padding:6px 11px;font-size:11.5px;}
+.btn-danger{background:linear-gradient(180deg,#ef4444,#7f1d1d);border-color:#ef4444;}
+
+/* ── CARDS / KPI ── */
+.grid-kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:20px;}
+.kpi{background:var(--s1);border:1px solid var(--bd);border-radius:var(--rad);padding:16px;position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--cor,var(--azul-claro));}
+.kpi .n{font-size:26px;font-weight:900;}
+.kpi .l{font-size:11.5px;color:var(--mu);font-weight:700;}
+
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--rad);padding:18px;margin-bottom:18px;}
+.card h2{font-size:15px;margin:0 0 4px;}
+.card .sub{font-size:12px;color:var(--mu);margin:0 0 14px;}
+
+/* ── TABELA / LISTA DE PROJETOS ── */
+.proj-lista{display:flex;flex-direction:column;gap:10px;}
+.proj-card{
+  background:var(--s2);border:1px solid var(--bd);border-radius:var(--rad-sm);
+  padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;
+  transition:border-color .15s;
+}
+.proj-card:hover{border-color:var(--laranja);}
+.proj-card .cod{font-size:10.5px;font-weight:800;color:var(--azul-claro);}
+.proj-card .nome{font-size:14.5px;font-weight:800;margin:2px 0 4px;}
+.proj-card .meta{font-size:11.5px;color:var(--mu);}
+.proj-card .barra-wrap{flex-shrink:0;width:140px;}
+.proj-card .barra{height:7px;background:var(--bd);border-radius:10px;overflow:hidden;margin-bottom:4px;}
+.proj-card .barra i{display:block;height:100%;background:linear-gradient(90deg,var(--azul-claro),var(--laranja));}
+.status-pill{font-size:10px;font-weight:800;text-transform:uppercase;padding:4px 9px;border-radius:20px;white-space:nowrap;}
+.status-planejamento{background:rgba(139,92,246,.18);color:#c4b5fd;}
+.status-em_andamento{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-pausado{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-concluido{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-cancelado{background:rgba(220,38,38,.18);color:#fca5a5;}
+
+/* Status específicos do CRM */
+.status-prospeccao{background:rgba(139,92,246,.18);color:#c4b5fd;}
+.status-qualificacao{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-proposta{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-negociacao{background:rgba(253,138,20,.18);color:#fdba74;}
+.status-ganho{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-perdido{background:rgba(220,38,38,.18);color:#fca5a5;}
+.status-aberto{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-bloqueado_credito{background:rgba(220,38,38,.18);color:#fca5a5;}
+.status-bloqueado_margem{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-liberado{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-faturando{background:rgba(139,92,246,.18);color:#c4b5fd;}
+.status-rascunho{background:rgba(143,163,196,.18);color:#c3d0e8;}
+.status-enviada{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-aprovada{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-recusada{background:rgba(220,38,38,.18);color:#fca5a5;}
+
+/* Funil de vendas (kanban) */
+.funil-wrap{display:flex;gap:12px;overflow-x:auto;padding-bottom:10px;}
+.funil-col{flex:0 0 240px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rad-sm);padding:10px;}
+.funil-col h3{font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;margin:0 0 10px;padding-bottom:8px;border-bottom:2px solid var(--cor,var(--azul-claro));color:var(--mu);}
+.funil-card{background:var(--s1);border:1px solid var(--bd);border-radius:8px;padding:10px;margin-bottom:8px;cursor:pointer;transition:border-color .15s;}
+.funil-card:hover{border-color:var(--laranja);}
+.funil-card .tit{font-size:12.5px;font-weight:800;margin-bottom:4px;}
+.funil-card .val{font-size:12px;color:var(--azul-claro);font-weight:700;}
+.funil-card .cli{font-size:10.5px;color:var(--mu);margin-top:3px;}
+
+/* Bloco de alerta de bloqueio */
+.alerta-bloqueio{background:rgba(220,38,38,.12);border:1.5px solid #dc2626;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:12.5px;color:#fca5a5;font-weight:700;}
+.alerta-bloqueio.margem{background:rgba(232,163,61,.12);border-color:#e8a33d;color:#fbbf24;}
+
+/* Itens de pedido/proposta */
+.item-produto{display:grid;grid-template-columns:2fr 90px 100px 90px 100px 40px;gap:8px;align-items:center;padding:8px;background:var(--s2);border-radius:8px;margin-bottom:6px;}
+.item-produto input{background:#0d1830;border:1px solid var(--bd);border-radius:6px;color:var(--tx);padding:6px 8px;font-size:12px;width:100%;}
+.item-produto .rm{cursor:pointer;color:#fca5a5;text-align:center;font-weight:900;}
+.totais-box{background:var(--s2);border-radius:8px;padding:12px 16px;margin-top:10px;display:flex;justify-content:space-between;font-size:13px;font-weight:800;}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:900;display:flex;align-items:center;justify-content:center;padding:20px;}
+.modal-box{background:var(--s1);border:1.5px solid var(--laranja);border-radius:var(--rad);max-width:560px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,.5);}
+.modal-head{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--bd);}
+.modal-head h3{margin:0;font-size:15px;}
+.modal-head .fechar{cursor:pointer;font-size:20px;color:var(--mu);background:none;border:none;line-height:1;}
+.modal-body{padding:18px 20px;}
+.modal-foot{padding:14px 20px;border-top:1px solid var(--bd);display:flex;gap:8px;justify-content:flex-end;}
+.credito-barra{height:8px;background:var(--bd);border-radius:10px;overflow:hidden;margin-top:6px;}
+.credito-barra i{display:block;height:100%;}
+
+/* ── FORMULÁRIO ── */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
+.form-grid.full{grid-template-columns:1fr;}
+.fld{display:flex;flex-direction:column;gap:5px;}
+.fld label{font-size:11.5px;font-weight:700;color:var(--mu);}
+.fld input,.fld select,.fld textarea{
+  background:#0d1830;border:1px solid var(--bd);border-radius:8px;color:var(--tx);
+  padding:9px 11px;font-size:13px;font-family:inherit;
+}
+.fld input:focus,.fld select:focus,.fld textarea:focus{outline:none;border-color:var(--azul-claro);}
+.fld textarea{resize:vertical;min-height:70px;}
+
+/* ── ABAS DE DETALHE ── */
+.tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
+.tab-btn{
+  padding:8px 14px;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;
+  background:var(--s2);border:1px solid var(--bd);color:var(--mu);
+}
+.tab-btn.active{background:linear-gradient(180deg,var(--azul-claro),var(--azul-escuro));color:#fff;border-color:var(--laranja);}
+
+.item-linha{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--s2);border-radius:8px;margin-bottom:8px;border:1px solid var(--bd);}
+.item-linha .principal{font-size:13px;font-weight:700;}
+.item-linha .sec{font-size:11px;color:var(--mu);}
+
+.vazio{text-align:center;padding:40px 20px;color:var(--mu);font-size:13px;}
+
+.hidden{display:none !important;}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#102b65;border:1.5px solid var(--laranja);color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:700;z-index:9999;box-shadow:0 6px 20px rgba(0,0,0,.4);opacity:0;transition:opacity .2s;pointer-events:none;}
+.toast.show{opacity:1;}
+
+/* ── FINANCEIRO específico ── */
+.saldo-hero{background:linear-gradient(135deg,#0a1e42,#102b65);border:1.5px solid var(--laranja);border-radius:var(--rad);padding:22px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;}
+.saldo-hero .lbl{font-size:11.5px;color:var(--mu);font-weight:700;text-transform:uppercase;}
+.saldo-hero .val{font-size:30px;font-weight:900;}
+.saldo-hero .val.pos{color:#4ade80;} .saldo-hero .val.neg{color:#fca5a5;}
+
+.titulo-linha{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rad-sm);margin-bottom:8px;cursor:pointer;transition:border-color .15s;}
+.titulo-linha:hover{border-color:var(--laranja);}
+.titulo-linha .num{font-size:10px;font-weight:800;color:var(--azul-claro);}
+.titulo-linha .desc{font-size:13.5px;font-weight:700;margin:2px 0;}
+.titulo-linha .meta{font-size:11px;color:var(--mu);}
+.titulo-linha .val{font-size:14px;font-weight:800;text-align:right;flex-shrink:0;min-width:110px;}
+
+.status-aberto{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-parcial{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-pago{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-vencido{background:rgba(220,38,38,.18);color:#fca5a5;}
+.status-cancelado{background:rgba(143,163,196,.18);color:#c3d0e8;}
+.status-aguardando_aprovacao{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-aprovado{background:rgba(0,181,254,.18);color:#7dd3fc;}
+
+/* DRE */
+.dre-linha{display:flex;justify-content:space-between;padding:9px 4px;border-bottom:1px solid var(--bd);font-size:13px;}
+.dre-linha.total{font-weight:900;font-size:14.5px;border-bottom:none;border-top:2px solid var(--laranja);padding-top:12px;margin-top:4px;}
+.dre-linha .neg{color:#fca5a5;}
+.dre-linha .pos{color:#4ade80;}
+.dre-cat-barra{display:flex;height:26px;border-radius:6px;overflow:hidden;margin:10px 0;}
+.dre-cat-barra span{display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:800;color:#fff;}
+
+/* ── FISCAL específico ── */
+.nota-linha{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rad-sm);margin-bottom:8px;cursor:pointer;transition:border-color .15s;}
+.nota-linha:hover{border-color:var(--laranja);}
+.nota-linha .num{font-size:10px;font-weight:800;color:var(--azul-claro);}
+.nota-linha .desc{font-size:13.5px;font-weight:700;margin:2px 0;}
+.nota-linha .meta{font-size:11px;color:var(--mu);}
+.nota-linha .val{font-size:14px;font-weight:800;text-align:right;flex-shrink:0;min-width:110px;}
+
+.status-rascunho{background:rgba(143,163,196,.18);color:#c3d0e8;}
+.status-emitida{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-cancelada{background:rgba(220,38,38,.18);color:#fca5a5;}
+.status-com_erro{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-pendente{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-ciencia{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-confirmado{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-aberta{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-guia_gerada{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-paga{background:rgba(22,163,74,.18);color:#4ade80;}
+
+.retencoes-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin:12px 0;}
+.retencao-item{background:var(--s2);border-radius:8px;padding:9px 11px;text-align:center;}
+.retencao-item .lbl{font-size:9.5px;color:var(--mu);text-transform:uppercase;font-weight:700;}
+.retencao-item .val{font-size:13px;font-weight:800;margin-top:2px;}
+
+.aviso-integracao{background:rgba(232,163,61,.1);border:1.5px solid #e8a33d;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:#fbbf24;line-height:1.5;}
+
+/* ── PONTO / RH específico ── */
+.status-normal{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-inconsistente{background:rgba(220,38,38,.18);color:#fca5a5;}
+.status-ajustado{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-abonado{background:rgba(0,181,254,.18);color:#7dd3fc;}
+
+.tabela-ponto{width:100%;border-collapse:collapse;font-size:12px;}
+.tabela-ponto th{background:var(--s2);padding:7px 6px;text-align:center;font-size:10px;text-transform:uppercase;color:var(--mu);border-bottom:1.5px solid var(--laranja);}
+.tabela-ponto td{padding:6px;text-align:center;border-bottom:1px solid var(--bd);}
+.tabela-ponto tr:hover td{background:var(--s2);}
+.tabela-ponto td.dia-nome{color:var(--mu);font-size:10.5px;}
+.tabela-ponto td.domingo{color:#fca5a5;}
+.tabela-ponto input{width:64px;background:#0d1830;border:1px solid var(--bd);border-radius:5px;color:var(--tx);padding:4px 5px;font-size:11.5px;text-align:center;}
+.marca-ajuste{color:#fbbf24;font-weight:900;}
+
+.banco-horas-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;font-size:13px;font-weight:800;}
+.banco-horas-badge.pos{background:rgba(22,163,74,.18);color:#4ade80;}
+.banco-horas-badge.neg{background:rgba(220,38,38,.18);color:#fca5a5;}
+
+/* ── ESPELHO DE PONTO — layout A4, pensado pra caber numa folha só ── */
+.folha-a4{
+  background:#fff;color:#111;width:210mm;min-height:297mm;margin:0 auto;
+  padding:10mm 12mm;font-family:Arial,Helvetica,sans-serif;font-size:9.5px;box-sizing:border-box;
+}
+.folha-a4 .cab-a4{display:flex;justify-content:space-between;border-bottom:2px solid #111;padding-bottom:5mm;margin-bottom:4mm;}
+.folha-a4 .cab-a4 h2{font-size:13px;margin:0 0 2mm;}
+.folha-a4 .cab-a4 .col{font-size:9px;line-height:1.5;}
+.folha-a4 table.espelho-tabela{width:100%;border-collapse:collapse;font-size:8px;}
+.folha-a4 table.espelho-tabela th{background:#eee;border:1px solid #999;padding:1mm;font-size:7px;text-transform:uppercase;}
+.folha-a4 table.espelho-tabela td{border:1px solid #ccc;padding:0.8mm 1mm;text-align:center;height:5.5mm;}
+.folha-a4 .rodape-a4{margin-top:4mm;display:flex;gap:10mm;}
+.folha-a4 .totais-a4{flex:1;border:1px solid #999;padding:2mm;font-size:8px;}
+.folha-a4 .totais-a4 div{display:flex;justify-content:space-between;padding:0.6mm 0;}
+.folha-a4 .legenda-a4{flex:1;border:1px solid #999;padding:2mm;font-size:7.5px;line-height:1.5;}
+.folha-a4 .assinaturas-a4{display:flex;justify-content:space-around;margin-top:8mm;}
+.folha-a4 .assinaturas-a4 div{text-align:center;font-size:8px;width:70mm;border-top:1px solid #111;padding-top:1.5mm;}
+
+@media print{
+  body *{visibility:hidden;}
+  .folha-a4, .folha-a4 *{visibility:visible;}
+  .folha-a4{position:absolute;top:0;left:0;margin:0;box-shadow:none;}
+  @page{size:A4;margin:0;}
+}
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <img src="esf-logo-oficial.png" alt="ESF">
+      <div><div class="tt">ESF <b>ERP</b></div><div class="st">Ponto e Custo de Pessoal</div></div>
+    </div>
+    <a href="index.html" class="voltar-hub">← Sistema de Gestão</a>
+
+    <div class="nav-lbl">Visão Geral</div>
+    <button class="nav-item active" data-view="dashboard"><span class="ic"><img src="icone-dashboard.png" alt="" style="width:17px;height:17px;object-fit:contain;vertical-align:middle"></span>Dashboard</button>
+
+    <div class="nav-lbl">Custo de Pessoal</div>
+    <button class="nav-item" data-view="custo"><span class="ic">💰</span>Custo Real / HH</button>
+
+    <div class="nav-lbl">Ponto Eletrônico</div>
+    <button class="nav-item" data-view="batidas"><span class="ic">⏱️</span>Importar Batidas</button>
+    <button class="nav-item" data-view="espelho"><span class="ic">📋</span>Espelho de Ponto</button>
+    <button class="nav-item" data-view="abonos"><span class="ic">📝</span>Abonos e Atestados</button>
+    <button class="nav-item" data-view="banco"><span class="ic">🏦</span>Banco de Horas</button>
+
+    <div class="sidebar-foot">
+      ESF · Ponto/RH — v2026.09.22<br>
+      <span id="statusConexao">🟢 Online</span>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="banner-topo"><img src="esf-banner-panoramico.png" alt="ESF ERP — Sistema de Gestão"></div>
+
+    <!-- ═══════════ DASHBOARD ═══════════ -->
+    <div id="viewDashboard">
+      <div class="pg-head"><div><h1>Dashboard de Ponto e Custo de Pessoal</h1><p>Visão geral de inconsistências, banco de horas e custo médio.</p></div></div>
+      <div class="grid-kpi">
+        <div class="kpi" style="--cor:#dc2626"><div class="n" id="kpiInconsistencias">—</div><div class="l">Dias com inconsistência</div></div>
+        <div class="kpi" style="--cor:#00b5fe"><div class="n" id="kpiFuncionariosComCusto">—</div><div class="l">Funcionários com custo calculado</div></div>
+        <div class="kpi" style="--cor:#16a34a"><div class="n" id="kpiHhMedio">—</div><div class="l">Valor/hora médio (HH)</div></div>
+        <div class="kpi" style="--cor:#8b5cf6"><div class="n" id="kpiSaldoBanco">—</div><div class="l">Saldo total no banco de horas</div></div>
+      </div>
+      <div class="card">
+        <h2>Dias com inconsistência — precisam de tratamento</h2>
+        <p class="sub">Batida faltando, sem intervalo de almoço registrado, etc.</p>
+        <div id="listaDashInconsistencias"><div class="vazio">Carregando...</div></div>
+      </div>
+    </div>
+
+    <!-- ═══════════ CUSTO REAL DO COLABORADOR / HH ═══════════ -->
+    <div id="viewCusto" class="hidden">
+      <div class="pg-head">
+        <div><h1>Custo Real do Colaborador</h1><p>Transforma salário + benefícios + encargos + provisões no valor/hora (HH) — que alimenta o RDO e o Financeiro sozinho.</p></div>
+      </div>
+      <div class="card">
+        <div class="fld" style="max-width:320px;margin-bottom:16px">
+          <label>Funcionário</label>
+          <select id="custoFuncionarioId" onchange="carregarFichaCusto()"><option value="">— Selecione —</option></select>
+        </div>
+        <div id="fichaCustoConteudo"><div class="vazio">Escolha um funcionário acima.</div></div>
+      </div>
+    </div>
+
+    <!-- ═══════════ IMPORTAR BATIDAS ═══════════ -->
+    <div id="viewBatidas" class="hidden">
+      <div class="pg-head"><div><h1>Importar Batidas de Ponto</h1><p>Arquivo .txt/.afd do relógio, ou lançamento manual.</p></div></div>
+      <div class="aviso-integracao">⚠️ O leitor abaixo processa o formato padrão AFD (Portaria 671/2021 — linhas de tamanho fixo, tipo de registro na posição 10). Se seu relógio exportar num formato próprio (Secullum, PontoTech customizado), pode precisar de ajuste no leitor — o arquivo bruto nunca é alterado, só lido.</div>
+      <div class="card">
+        <h2>Importar arquivo</h2>
+        <input type="file" id="arquivoAfd" accept=".txt,.afd" style="margin-bottom:10px">
+        <div class="fld" style="max-width:260px;margin-bottom:10px"><label>Funcionário (se o arquivo for só de uma pessoa)</label><select id="batidaFuncionarioId"><option value="">Detectar do arquivo / selecionar depois</option></select></div>
+        <button class="btn btn-sm" onclick="importarArquivoPonto()">📥 Processar Arquivo</button>
+      </div>
+      <div class="card">
+        <h2>Lançamento manual</h2>
+        <div class="form-grid">
+          <div class="fld"><label>Funcionário</label><select id="mFuncionarioId"></select></div>
+          <div class="fld"><label>Data</label><input type="date" id="mData"></div>
+          <div class="fld"><label>Hora</label><input type="time" id="mHora"></div>
+        </div>
+        <button class="btn btn-sm btn-ghost" style="margin-top:10px" onclick="lancarBatidaManual()">➕ Lançar Batida</button>
+      </div>
+    </div>
+
+    <!-- ═══════════ ESPELHO DE PONTO ═══════════ -->
+    <div id="viewEspelho" class="hidden">
+      <div class="pg-head">
+        <div><h1>Espelho de Ponto</h1><p>Processa as batidas do mês, trata inconsistências e gera o espelho pra impressão.</p></div>
+      </div>
+      <div class="card">
+        <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+          <div class="fld" style="max-width:260px"><label>Funcionário</label><select id="espFuncionarioId"></select></div>
+          <div class="fld" style="max-width:160px"><label>Competência</label><input type="month" id="espCompetencia"></div>
+          <button class="btn btn-sm" onclick="processarEspelho()">⚙️ Processar Mês</button>
+          <button class="btn btn-sm btn-ghost" onclick="tratarInconsistenciasLote()">🔧 Tratar Inconsistências em Lote</button>
+          <button class="btn btn-sm btn-ghost" onclick="window.print()">🖨️ Imprimir Espelho A4</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Tabela do mês (tela)</h2>
+        <div style="overflow-x:auto"><table class="tabela-ponto" id="tabelaEspelhoTela"><thead><tr><th>Data</th><th>Dia</th><th>Ent.1</th><th>Saí.1</th><th>Ent.2</th><th>Saí.2</th><th>Normais</th><th>HE 50%</th><th>HE 100%</th><th>Ad.Not.</th><th>Ocorrência</th></tr></thead><tbody id="corpoTabelaEspelho"></tbody></table></div>
+      </div>
+
+      <!-- Folha A4 -- só aparece na impressão, fica escondida na tela normal -->
+      <div class="folha-a4" id="folhaA4" style="display:none"></div>
+    </div>
+
+    <!-- ═══════════ ABONOS ═══════════ -->
+    <div id="viewAbonos" class="hidden">
+      <div class="pg-head">
+        <div><h1>Abonos e Atestados</h1><p>Atestados, férias, licenças e folgas — zera a falta automaticamente no espelho.</p></div>
+        <button class="btn" onclick="abrirNovoAbono()">➕ Lançar Abono</button>
+      </div>
+      <div class="card"><div id="listaAbonos"><div class="vazio">Carregando...</div></div></div>
+    </div>
+
+    <!-- ═══════════ BANCO DE HORAS ═══════════ -->
+    <div id="viewBanco" class="hidden">
+      <div class="pg-head"><div><h1>Banco de Horas</h1><p>Saldo acumulado por funcionário, mês a mês.</p></div></div>
+      <div class="card"><div id="listaBanco"><div class="vazio">Carregando...</div></div></div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════ MODAL: NOVO ABONO ═══════════ -->
+<div class="modal-overlay hidden" id="modalAbono">
+  <div class="modal-box">
+    <div class="modal-head"><h3>📝 Lançar Abono</h3><button class="fechar" onclick="fecharModal('modalAbono')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="fld"><label>Funcionário *</label><select id="abFuncionarioId"></select></div>
+        <div class="fld"><label>Data *</label><input type="date" id="abData"></div>
+        <div class="fld"><label>Tipo</label>
+          <select id="abTipo">
+            <option value="atestado_total">Atestado médico — dia inteiro</option>
+            <option value="atestado_parcial">Atestado médico — parcial</option>
+            <option value="ferias">Férias</option>
+            <option value="licenca">Licença</option>
+            <option value="folga">Folga</option>
+            <option value="dsr">DSR</option>
+          </select>
+        </div>
+        <div class="fld" id="wrapHorasAbonadas" style="display:none"><label>Horas abonadas</label><input type="number" id="abHoras" step="0.5"></div>
+        <div class="fld" style="grid-column:1/-1"><label>Justificativa</label><textarea id="abJustificativa"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost btn-sm" onclick="fecharModal('modalAbono')">Cancelar</button><button class="btn btn-sm" onclick="salvarAbono()">💾 Salvar</button></div>
+  </div>
+</div>
+
+
+<script>
+/* ── CONEXÃO ─────────────────────────────────────────────── */
+const SUPABASE_URL = 'https://bddjdpyfypsiwnirbyhv.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkZGpkcHlmeXBzaXduaXJieWh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NDk1MjgsImV4cCI6MjEwMDQyNTUyOH0.0HnH7caYH6sLp5n68izQXqbCJ-cLqTyxELl1EqoHHww';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ── ESTADO ──────────────────────────────────────────────── */
+let FUNCIONARIOS=[], ABONOS=[], FERIADOS=[];
+let espelhoAtual = []; // linhas processadas do mês atual em tela
+
+/* ── UTILITÁRIOS ─────────────────────────────────────────── */
+function toast(msg,cor){ const t=document.getElementById('toast'); t.textContent=msg; t.style.borderColor=cor||'#fd8a14'; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3200); }
+function fmtMoeda(v){ if(v===null||v===undefined||isNaN(v)) return 'R$ 0,00'; return 'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtData(d){ if(!d) return '—'; const p=d.split('T')[0].split('-'); return `${p[2]}/${p[1]}/${p[0]}`; }
+function fmtHoras(h){ if(!h) return '0h00'; const sinal=h<0?'-':''; h=Math.abs(h); const hh=Math.floor(h), mm=Math.round((h-hh)*60); return `${sinal}${hh}h${String(mm).padStart(2,'0')}`; }
+function abrirModal(id){ document.getElementById(id).classList.remove('hidden'); }
+function fecharModal(id){ document.getElementById(id).classList.add('hidden'); }
+const DIAS_SEMANA = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+
+/* ── NAVEGAÇÃO ───────────────────────────────────────────── */
+function mudarView(nome){
+  const views=['dashboard','custo','batidas','espelho','abonos','banco'];
+  views.forEach(v=>{ const el=document.getElementById('view'+v.charAt(0).toUpperCase()+v.slice(1)); if(el) el.classList.toggle('hidden', v!==nome); });
+  document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.classList.toggle('active', b.dataset.view===nome));
+  if(nome==='dashboard') renderizarDashboard();
+  if(nome==='abonos') renderizarAbonos();
+  if(nome==='banco') renderizarBanco();
+}
+document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.addEventListener('click',()=>mudarView(b.dataset.view)));
+
+/* ── CARREGAMENTO ────────────────────────────────────────── */
+async function carregarFuncionarios(){
+  try{
+    const{data,error}=await supabaseClient.from('funcionarios').select('id,nome,valor_hora_padrao').order('nome');
+    if(error) throw error;
+    FUNCIONARIOS=data||[];
+    const opts='<option value="">— Selecione —</option>'+FUNCIONARIOS.map(f=>`<option value="${f.id}">${f.nome}</option>`).join('');
+    ['custoFuncionarioId','batidaFuncionarioId','mFuncionarioId','espFuncionarioId','abFuncionarioId'].forEach(id=>{
+      const el=document.getElementById(id); if(el) el.innerHTML = opts;
+    });
+  }catch(e){ console.error(e); }
+}
+async function carregarFeriados(){
+  try{ const{data,error}=await supabaseClient.from('rh_feriados').select('*'); if(error) throw error; FERIADOS=data||[]; }
+  catch(e){ console.error(e); }
+}
+async function carregarAbonos(){
+  try{ const{data,error}=await supabaseClient.from('rh_abonos').select('*, funcionarios(nome)').order('data',{ascending:false}); if(error) throw error; ABONOS=data||[]; }
+  catch(e){ console.error(e); }
+}
+
+/* ── DASHBOARD ───────────────────────────────────────────── */
+async function renderizarDashboard(){
+  try{
+    const{data:inconsistentes} = await supabaseClient.from('rh_espelho_dia').select('*, funcionarios(nome)').eq('ajuste_manual', false).not('ocorrencia','is',null).limit(20);
+    const lista = (inconsistentes||[]).filter(d => (d.ocorrencia||'').toLowerCase().includes('inconsist'));
+    document.getElementById('kpiInconsistencias').textContent = lista.length;
+    document.getElementById('listaDashInconsistencias').innerHTML = lista.length ? lista.slice(0,6).map(d=>`
+      <div class="item-linha"><div><div class="principal">${d.funcionarios?.nome||'—'}</div><div class="sec">${fmtData(d.data)} · ${d.ocorrencia}</div></div></div>`).join('') : '<div class="vazio">Nenhuma inconsistência pendente. 🎉</div>';
+  }catch(e){ console.error(e); document.getElementById('listaDashInconsistencias').innerHTML='<div class="vazio">—</div>'; }
+
+  const comCusto = FUNCIONARIOS.filter(f=>f.valor_hora_padrao>0);
+  document.getElementById('kpiFuncionariosComCusto').textContent = `${comCusto.length}/${FUNCIONARIOS.length}`;
+  const media = comCusto.length ? comCusto.reduce((s,f)=>s+Number(f.valor_hora_padrao),0)/comCusto.length : 0;
+  document.getElementById('kpiHhMedio').textContent = fmtMoeda(media);
+
+  try{
+    const{data:bancos} = await supabaseClient.from('rh_banco_horas').select('saldo_atual');
+    const total = (bancos||[]).reduce((s,b)=>s+Number(b.saldo_atual||0),0);
+    document.getElementById('kpiSaldoBanco').textContent = fmtHoras(total);
+  }catch(e){ document.getElementById('kpiSaldoBanco').textContent='—'; }
+}
+
+/* ── CUSTO REAL DO COLABORADOR / HH ─────────────────────── */
+async function carregarFichaCusto(){
+  const funcId = document.getElementById('custoFuncionarioId').value;
+  const wrap = document.getElementById('fichaCustoConteudo');
+  if(!funcId){ wrap.innerHTML='<div class="vazio">Escolha um funcionário acima.</div>'; return; }
+
+  let ficha = null;
+  try{
+    const{data} = await supabaseClient.from('rh_composicao_custo').select('*').eq('funcionario_id', funcId).order('created_at',{ascending:false}).limit(1).single();
+    ficha = data;
+  }catch(e){ /* ainda não tem ficha — normal pra funcionário novo */ }
+
+  const v = (campo, padrao) => ficha ? (ficha[campo] ?? padrao) : padrao;
+
+  wrap.innerHTML = `
+    <div class="form-grid">
+      <div class="fld"><label>Salário base (R$)</label><input type="number" id="fcSalario" step="0.01" value="${v('salario_base',0)}"></div>
+      <div class="fld"><label>Insalubridade (%)</label><input type="number" id="fcInsalubridade" step="0.01" value="${v('adicional_insalubridade_pct',0)}"></div>
+      <div class="fld"><label>Periculosidade (%)</label><input type="number" id="fcPericulosidade" step="0.01" value="${v('adicional_periculosidade_pct',0)}"></div>
+      <div class="fld"><label>Gratificação/confiança (R$)</label><input type="number" id="fcGratificacao" step="0.01" value="${v('gratificacao_confianca',0)}"></div>
+
+      <div class="fld"><label>Vale transporte (R$/mês)</label><input type="number" id="fcVt" step="0.01" value="${v('vale_transporte_valor',0)}"></div>
+      <div class="fld"><label>Vale refeição (R$/mês)</label><input type="number" id="fcVr" step="0.01" value="${v('vale_refeicao_valor',0)}"></div>
+      <div class="fld"><label>Vale alimentação (R$/mês)</label><input type="number" id="fcVa" step="0.01" value="${v('vale_alimentacao_valor',0)}"></div>
+      <div class="fld"><label>Plano de saúde (R$/mês)</label><input type="number" id="fcSaude" step="0.01" value="${v('plano_saude_valor',0)}"></div>
+      <div class="fld"><label>Seguro de vida (R$/mês)</label><input type="number" id="fcSeguro" step="0.01" value="${v('seguro_vida_valor',0)}"></div>
+      <div class="fld"><label>Odontológico (R$/mês)</label><input type="number" id="fcOdonto" step="0.01" value="${v('assistencia_odonto_valor',0)}"></div>
+
+      <div class="fld"><label>INSS Patronal (%)</label><input type="number" id="fcInss" step="0.01" value="${v('inss_patronal_pct',20)}"></div>
+      <div class="fld"><label>FGTS (%)</label><input type="number" id="fcFgts" step="0.01" value="${v('fgts_pct',8)}"></div>
+      <div class="fld"><label>RAT/FAP (%)</label><input type="number" id="fcRat" step="0.01" value="${v('rat_fap_pct',2)}"></div>
+      <div class="fld"><label>Sistema S (%)</label><input type="number" id="fcSistemaS" step="0.01" value="${v('sistema_s_pct',5.8)}"></div>
+
+      <div class="fld"><label>13º salário (%)</label><input type="number" id="fc13" step="0.01" value="${v('decimo_terceiro_pct',8.33)}"></div>
+      <div class="fld"><label>Férias + 1/3 (%)</label><input type="number" id="fcFerias" step="0.01" value="${v('ferias_pct',11.11)}"></div>
+      <div class="fld"><label>Multa FGTS projetada (%)</label><input type="number" id="fcMulta" step="0.01" value="${v('multa_fgts_pct',4)}"></div>
+
+      <div class="fld"><label>Exames admissionais (R$)</label><input type="number" id="fcExames" step="0.01" value="${v('custo_exames_admissionais',0)}"></div>
+      <div class="fld"><label>Cursos/NRs (R$)</label><input type="number" id="fcCursos" step="0.01" value="${v('custo_cursos_nrs',0)}"></div>
+      <div class="fld"><label>Kit inicial EPI (R$)</label><input type="number" id="fcKit" step="0.01" value="${v('custo_kit_inicial_epi',0)}"></div>
+      <div class="fld"><label>Diluir em quantos meses</label><input type="number" id="fcMeses" value="${v('meses_diluicao_admissional',12)}"></div>
+      <div class="fld"><label><input type="checkbox" id="fcDiluirObra" style="width:auto;margin-right:6px" ${v('diluir_na_obra_atual',false)?'checked':''}> Jogar admissional inteiro na obra atual (em vez de diluir na folha)</label></div>
+      <div class="fld"><label>Horas mensais de referência</label><input type="number" id="fcHorasMes" value="${v('horas_mensais_referencia',220)}"></div>
+    </div>
+    <div style="margin-top:16px"><button class="btn" onclick="salvarFichaCusto('${funcId}')">💾 Calcular e Salvar</button></div>
+    ${ficha ? `
+      <div class="totais-box" style="margin-top:16px"><span>Custo mensal total</span><span>${fmtMoeda(ficha.custo_mensal_total)}</span></div>
+      <div class="totais-box" style="background:linear-gradient(135deg,#00b5fe,#102b65)"><span>Valor/Hora (HH) — já aplicado no funcionário</span><span>${fmtMoeda(ficha.valor_hh_nominal)}</span></div>
+    ` : ''}
+  `;
+}
+
+async function salvarFichaCusto(funcId){
+  const g = id => parseFloat(document.getElementById(id).value)||0;
+  const linha = {
+    funcionario_id: funcId,
+    salario_base: g('fcSalario'), adicional_insalubridade_pct: g('fcInsalubridade'), adicional_periculosidade_pct: g('fcPericulosidade'), gratificacao_confianca: g('fcGratificacao'),
+    vale_transporte_valor: g('fcVt'), vale_refeicao_valor: g('fcVr'), vale_alimentacao_valor: g('fcVa'), plano_saude_valor: g('fcSaude'), seguro_vida_valor: g('fcSeguro'), assistencia_odonto_valor: g('fcOdonto'),
+    inss_patronal_pct: g('fcInss'), fgts_pct: g('fcFgts'), rat_fap_pct: g('fcRat'), sistema_s_pct: g('fcSistemaS'),
+    decimo_terceiro_pct: g('fc13'), ferias_pct: g('fcFerias'), multa_fgts_pct: g('fcMulta'),
+    custo_exames_admissionais: g('fcExames'), custo_cursos_nrs: g('fcCursos'), custo_kit_inicial_epi: g('fcKit'),
+    meses_diluicao_admissional: parseInt(document.getElementById('fcMeses').value)||12,
+    diluir_na_obra_atual: document.getElementById('fcDiluirObra').checked,
+    horas_mensais_referencia: parseFloat(document.getElementById('fcHorasMes').value)||220,
+  };
+  try{
+    const{error} = await supabaseClient.from('rh_composicao_custo').insert(linha);
+    if(error) throw error;
+    toast('✓ Custo calculado e valor/hora atualizado no funcionário.','#16a34a');
+    await carregarFuncionarios();
+    carregarFichaCusto();
+  }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
+}
+
+/* ── PARSER DE ARQUIVO AFD (Portaria 671/2021) ──────────────
+   Formato padrão: linhas de tamanho fixo, registro tipo 3 é
+   marcação de ponto — posição 10 = tipo, posição 11-18 = data
+   (DDMMAAAA), posição 19-22 = hora (HHMM), 23-33 = PIS do
+   funcionário (11 dígitos). Se o arquivo do seu relógio for
+   diferente, os números das posições abaixo são o ponto certo
+   pra ajustar. */
+function parseArquivoAfd(texto){
+  const linhas = texto.split(/\r?\n/).filter(l=>l.trim().length>0);
+  const batidas = [];
+  for(const linha of linhas){
+    if(linha.length < 33) continue;
+    const tipoRegistro = linha.substring(9,10);
+    if(tipoRegistro !== '3') continue; // só nos interessa marcação de ponto
+    const dataStr = linha.substring(10,18);   // DDMMAAAA
+    const horaStr = linha.substring(18,22);   // HHMM
+    const pis = linha.substring(22,33).trim();
+    if(dataStr.length!==8 || horaStr.length!==4) continue;
+    const dia=dataStr.substring(0,2), mes=dataStr.substring(2,4), ano=dataStr.substring(4,8);
+    const hh=horaStr.substring(0,2), mm=horaStr.substring(2,4);
+    batidas.push({ pis, data_hora: `${ano}-${mes}-${dia}T${hh}:${mm}:00` });
+  }
+  return batidas;
+}
+
+async function importarArquivoPonto(){
+  const arquivoInput = document.getElementById('arquivoAfd');
+  const funcIdManual = document.getElementById('batidaFuncionarioId').value;
+  if(!arquivoInput.files.length){ toast('Escolhe um arquivo primeiro.','#dc2626'); return; }
+  const arquivo = arquivoInput.files[0];
+  const texto = await arquivo.text();
+  const batidas = parseArquivoAfd(texto);
+
+  if(!batidas.length){ toast('Não achei nenhuma marcação (registro tipo 3) nesse arquivo. Confere se o formato bate com o padrão AFD.', '#e8a33d'); return; }
+  if(!funcIdManual){ toast(`Achei ${batidas.length} marcações, mas preciso que você escolha o funcionário (esse arquivo pode ter PIS de várias pessoas — a v1 associa tudo ao funcionário selecionado).`, '#e8a33d'); return; }
+
+  try{
+    const linhas = batidas.map(b=>({funcionario_id:funcIdManual, data_hora:b.data_hora, origem:'importado_afd'}));
+    const{error} = await supabaseClient.from('rh_batidas_ponto').insert(linhas);
+    if(error) throw error;
+    toast(`✓ ${batidas.length} marcações importadas. O arquivo original não foi alterado.`,'#16a34a');
+  }catch(e){ console.error(e); toast('Não foi possível importar.','#dc2626'); }
+}
+
+async function lancarBatidaManual(){
+  const funcId=document.getElementById('mFuncionarioId').value;
+  const data=document.getElementById('mData').value;
+  const hora=document.getElementById('mHora').value;
+  if(!funcId||!data||!hora){ toast('Preenche funcionário, data e hora.','#dc2626'); return; }
+  try{
+    const{error}=await supabaseClient.from('rh_batidas_ponto').insert({funcionario_id:funcId, data_hora:`${data}T${hora}:00`, origem:'manual'});
+    if(error) throw error;
+    toast('✓ Batida lançada.','#16a34a');
+  }catch(e){ console.error(e); toast('Não foi possível lançar.','#dc2626'); }
+}
+
+/* ── PROCESSAMENTO DO ESPELHO ────────────────────────────────
+   Agrupa as batidas do mês por dia, calcula normais/extras/
+   noturno, aplica tolerância de 5min/10min por dia (Art. 58 CLT),
+   marca inconsistência quando faltar batida de almoço, e aplica
+   abono quando existir pro dia. */
+const TOLERANCIA_MIN = 5, TOLERANCIA_MAX_DIA_MIN = 10;
+const JORNADA_DIARIA_HORAS = 8.8; // 44h/semana ÷ 5 dias ≈ 8h48
+
+function horaParaDecimal(hhmm){ if(!hhmm) return null; const [h,m]=hhmm.split(':').map(Number); return h + m/60; }
+function decimalParaHora(dec){ if(dec===null||dec===undefined) return null; const h=Math.floor(dec), m=Math.round((dec-h)*60); return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`; }
+
+function calcularHoraNoturna(entrada, saida){
+  // Adicional noturno: 22h-05h, com hora reduzida (52min30s = fator 1.1428)
+  if(entrada===null||saida===null) return 0;
+  let inicio = Math.max(entrada, 22);
+  let fim = saida <= 5 ? saida : (saida > 22 ? Math.min(saida,29)-24 : 0);
+  if(entrada < 5) inicio = Math.min(inicio, entrada);
+  let horasNoturnas = 0;
+  if(saida > 22 || saida <= 5){
+    const de = Math.max(entrada,22)<29 ? Math.max(entrada,22) : 22;
+    // simplificação: soma o que cai depois das 22h até 24h + o que cai de 0h até 5h
+    if(entrada < 22 && saida > 22) horasNoturnas += Math.min(saida,29)-22;
+    if(saida <= 5 && entrada < 5) horasNoturnas += saida - Math.max(entrada,0);
+  }
+  return Math.max(0, round2(horasNoturnas * 1.1428));
+}
+function round2(v){ return Math.round(v*100)/100; }
+
+async function processarEspelho(){
+  const funcId = document.getElementById('espFuncionarioId').value;
+  const competencia = document.getElementById('espCompetencia').value;
+  if(!funcId||!competencia){ toast('Escolhe funcionário e competência.','#dc2626'); return; }
+
+  const [ano,mes] = competencia.split('-').map(Number);
+  const inicio = `${competencia}-01T00:00:00`;
+  const fim = `${competencia}-${String(new Date(ano,mes,0).getDate()).padStart(2,'0')}T23:59:59`;
+
+  try{
+    const{data:batidas,error} = await supabaseClient.from('rh_batidas_ponto').select('*').eq('funcionario_id',funcId).gte('data_hora',inicio).lte('data_hora',fim).order('data_hora');
+    if(error) throw error;
+    const{data:abonosDoMes} = await supabaseClient.from('rh_abonos').select('*').eq('funcionario_id',funcId).gte('data',competencia+'-01').lte('data',competencia+'-31');
+
+    const porDia = {};
+    (batidas||[]).forEach(b=>{
+      const dia = b.data_hora.slice(0,10);
+      if(!porDia[dia]) porDia[dia]=[];
+      porDia[dia].push(b.data_hora.slice(11,16));
+    });
+
+    const totalDias = new Date(ano,mes,0).getDate();
+    espelhoAtual = [];
+    for(let d=1; d<=totalDias; d++){
+      const dataStr = `${competencia}-${String(d).padStart(2,'0')}`;
+      const dataObj = new Date(ano, mes-1, d);
+      const diaSemana = DIAS_SEMANA[dataObj.getDay()];
+      const feriado = FERIADOS.find(f=>f.data===dataStr);
+      const abono = (abonosDoMes||[]).find(a=>a.data===dataStr);
+      const marcacoes = (porDia[dataStr]||[]).sort();
+
+      let linha = {data:dataStr, dia:diaSemana, e1:null,s1:null,e2:null,s2:null, normais:0, he50:0, he100:0, noturno:0, ocorrencia:'', ajuste:false};
+
+      if(abono){
+        linha.ocorrencia = ({atestado_total:'Atestado médico', atestado_parcial:'Atestado médico (parcial)', ferias:'Férias', licenca:'Licença', folga:'Folga', dsr:'DSR'})[abono.tipo] || abono.tipo;
+        if(abono.tipo==='atestado_parcial' && abono.horas_abonadas) linha.normais = JORNADA_DIARIA_HORAS - abono.horas_abonadas;
+      }else if(marcacoes.length===0){
+        if(diaSemana==='Dom') linha.ocorrencia = 'DSR';
+        else if(feriado) linha.ocorrencia = 'Feriado — '+feriado.nome;
+        else linha.ocorrencia = 'FALTA — sem batida registrada';
+      }else if(marcacoes.length===2){
+        linha.e1=marcacoes[0]; linha.s1=marcacoes[1];
+        linha.ocorrencia = '* Sem batida de almoço — pré-assinalação aplicada (12:00-13:00)';
+        linha.ajuste = true;
+        const ent=horaParaDecimal(marcacoes[0]), sai=horaParaDecimal(marcacoes[1]);
+        const trabalhado = (sai-ent) - 1; // desconta 1h de almoço pré-assinalado
+        linha.normais = Math.min(trabalhado, JORNADA_DIARIA_HORAS);
+        const extra = Math.max(0, trabalhado - JORNADA_DIARIA_HORAS);
+        if(feriado || diaSemana==='Dom') linha.he100 = trabalhado; else linha.he50 = extra;
+        linha.noturno = calcularHoraNoturna(ent,sai);
+      }else if(marcacoes.length>=4){
+        linha.e1=marcacoes[0]; linha.s1=marcacoes[1]; linha.e2=marcacoes[2]; linha.s2=marcacoes[3];
+        const m1=horaParaDecimal(marcacoes[0]), m2=horaParaDecimal(marcacoes[1]), m3=horaParaDecimal(marcacoes[2]), m4=horaParaDecimal(marcacoes[3]);
+        const trabalhado = (m2-m1)+(m4-m3);
+        linha.normais = Math.min(trabalhado, JORNADA_DIARIA_HORAS);
+        const extra = Math.max(0, trabalhado - JORNADA_DIARIA_HORAS);
+        if(feriado || diaSemana==='Dom') linha.he100 = trabalhado; else linha.he50 = extra;
+        linha.noturno = calcularHoraNoturna(m1,m4);
+      }else{
+        linha.ocorrencia = 'INCONSISTENTE — número de batidas incomum ('+marcacoes.length+')';
+      }
+      espelhoAtual.push(linha);
+    }
+    renderizarTabelaEspelho();
+    renderizarFolhaA4(funcId, competencia);
+    toast('✓ Mês processado.','#16a34a');
+  }catch(e){ console.error(e); toast('Não foi possível processar.','#dc2626'); }
+}
+
+function renderizarTabelaEspelho(){
+  const corpo = document.getElementById('corpoTabelaEspelho');
+  corpo.innerHTML = espelhoAtual.map(l => `
+    <tr>
+      <td>${l.data.split('-').reverse().join('/')}</td>
+      <td class="dia-nome ${l.dia==='Dom'?'domingo':''}">${l.dia}</td>
+      <td>${l.e1||'—'}</td><td>${l.s1||'—'}</td><td>${l.e2||'—'}</td><td>${l.s2||'—'}</td>
+      <td>${l.normais?fmtHoras(l.normais):'—'}</td>
+      <td>${l.he50?fmtHoras(l.he50):'—'}</td>
+      <td>${l.he100?fmtHoras(l.he100):'—'}</td>
+      <td>${l.noturno?fmtHoras(l.noturno):'—'}</td>
+      <td style="text-align:left;font-size:10.5px">${l.ajuste?'<span class="marca-ajuste">* </span>':''}${l.ocorrencia||''}</td>
+    </tr>`).join('');
+}
+
+/* Trata em lote: qualquer linha marcada como "ajuste" (2 batidas sem
+   almoço) já recebeu a pré-assinalação no processamento — esse botão
+   GRAVA esse tratamento no banco (rh_espelho_dia), oficializando. */
+async function tratarInconsistenciasLote(){
+  const funcId = document.getElementById('espFuncionarioId').value;
+  if(!espelhoAtual.length){ toast('Processa o mês primeiro.','#e8a33d'); return; }
+  const linhasAjuste = espelhoAtual.filter(l=>l.ajuste);
+  if(!linhasAjuste.length){ toast('Nenhuma inconsistência de almoço pra tratar nesse mês.','#8fa3c4'); return; }
+  try{
+    for(const l of linhasAjuste){
+      await supabaseClient.from('rh_espelho_dia').upsert({
+        funcionario_id: funcId, data: l.data, entrada1:l.e1, saida1:'12:00', entrada2:'13:00', saida2:l.s1,
+        horas_normais: l.normais, horas_extras_50: l.he50, horas_extras_100: l.he100, adicional_noturno_horas: l.noturno,
+        ocorrencia: l.ocorrencia, ajuste_manual: true, justificativa_ajuste: 'Pré-assinalação de almoço (Art. 74 §2º CLT) — tratamento em lote',
+      }, {onConflict:'funcionario_id,data'});
+    }
+    toast(`✓ ${linhasAjuste.length} dia(s) tratado(s) e gravado(s) no espelho oficial.`,'#16a34a');
+  }catch(e){ console.error(e); toast('Não foi possível gravar o tratamento.','#dc2626'); }
+}
+
+/* ── FOLHA A4 ────────────────────────────────────────────── */
+function renderizarFolhaA4(funcId, competencia){
+  const func = FUNCIONARIOS.find(f=>f.id===funcId);
+  const totais = espelhoAtual.reduce((acc,l)=>({
+    normais: acc.normais+(l.normais||0), he50: acc.he50+(l.he50||0), he100: acc.he100+(l.he100||0),
+    noturno: acc.noturno+(l.noturno||0), faltas: acc.faltas + (l.ocorrencia?.startsWith('FALTA')?JORNADA_DIARIA_HORAS:0),
+  }), {normais:0,he50:0,he100:0,noturno:0,faltas:0});
+
+  const linhasHtml = espelhoAtual.map(l => `
+    <tr>
+      <td>${l.data.split('-')[2]}</td><td>${l.dia}</td>
+      <td>${l.e1||''}</td><td>${l.s1||''}</td><td>${l.e2||''}</td><td>${l.s2||''}</td>
+      <td>${l.normais?fmtHoras(l.normais):''}</td>
+      <td>${l.ocorrencia?.startsWith('FALTA')?'F':''}</td>
+      <td>${l.he50?fmtHoras(l.he50):''}</td>
+      <td>${l.he100?fmtHoras(l.he100):''}</td>
+      <td>${l.noturno?fmtHoras(l.noturno):''}</td>
+      <td style="text-align:left;font-size:6.5px">${l.ajuste?'*':''}${(l.ocorrencia||'').replace('* Sem batida de almoço — pré-assinalação aplicada (12:00-13:00)','Pré-assin. almoço')}</td>
+    </tr>`).join('');
+
+  document.getElementById('folhaA4').innerHTML = `
+    <div class="cab-a4">
+      <div class="col"><h2>ESF — Montagem e Manutenção Industrial</h2>CNPJ: 00.000.000/0001-00<br>Competência: ${competencia}</div>
+      <div class="col" style="text-align:right"><b>${func?.nome||'—'}</b><br>Matrícula/PIS: —<br>Cargo: —<br>Horário contratual: 07:00–17:12 (seg-sex)</div>
+    </div>
+    <table class="espelho-tabela">
+      <thead><tr><th>Dia</th><th>Sem</th><th>Ent1</th><th>Saí1</th><th>Ent2</th><th>Saí2</th><th>Normais</th><th>Falta</th><th>HE50</th><th>HE100</th><th>Ad.Not</th><th>Ocorrência</th></tr></thead>
+      <tbody>${linhasHtml}</tbody>
+    </table>
+    <div class="rodape-a4">
+      <div class="totais-a4">
+        <b>TOTAIS DO MÊS</b>
+        <div><span>Horas normais</span><span>${fmtHoras(totais.normais)}</span></div>
+        <div><span>Horas extras 50%</span><span>${fmtHoras(totais.he50)}</span></div>
+        <div><span>Horas extras 100%</span><span>${fmtHoras(totais.he100)}</span></div>
+        <div><span>Adicional noturno</span><span>${fmtHoras(totais.noturno)}</span></div>
+        <div><span>Faltas</span><span>${fmtHoras(totais.faltas)}</span></div>
+      </div>
+      <div class="legenda-a4">
+        <b>LEGENDA / AUDITORIA</b><br>
+        * = ajuste automático (pré-assinalação de almoço, Art. 74 §2º CLT)<br>
+        F = falta não abonada · Tolerância aplicada: 5min/batida, máx 10min/dia (Art. 58 CLT)<br>
+        Documento gerado pelo sistema em ${new Date().toLocaleDateString('pt-BR')}
+      </div>
+    </div>
+    <div class="assinaturas-a4">
+      <div>Assinatura do Colaborador</div>
+      <div>Assinatura do Gestor / RH</div>
+    </div>
+  `;
+}
+
+/* ── ABONOS ──────────────────────────────────────────────── */
+document.getElementById('abTipo').addEventListener('change', function(){
+  document.getElementById('wrapHorasAbonadas').style.display = this.value==='atestado_parcial' ? '' : 'none';
+});
+function renderizarAbonos(){
+  document.getElementById('listaAbonos').innerHTML = ABONOS.length ? ABONOS.map(a=>`
+    <div class="item-linha"><div><div class="principal">${a.funcionarios?.nome||'—'} — ${a.tipo}</div><div class="sec">${fmtData(a.data)} · ${a.justificativa||'—'}</div></div></div>`).join('') : '<div class="vazio">Nenhum abono lançado.</div>';
+}
+function abrirNovoAbono(){
+  document.getElementById('abFuncionarioId').value=''; document.getElementById('abData').value='';
+  document.getElementById('abTipo').value='atestado_total'; document.getElementById('abHoras').value='';
+  document.getElementById('abJustificativa').value=''; document.getElementById('wrapHorasAbonadas').style.display='none';
+  abrirModal('modalAbono');
+}
+async function salvarAbono(){
+  const funcId=document.getElementById('abFuncionarioId').value, data=document.getElementById('abData').value;
+  if(!funcId||!data){ toast('Escolhe funcionário e data.','#dc2626'); return; }
+  try{
+    const{error}=await supabaseClient.from('rh_abonos').insert({
+      funcionario_id:funcId, data, tipo:document.getElementById('abTipo').value,
+      horas_abonadas:parseFloat(document.getElementById('abHoras').value)||null,
+      justificativa:document.getElementById('abJustificativa').value||null,
+    });
+    if(error) throw error;
+    toast('✓ Abono lançado.','#16a34a');
+    fecharModal('modalAbono');
+    await carregarAbonos(); renderizarAbonos();
+  }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
+}
+
+/* ── BANCO DE HORAS ──────────────────────────────────────── */
+async function renderizarBanco(){
+  try{
+    const{data,error}=await supabaseClient.from('rh_banco_horas').select('*, funcionarios(nome)').order('competencia',{ascending:false});
+    if(error) throw error;
+    document.getElementById('listaBanco').innerHTML = (data&&data.length) ? data.map(b=>`
+      <div class="item-linha"><div><div class="principal">${b.funcionarios?.nome||'—'}</div><div class="sec">Competência ${b.competencia} · Creditado ${fmtHoras(b.horas_creditadas)} · Debitado ${fmtHoras(b.horas_debitadas)}</div></div>
+      <span class="banco-horas-badge ${b.saldo_atual>=0?'pos':'neg'}">${fmtHoras(b.saldo_atual)}</span></div>`).join('') : '<div class="vazio">Nenhum banco de horas calculado ainda.</div>';
+  }catch(e){ console.error(e); }
+}
+
+/* ── INICIALIZAÇÃO ───────────────────────────────────────── */
+(async function init(){
+  document.getElementById('espCompetencia').value = new Date().toISOString().slice(0,7);
+  await Promise.all([carregarFuncionarios(), carregarFeriados(), carregarAbonos()]);
+  renderizarDashboard();
+})();
+</script>
+</body>
+</html>
