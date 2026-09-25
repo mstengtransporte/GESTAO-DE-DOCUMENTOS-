@@ -350,12 +350,12 @@ a{color:inherit;}
     <!-- ═══════════ IMPORTAR BATIDAS ═══════════ -->
     <div id="viewBatidas" class="hidden">
       <div class="pg-head"><div><h1>Importar Batidas de Ponto</h1><p>Arquivo .txt/.afd do relógio, ou lançamento manual.</p></div></div>
-      <div class="aviso-integracao">⚠️ O leitor abaixo processa o formato padrão AFD (Portaria 671/2021 — linhas de tamanho fixo, tipo de registro na posição 10). Se seu relógio exportar num formato próprio (Secullum, PontoTech customizado), pode precisar de ajuste no leitor — o arquivo bruto nunca é alterado, só lido.</div>
+      <div class="aviso-integracao">✅ O leitor lê o formato REP-C (Portaria 671/2021, datas em ISO 8601) — testado contra um arquivo real do seu relógio. Reconhece automaticamente todo mundo que já tem PIS cadastrado, e mostra quem é novo antes de importar. O arquivo original nunca é alterado.</div>
       <div class="card">
         <h2>Importar arquivo</h2>
         <input type="file" id="arquivoAfd" accept=".txt,.afd" style="margin-bottom:10px">
-        <div class="fld" style="max-width:260px;margin-bottom:10px"><label>Funcionário (se o arquivo for só de uma pessoa)</label><select id="batidaFuncionarioId"><option value="">Detectar do arquivo / selecionar depois</option></select></div>
         <button class="btn btn-sm" onclick="importarArquivoPonto()">📥 Processar Arquivo</button>
+        <div id="resumoImportacaoAfd"></div>
       </div>
       <div class="card">
         <h2>Lançamento manual</h2>
@@ -475,7 +475,7 @@ async function carregarFuncionarios(){
     if(error) throw error;
     FUNCIONARIOS=data||[];
     const opts='<option value="">— Selecione —</option>'+FUNCIONARIOS.map(f=>`<option value="${f.id}">${f.nome}</option>`).join('');
-    ['custoFuncionarioId','batidaFuncionarioId','mFuncionarioId','espFuncionarioId','abFuncionarioId'].forEach(id=>{
+    ['custoFuncionarioId','mFuncionarioId','espFuncionarioId','abFuncionarioId'].forEach(id=>{
       const el=document.getElementById(id); if(el) el.innerHTML = opts;
     });
   }catch(e){ console.error(e); }
@@ -592,40 +592,114 @@ async function salvarFichaCusto(funcId){
    funcionário (11 dígitos). Se o arquivo do seu relógio for
    diferente, os números das posições abaixo são o ponto certo
    pra ajustar. */
+/* Leitor de AFD, reconstruído a partir de um arquivo real (Portaria 671,
+   formato REP-C com datas em ISO 8601, não o formato antigo DDMMAAAA).
+   Estrutura confirmada testando contra um arquivo de verdade:
+   - Registro "I" (identificação, 118 caracteres): NSR(10) + data-hora
+     ISO(24) + "I"(1) + PIS(12) + NOME(36, com espaço no fim)
+   - Registro de marcação (50 caracteres): NSR(10) + data-hora ISO(24) +
+     PIS(12) + checksum(4)
+   - Registros de 36 caracteres são eventos do sistema (relógio ligando
+     etc.), sem pessoa vinculada — ignorados. */
 function parseArquivoAfd(texto){
   const linhas = texto.split(/\r?\n/).filter(l=>l.trim().length>0);
+  const nomesDoArquivo = new Map(); // pis -> nome
   const batidas = [];
+
   for(const linha of linhas){
-    if(linha.length < 33) continue;
-    const tipoRegistro = linha.substring(9,10);
-    if(tipoRegistro !== '3') continue; // só nos interessa marcação de ponto
-    const dataStr = linha.substring(10,18);   // DDMMAAAA
-    const horaStr = linha.substring(18,22);   // HHMM
-    const pis = linha.substring(22,33).trim();
-    if(dataStr.length!==8 || horaStr.length!==4) continue;
-    const dia=dataStr.substring(0,2), mes=dataStr.substring(2,4), ano=dataStr.substring(4,8);
-    const hh=horaStr.substring(0,2), mm=horaStr.substring(2,4);
-    batidas.push({ pis, data_hora: `${ano}-${mes}-${dia}T${hh}:${mm}:00` });
+    if(linha.length===118 && linha.substring(34,35)==='I'){
+      const pis = linha.substring(35,47).trim();
+      const nome = linha.substring(47,83).trim();
+      if(pis && nome && !/^\d+$/.test(nome)){
+        nomesDoArquivo.set(pis, nome); // a última ocorrência de cada PIS "vence" (nome mais recente)
+      }
+    }
+    if(linha.length===50){
+      const dataHoraIso = linha.substring(10,34); // AAAA-MM-DDTHH:MM:SS-0300
+      const pis = linha.substring(34,46).trim();
+      if(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(dataHoraIso) && pis){
+        batidas.push({ pis, data_hora: dataHoraIso.slice(0,19) });
+      }
+    }
   }
-  return batidas;
+  return { batidas, nomesDoArquivo };
 }
+
+let dadosAfdProcessados = null;
 
 async function importarArquivoPonto(){
   const arquivoInput = document.getElementById('arquivoAfd');
-  const funcIdManual = document.getElementById('batidaFuncionarioId').value;
   if(!arquivoInput.files.length){ toast('Escolhe um arquivo primeiro.','#dc2626'); return; }
   const arquivo = arquivoInput.files[0];
-  const texto = await arquivo.text();
-  const batidas = parseArquivoAfd(texto);
 
-  if(!batidas.length){ toast('Não achei nenhuma marcação (registro tipo 3) nesse arquivo. Confere se o formato bate com o padrão AFD.', '#e8a33d'); return; }
-  if(!funcIdManual){ toast(`Achei ${batidas.length} marcações, mas preciso que você escolha o funcionário (esse arquivo pode ter PIS de várias pessoas — a v1 associa tudo ao funcionário selecionado).`, '#e8a33d'); return; }
+  // O AFD vem em Latin-1/ANSI, não UTF-8 — ler como texto puro corrompe
+  // acento (Ç, Ã...). Lê os bytes e decodifica certo.
+  const bytes = await arquivo.arrayBuffer();
+  const texto = new TextDecoder('iso-8859-1').decode(bytes);
+
+  const { batidas, nomesDoArquivo } = parseArquivoAfd(texto);
+  if(!batidas.length){ toast('Não achei nenhuma marcação nesse arquivo. Confere se é um AFD de verdade.', '#e8a33d'); return; }
+
+  // Agrupa as batidas por PIS, pra mostrar um resumo por pessoa antes de importar
+  const porPis = {};
+  batidas.forEach(b=>{ (porPis[b.pis] = porPis[b.pis]||[]).push(b); });
+
+  const{data: funcsAtuais} = await supabaseClient.from('funcionarios').select('id,nome,pis');
+  const porPisSistema = {};
+  (funcsAtuais||[]).forEach(f=>{ if(f.pis) porPisSistema[f.pis.trim()] = f; });
+
+  dadosAfdProcessados = { porPis, nomesDoArquivo, porPisSistema };
+
+  const linhasResumo = Object.keys(porPis).map(pis=>{
+    const nome = nomesDoArquivo.get(pis) || '(nome não veio no arquivo — só o PIS)';
+    const jaExiste = porPisSistema[pis];
+    return {pis, nome, qtdBatidas: porPis[pis].length, jaExiste: !!jaExiste, funcionarioId: jaExiste?.id};
+  }).sort((a,b)=>a.nome.localeCompare(b.nome));
+
+  const wrap = document.getElementById('resumoImportacaoAfd');
+  wrap.innerHTML = `
+    <h2 style="font-size:13px;margin:16px 0 8px">Encontrado no arquivo — ${linhasResumo.length} pessoa(s), ${batidas.length} marcação(ões)</h2>
+    <p class="sub">Quem já está cadastrado (bate o PIS) recebe as batidas direto. Quem é novo, você escolhe se cadastra agora.</p>
+    <div id="listaResumoAfd">${linhasResumo.map(l=>`
+      <div class="item-linha">
+        <div><div class="principal">${l.nome}</div><div class="sec">PIS: ${l.pis} · ${l.qtdBatidas} marcação(ões)</div></div>
+        <span class="status-pill ${l.jaExiste?'status-normal':'status-inconsistente'}">${l.jaExiste?'Já cadastrado':'Novo — não cadastrado'}</span>
+      </div>`).join('')}
+    </div>
+    <div style="margin-top:14px;display:flex;gap:8px">
+      <button class="btn btn-sm" onclick="confirmarImportacaoAfd(true)">✅ Cadastrar os novos e importar tudo</button>
+      <button class="btn btn-sm btn-ghost" onclick="confirmarImportacaoAfd(false)">Importar só de quem já está cadastrado</button>
+    </div>
+  `;
+}
+
+async function confirmarImportacaoAfd(cadastrarNovos){
+  if(!dadosAfdProcessados) return;
+  const { porPis, nomesDoArquivo, porPisSistema } = dadosAfdProcessados;
+  let totalImportado = 0, totalCadastrado = 0;
 
   try{
-    const linhas = batidas.map(b=>({funcionario_id:funcIdManual, data_hora:b.data_hora, origem:'importado_afd'}));
-    const{error} = await supabaseClient.from('rh_batidas_ponto').insert(linhas);
-    if(error) throw error;
-    toast(`✓ ${batidas.length} marcações importadas. O arquivo original não foi alterado.`,'#16a34a');
+    for(const pis of Object.keys(porPis)){
+      let funcId = porPisSistema[pis]?.id;
+
+      if(!funcId && cadastrarNovos){
+        const nome = nomesDoArquivo.get(pis);
+        if(nome){
+          const{data: novo, error: errNovo} = await supabaseClient.from('funcionarios').insert({nome, pis}).select().single();
+          if(!errNovo && novo){ funcId = novo.id; totalCadastrado++; }
+        }
+      }
+      if(!funcId) continue; // sem cadastro e sem nome no arquivo — não dá pra importar essa pessoa
+
+      const linhas = porPis[pis].map(b=>({funcionario_id:funcId, data_hora:b.data_hora, origem:'importado_afd'}));
+      const{error} = await supabaseClient.from('rh_batidas_ponto').insert(linhas);
+      if(!error) totalImportado += linhas.length;
+    }
+    toast(`✓ ${totalImportado} marcações importadas${totalCadastrado?', '+totalCadastrado+' funcionário(s) novo(s) cadastrado(s)':''}.`,'#16a34a');
+    document.getElementById('resumoImportacaoAfd').innerHTML = '';
+    document.getElementById('arquivoAfd').value = '';
+    dadosAfdProcessados = null;
+    await carregarFuncionarios();
   }catch(e){ console.error(e); toast('Não foi possível importar.','#dc2626'); }
 }
 
