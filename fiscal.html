@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESF ERP · Fiscal e Tributário</title>
+<link rel="icon" type="image/png" href="/mod-fiscal.png">
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+:root{
+  --azul-claro:#00b5fe; --azul-escuro:#102b65; --laranja:#fd8a14;
+  --bg:#0a1220; --s1:#0e1a30; --s2:#132038; --bd:#1e2e48;
+  --tx:#e7eefc; --mu:#8fa3c4; --verde:#16a34a; --vermelho:#dc2626; --amarelo:#e8a33d; --roxo:#8b5cf6;
+  --rad:12px; --rad-sm:8px;
+}
+*{box-sizing:border-box;}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--tx);}
+a{color:inherit;}
+
+/* ── LAYOUT ── */
+.app-shell{display:flex;min-height:100vh;}
+.sidebar{
+  width:230px;flex-shrink:0;background:#081020;border-right:1px solid var(--bd);
+  padding:16px 12px;display:flex;flex-direction:column;
+  position:fixed;top:0;left:0;bottom:0;overflow-y:auto;z-index:100;
+}
+.main{flex:1;margin-left:230px;padding:20px 26px 60px;max-width:1400px;}
+@media (max-width:860px){
+  .sidebar{position:fixed;left:-240px;transition:left .2s ease;width:230px;}
+  .sidebar.open{left:0;}
+  .main{margin-left:0;padding:16px;}
+}
+
+/* ── SIDEBAR ── */
+.sidebar-logo{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+.sidebar-logo img{width:44px;height:44px;object-fit:contain;flex-shrink:0;}
+.sidebar-logo .tt{font-size:15px;font-weight:900;}
+.sidebar-logo .tt b{color:var(--azul-claro);}
+.sidebar-logo .st{font-size:9.5px;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+.voltar-hub{
+  display:block;margin:10px 0 14px;font-size:11px;font-weight:700;text-align:center;
+  border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:6px 10px;text-decoration:none;
+  color:#fff;opacity:.8;
+}
+.nav-lbl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--mu);padding:10px 6px 6px;}
+.nav-item{
+  display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  padding:10px 12px;border-radius:10px;font-size:13px;font-weight:700;
+  background:linear-gradient(180deg,var(--azul-claro) 0%,var(--azul-escuro) 30%,var(--azul-escuro) 100%);
+  border:1.5px solid var(--laranja);color:#fff;margin-bottom:6px;
+  cursor:pointer;box-shadow:2px 2px 0 rgba(0,0,0,.3);transition:all .16s ease;
+  text-decoration:none;
+}
+.nav-item .ic{font-size:16px;flex:none;width:18px;text-align:center;}
+.nav-item:hover{filter:brightness(1.15);transform:translate(-2px,-2px) scale(1.02);box-shadow:4px 4px 0 rgba(0,0,0,.3),0 0 12px rgba(253,138,20,.5);}
+.nav-item.active{border-color:#fff;box-shadow:0 0 8px rgba(253,138,20,.7),0 0 16px rgba(253,138,20,.4);}
+.sidebar-foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--bd);font-size:10.5px;color:var(--mu);}
+
+/* ── BANNER ── */
+.banner-topo{width:100%;max-width:960px;margin:0 auto 18px;border-radius:16px;overflow:hidden;height:170px;background:#061224;}
+.banner-topo img{width:100%;height:100%;object-fit:cover;object-position:center center;}
+
+/* ── HEADER DE PÁGINA ── */
+.pg-head{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:18px;}
+.pg-head h1{font-size:21px;margin:0 0 3px;}
+.pg-head p{margin:0;color:var(--mu);font-size:12.5px;}
+
+/* ── BOTÕES ── */
+.btn{
+  display:inline-flex;align-items:center;gap:7px;padding:10px 16px;border-radius:10px;
+  font-size:12.5px;font-weight:800;cursor:pointer;border:1.5px solid var(--laranja);
+  background:linear-gradient(180deg,var(--azul-claro) 0%,var(--azul-escuro) 30%,var(--azul-escuro) 100%);
+  color:#fff;box-shadow:2px 2px 0 rgba(0,0,0,.3);transition:all .16s ease;
+}
+.btn:hover{filter:brightness(1.15);transform:translate(-2px,-2px);box-shadow:4px 4px 0 rgba(0,0,0,.3),0 0 12px rgba(253,138,20,.5);}
+.btn-ghost{background:var(--s2);border-color:var(--bd);}
+.btn-sm{padding:6px 11px;font-size:11.5px;}
+.btn-danger{background:linear-gradient(180deg,#ef4444,#7f1d1d);border-color:#ef4444;}
+
+/* ── CARDS / KPI ── */
+.grid-kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:20px;}
+.kpi{background:var(--s1);border:1px solid var(--bd);border-radius:var(--rad);padding:16px;position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--cor,var(--azul-claro));}
+.kpi .n{font-size:26px;font-weight:900;}
+.kpi .l{font-size:11.5px;color:var(--mu);font-weight:700;}
+
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--rad);padding:18px;margin-bottom:18px;}
+.card h2{font-size:15px;margin:0 0 4px;}
+.card .sub{font-size:12px;color:var(--mu);margin:0 0 14px;}
+
+/* ── TABELA / LISTA DE PROJETOS ── */
+.proj-lista{display:flex;flex-direction:column;gap:10px;}
+.proj-card{
+  background:var(--s2);border:1px solid var(--bd);border-radius:var(--rad-sm);
+  padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;
+  transition:border-color .15s;
+}
+.proj-card:hover{border-color:var(--laranja);}
+.proj-card .cod{font-size:10.5px;font-weight:800;color:var(--azul-claro);}
+.proj-card .nome{font-size:14.5px;font-weight:800;margin:2px 0 4px;}
+.proj-card .meta{font-size:11.5px;color:var(--mu);}
+.proj-card .barra-wrap{flex-shrink:0;width:140px;}
+.proj-card .barra{height:7px;background:var(--bd);border-radius:10px;overflow:hidden;margin-bottom:4px;}
+.proj-card .barra i{display:block;height:100%;background:linear-gradient(90deg,var(--azul-claro),var(--laranja));}
+.status-pill{font-size:10px;font-weight:800;text-transform:uppercase;padding:4px 9px;border-radius:20px;white-space:nowrap;}
+.status-planejamento{background:rgba(139,92,246,.18);color:#c4b5fd;}
+.status-em_andamento{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-pausado{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-concluido{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-cancelado{background:rgba(220,38,38,.18);color:#fca5a5;}
+
+/* Status específicos do CRM */
+.status-prospeccao{background:rgba(139,92,246,.18);color:#c4b5fd;}
+.status-qualificacao{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-proposta{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-negociacao{background:rgba(253,138,20,.18);color:#fdba74;}
+.status-ganho{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-perdido{background:rgba(220,38,38,.18);color:#fca5a5;}
+.status-aberto{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-bloqueado_credito{background:rgba(220,38,38,.18);color:#fca5a5;}
+.status-bloqueado_margem{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-liberado{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-faturando{background:rgba(139,92,246,.18);color:#c4b5fd;}
+.status-rascunho{background:rgba(143,163,196,.18);color:#c3d0e8;}
+.status-enviada{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-aprovada{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-recusada{background:rgba(220,38,38,.18);color:#fca5a5;}
+
+/* Funil de vendas (kanban) */
+.funil-wrap{display:flex;gap:12px;overflow-x:auto;padding-bottom:10px;}
+.funil-col{flex:0 0 240px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rad-sm);padding:10px;}
+.funil-col h3{font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;margin:0 0 10px;padding-bottom:8px;border-bottom:2px solid var(--cor,var(--azul-claro));color:var(--mu);}
+.funil-card{background:var(--s1);border:1px solid var(--bd);border-radius:8px;padding:10px;margin-bottom:8px;cursor:pointer;transition:border-color .15s;}
+.funil-card:hover{border-color:var(--laranja);}
+.funil-card .tit{font-size:12.5px;font-weight:800;margin-bottom:4px;}
+.funil-card .val{font-size:12px;color:var(--azul-claro);font-weight:700;}
+.funil-card .cli{font-size:10.5px;color:var(--mu);margin-top:3px;}
+
+/* Bloco de alerta de bloqueio */
+.alerta-bloqueio{background:rgba(220,38,38,.12);border:1.5px solid #dc2626;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:12.5px;color:#fca5a5;font-weight:700;}
+.alerta-bloqueio.margem{background:rgba(232,163,61,.12);border-color:#e8a33d;color:#fbbf24;}
+
+/* Itens de pedido/proposta */
+.item-produto{display:grid;grid-template-columns:2fr 90px 100px 90px 100px 40px;gap:8px;align-items:center;padding:8px;background:var(--s2);border-radius:8px;margin-bottom:6px;}
+.item-produto input{background:#0d1830;border:1px solid var(--bd);border-radius:6px;color:var(--tx);padding:6px 8px;font-size:12px;width:100%;}
+.item-produto .rm{cursor:pointer;color:#fca5a5;text-align:center;font-weight:900;}
+.totais-box{background:var(--s2);border-radius:8px;padding:12px 16px;margin-top:10px;display:flex;justify-content:space-between;font-size:13px;font-weight:800;}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:900;display:flex;align-items:center;justify-content:center;padding:20px;}
+.modal-box{background:var(--s1);border:1.5px solid var(--laranja);border-radius:var(--rad);max-width:560px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,.5);}
+.modal-head{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--bd);}
+.modal-head h3{margin:0;font-size:15px;}
+.modal-head .fechar{cursor:pointer;font-size:20px;color:var(--mu);background:none;border:none;line-height:1;}
+.modal-body{padding:18px 20px;}
+.modal-foot{padding:14px 20px;border-top:1px solid var(--bd);display:flex;gap:8px;justify-content:flex-end;}
+.credito-barra{height:8px;background:var(--bd);border-radius:10px;overflow:hidden;margin-top:6px;}
+.credito-barra i{display:block;height:100%;}
+
+/* ── FORMULÁRIO ── */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
+.form-grid.full{grid-template-columns:1fr;}
+.fld{display:flex;flex-direction:column;gap:5px;}
+.fld label{font-size:11.5px;font-weight:700;color:var(--mu);}
+.fld input,.fld select,.fld textarea{
+  background:#0d1830;border:1px solid var(--bd);border-radius:8px;color:var(--tx);
+  padding:9px 11px;font-size:13px;font-family:inherit;
+}
+.fld input:focus,.fld select:focus,.fld textarea:focus{outline:none;border-color:var(--azul-claro);}
+.fld textarea{resize:vertical;min-height:70px;}
+
+/* ── ABAS DE DETALHE ── */
+.tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
+.tab-btn{
+  padding:8px 14px;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;
+  background:var(--s2);border:1px solid var(--bd);color:var(--mu);
+}
+.tab-btn.active{background:linear-gradient(180deg,var(--azul-claro),var(--azul-escuro));color:#fff;border-color:var(--laranja);}
+
+.item-linha{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--s2);border-radius:8px;margin-bottom:8px;border:1px solid var(--bd);}
+.item-linha .principal{font-size:13px;font-weight:700;}
+.item-linha .sec{font-size:11px;color:var(--mu);}
+
+.vazio{text-align:center;padding:40px 20px;color:var(--mu);font-size:13px;}
+
+.hidden{display:none !important;}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#102b65;border:1.5px solid var(--laranja);color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:700;z-index:9999;box-shadow:0 6px 20px rgba(0,0,0,.4);opacity:0;transition:opacity .2s;pointer-events:none;}
+.toast.show{opacity:1;}
+
+/* ── FINANCEIRO específico ── */
+.saldo-hero{background:linear-gradient(135deg,#0a1e42,#102b65);border:1.5px solid var(--laranja);border-radius:var(--rad);padding:22px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;}
+.saldo-hero .lbl{font-size:11.5px;color:var(--mu);font-weight:700;text-transform:uppercase;}
+.saldo-hero .val{font-size:30px;font-weight:900;}
+.saldo-hero .val.pos{color:#4ade80;} .saldo-hero .val.neg{color:#fca5a5;}
+
+.titulo-linha{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rad-sm);margin-bottom:8px;cursor:pointer;transition:border-color .15s;}
+.titulo-linha:hover{border-color:var(--laranja);}
+.titulo-linha .num{font-size:10px;font-weight:800;color:var(--azul-claro);}
+.titulo-linha .desc{font-size:13.5px;font-weight:700;margin:2px 0;}
+.titulo-linha .meta{font-size:11px;color:var(--mu);}
+.titulo-linha .val{font-size:14px;font-weight:800;text-align:right;flex-shrink:0;min-width:110px;}
+
+.status-aberto{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-parcial{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-pago{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-vencido{background:rgba(220,38,38,.18);color:#fca5a5;}
+.status-cancelado{background:rgba(143,163,196,.18);color:#c3d0e8;}
+.status-aguardando_aprovacao{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-aprovado{background:rgba(0,181,254,.18);color:#7dd3fc;}
+
+/* DRE */
+.dre-linha{display:flex;justify-content:space-between;padding:9px 4px;border-bottom:1px solid var(--bd);font-size:13px;}
+.dre-linha.total{font-weight:900;font-size:14.5px;border-bottom:none;border-top:2px solid var(--laranja);padding-top:12px;margin-top:4px;}
+.dre-linha .neg{color:#fca5a5;}
+.dre-linha .pos{color:#4ade80;}
+.dre-cat-barra{display:flex;height:26px;border-radius:6px;overflow:hidden;margin:10px 0;}
+.dre-cat-barra span{display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:800;color:#fff;}
+
+/* ── FISCAL específico ── */
+.nota-linha{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rad-sm);margin-bottom:8px;cursor:pointer;transition:border-color .15s;}
+.nota-linha:hover{border-color:var(--laranja);}
+.nota-linha .num{font-size:10px;font-weight:800;color:var(--azul-claro);}
+.nota-linha .desc{font-size:13.5px;font-weight:700;margin:2px 0;}
+.nota-linha .meta{font-size:11px;color:var(--mu);}
+.nota-linha .val{font-size:14px;font-weight:800;text-align:right;flex-shrink:0;min-width:110px;}
+
+.status-rascunho{background:rgba(143,163,196,.18);color:#c3d0e8;}
+.status-emitida{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-cancelada{background:rgba(220,38,38,.18);color:#fca5a5;}
+.status-com_erro{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-pendente{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-ciencia{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-confirmado{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-aberta{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-guia_gerada{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-paga{background:rgba(22,163,74,.18);color:#4ade80;}
+
+.retencoes-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin:12px 0;}
+.retencao-item{background:var(--s2);border-radius:8px;padding:9px 11px;text-align:center;}
+.retencao-item .lbl{font-size:9.5px;color:var(--mu);text-transform:uppercase;font-weight:700;}
+.retencao-item .val{font-size:13px;font-weight:800;margin-top:2px;}
+
+.aviso-integracao{background:rgba(232,163,61,.1);border:1.5px solid #e8a33d;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:#fbbf24;line-height:1.5;}
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <img src="esf-logo-oficial.png" alt="ESF">
+      <div><div class="tt">ESF <b>ERP</b></div><div class="st">Fiscal e Tributário</div></div>
+    </div>
+    <a href="index.html" class="voltar-hub">← Sistema de Gestão</a>
+
+    <div class="nav-lbl">Visão Geral</div>
+    <button class="nav-item active" data-view="dashboard"><span class="ic"><img src="icone-dashboard.png" alt="" style="width:17px;height:17px;object-fit:contain;vertical-align:middle"></span>Dashboard</button>
+
+    <div class="nav-lbl">Saídas</div>
+    <button class="nav-item" data-view="saidas"><span class="ic">📤</span>Notas de Saída</button>
+
+    <div class="nav-lbl">Entradas</div>
+    <button class="nav-item" data-view="entradas"><span class="ic">📥</span>Notas de Entrada</button>
+
+    <div class="nav-lbl">Obrigações</div>
+    <button class="nav-item" data-view="apuracao"><span class="ic">🧮</span>Apuração de Impostos</button>
+    <button class="nav-item" data-view="regras"><span class="ic">⚙️</span>Regras de Tributação</button>
+
+    <div class="sidebar-foot">
+      ESF · Fiscal — v2026.09.22<br>
+      <span id="statusConexao">🟢 Online</span>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="banner-topo"><img src="esf-banner-panoramico.png" alt="ESF ERP — Sistema de Gestão"></div>
+
+    <!-- ═══════════ DASHBOARD ═══════════ -->
+    <div id="viewDashboard">
+      <div class="pg-head"><div><h1>Dashboard Fiscal</h1><p>Visão geral de notas emitidas, impostos apurados e pendências.</p></div></div>
+
+      <div class="grid-kpi">
+        <div class="kpi" style="--cor:#00b5fe"><div class="n" id="kpiNotasMes">—</div><div class="l">Notas emitidas (mês)</div></div>
+        <div class="kpi" style="--cor:#16a34a"><div class="n" id="kpiFaturadoMes">—</div><div class="l">Valor bruto faturado (mês)</div></div>
+        <div class="kpi" style="--cor:#e8a33d"><div class="n" id="kpiRetidoMes">—</div><div class="l">Total retido (mês)</div></div>
+        <div class="kpi" style="--cor:#dc2626"><div class="n" id="kpiImpostosAbertos">—</div><div class="l">Impostos a apurar/pagar</div></div>
+      </div>
+
+      <div class="card">
+        <h2>Últimas notas de saída</h2>
+        <div id="listaDashNotas"><div class="vazio">Carregando...</div></div>
+      </div>
+      <div class="card">
+        <h2>Notas de entrada pendentes de manifesto</h2>
+        <p class="sub">Ainda não confirmadas — o fornecedor emitiu, mas você ainda não deu ciência.</p>
+        <div id="listaDashEntradas"><div class="vazio">Carregando...</div></div>
+      </div>
+    </div>
+
+    <!-- ═══════════ NOTAS DE SAÍDA ═══════════ -->
+    <div id="viewSaidas" class="hidden">
+      <div class="pg-head">
+        <div><h1>Notas de Saída</h1><p>NFS-e de serviço e NF-e de produto/remessa.</p></div>
+        <button class="btn" onclick="abrirNovaNota()">➕ Emitir Nota</button>
+      </div>
+      <div class="aviso-integracao">⚠️ Emissão simulada — gera o registro interno completo, com impostos calculados. A transmissão real pra prefeitura/SEFAZ depende de certificado digital e integração externa, ainda não conectada.</div>
+      <div class="card">
+        <select id="filtroStatusNota" onchange="renderizarSaidas()" style="background:#0d1830;border:1px solid var(--bd);border-radius:8px;color:var(--tx);padding:8px 12px;font-size:12.5px;margin-bottom:14px">
+          <option value="">Todos os status</option>
+          <option value="rascunho">Rascunho</option><option value="emitida">Emitida</option>
+          <option value="cancelada">Cancelada</option><option value="com_erro">Com erro</option>
+        </select>
+        <div id="listaSaidas"><div class="vazio">Carregando...</div></div>
+      </div>
+    </div>
+
+    <!-- ═══════════ NOVA NOTA (formulário completo) ═══════════ -->
+    <div id="viewNovaNota" class="hidden">
+      <div class="pg-head"><div><h1>Emitir Nota de Saída</h1><p>Os impostos são calculados sozinhos, a partir da regra de tributação escolhida.</p></div></div>
+      <div class="card">
+        <div class="form-grid">
+          <div class="fld"><label>Tipo</label>
+            <select id="nTipo"><option value="nfse">NFS-e — Serviço</option><option value="nfe_produto">NF-e — Produto</option><option value="nfe_remessa">NF-e — Remessa (ferramenta p/ obra)</option><option value="nfe_devolucao">NF-e — Devolução</option></select>
+          </div>
+          <div class="fld"><label>Cliente *</label><select id="nCliente"><option value="">— Selecione —</option></select></div>
+          <div class="fld"><label>Pedido de origem</label><select id="nPedido"><option value="">— Nenhum / avulsa —</option></select></div>
+          <div class="fld"><label>Projeto (centro de custo)</label><select id="nProjeto"><option value="">— Selecione —</option></select></div>
+          <div class="fld" style="grid-column:1/-1"><label>Descrição do serviço/produto *</label><input type="text" id="nDescricao" placeholder="Ex: Montagem industrial — Tanque TQ-104, medição 03"></div>
+          <div class="fld"><label>Regra de tributação *</label><select id="nRegra" onchange="atualizarPreviaImpostos()"><option value="">— Selecione —</option></select></div>
+          <div class="fld"><label>Valor bruto (R$) *</label><input type="number" id="nValor" step="0.01" oninput="atualizarPreviaImpostos()"></div>
+        </div>
+
+        <h2 style="font-size:13px;margin:18px 0 8px">Prévia dos impostos (calculada automaticamente ao escolher a regra)</h2>
+        <div class="retencoes-grid" id="previaImpostos">
+          <div class="retencao-item"><div class="lbl">ISS</div><div class="val">—</div></div>
+          <div class="retencao-item"><div class="lbl">INSS</div><div class="val">—</div></div>
+          <div class="retencao-item"><div class="lbl">IRRF</div><div class="val">—</div></div>
+          <div class="retencao-item"><div class="lbl">PIS</div><div class="val">—</div></div>
+          <div class="retencao-item"><div class="lbl">COFINS</div><div class="val">—</div></div>
+          <div class="retencao-item"><div class="lbl">CSLL</div><div class="val">—</div></div>
+        </div>
+        <div class="totais-box"><span>Valor líquido (o que vai pro Contas a Receber)</span><span id="valorLiquidoDisplay">R$ 0,00</span></div>
+
+        <div style="margin-top:16px;display:flex;gap:8px">
+          <button class="btn" onclick="salvarNota('emitida')">📤 Emitir Nota</button>
+          <button class="btn btn-ghost" onclick="salvarNota('rascunho')">💾 Salvar como Rascunho</button>
+          <button class="btn btn-ghost" onclick="mudarView('saidas')">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ DETALHE DA NOTA ═══════════ -->
+    <div id="viewDetalheNota" class="hidden">
+      <div class="pg-head">
+        <div><div style="font-size:11px;color:var(--azul-claro);font-weight:800" id="dnNumero">—</div><h1 id="dnDescricao">—</h1><p id="dnMeta">—</p></div>
+        <span class="status-pill" id="dnStatusPill">—</span>
+      </div>
+      <div class="card">
+        <h2>Impostos retidos</h2>
+        <div class="retencoes-grid" id="dnRetencoes"></div>
+        <div class="totais-box"><span>Valor líquido</span><span id="dnLiquido">—</span></div>
+      </div>
+      <div class="card">
+        <h2>Cartas de Correção</h2>
+        <div id="dnCartas"></div>
+        <button class="btn btn-sm btn-ghost" onclick="abrirNovaCarta()">➕ Nova Carta de Correção</button>
+      </div>
+      <div class="card" id="dnAcoes">
+        <h2>Ações</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap" id="dnBotoes"></div>
+      </div>
+    </div>
+
+    <!-- ═══════════ NOTAS DE ENTRADA ═══════════ -->
+    <div id="viewEntradas" class="hidden">
+      <div class="pg-head">
+        <div><h1>Notas de Entrada</h1><p>Compras de fornecedores — materiais, locação, serviços de terceiros.</p></div>
+        <button class="btn" onclick="abrirNovaEntrada()">➕ Registrar Nota de Entrada</button>
+      </div>
+      <div class="card">
+        <div id="listaEntradas"><div class="vazio">Carregando...</div></div>
+      </div>
+    </div>
+
+    <!-- ═══════════ APURAÇÃO DE IMPOSTOS ═══════════ -->
+    <div id="viewApuracao" class="hidden">
+      <div class="pg-head"><div><h1>Apuração de Impostos</h1><p>Consolidado por competência (mês) — gera a guia e manda pro Contas a Pagar.</p></div></div>
+      <div class="card">
+        <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+          <div class="fld" style="max-width:180px"><label>Competência</label><input type="month" id="apCompetencia"></div>
+          <button class="btn btn-sm" onclick="apurarCompetencia()">🧮 Apurar Competência</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Guias geradas</h2>
+        <div id="listaApuracoes"><div class="vazio">Escolha uma competência acima e apure.</div></div>
+      </div>
+    </div>
+
+    <!-- ═══════════ REGRAS DE TRIBUTAÇÃO ═══════════ -->
+    <div id="viewRegras" class="hidden">
+      <div class="pg-head">
+        <div><h1>Regras de Tributação</h1><p>Um perfil por tipo de serviço — usado pra calcular os impostos na hora de emitir.</p></div>
+        <button class="btn" onclick="abrirNovaRegra()">➕ Nova Regra</button>
+      </div>
+      <div class="card"><div id="listaRegras"><div class="vazio">Carregando...</div></div></div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════ MODAL: NOVA NOTA DE ENTRADA ═══════════ -->
+<div class="modal-overlay hidden" id="modalEntrada">
+  <div class="modal-box">
+    <div class="modal-head"><h3>📥 Registrar Nota de Entrada</h3><button class="fechar" onclick="fecharModal('modalEntrada')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="fld"><label>Fornecedor *</label><input type="text" id="eFornecedor"></div>
+        <div class="fld"><label>CNPJ</label><input type="text" id="eCnpj"></div>
+        <div class="fld"><label>Número da nota</label><input type="text" id="eNumero"></div>
+        <div class="fld"><label>Projeto (centro de custo)</label><select id="eProjeto"><option value="">— Selecione —</option></select></div>
+        <div class="fld" style="grid-column:1/-1"><label>Descrição</label><input type="text" id="eDescricao"></div>
+        <div class="fld"><label>Valor total (R$) *</label><input type="number" id="eValor" step="0.01"></div>
+        <div class="fld"><label>Data de emissão</label><input type="date" id="eData"></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost btn-sm" onclick="fecharModal('modalEntrada')">Cancelar</button><button class="btn btn-sm" onclick="salvarEntrada()">💾 Salvar</button></div>
+  </div>
+</div>
+
+<!-- ═══════════ MODAL: NOVA REGRA DE TRIBUTAÇÃO ═══════════ -->
+<div class="modal-overlay hidden" id="modalRegra">
+  <div class="modal-box" style="max-width:640px">
+    <div class="modal-head"><h3>⚙️ Nova Regra de Tributação</h3><button class="fechar" onclick="fecharModal('modalRegra')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="fld" style="grid-column:1/-1"><label>Nome *</label><input type="text" id="rgNome" placeholder="Ex: Montagem Industrial"></div>
+        <div class="fld"><label>Código de serviço municipal</label><input type="text" id="rgCodigoServico"></div>
+        <div class="fld"><label>Município de incidência do ISS</label><input type="text" id="rgMunicipio" placeholder="Sede ou local da obra"></div>
+        <div class="fld"><label>Alíquota ISS (%)</label><input type="number" id="rgAliquotaIss" step="0.01" value="5"></div>
+        <div class="fld"><label>Valor mínimo p/ reter federais (R$)</label><input type="number" id="rgMinimo" step="0.01" value="215.05"></div>
+
+        <div class="fld"><label><input type="checkbox" id="rgReterInss" style="width:auto;margin-right:6px"> Retém INSS</label><input type="number" id="rgAliquotaInss" step="0.01" value="11" placeholder="Alíquota %"></div>
+        <div class="fld"><label><input type="checkbox" id="rgReterIrrf" style="width:auto;margin-right:6px"> Retém IRRF</label><input type="number" id="rgAliquotaIrrf" step="0.01" value="1.5" placeholder="Alíquota %"></div>
+        <div class="fld" style="grid-column:1/-1"><label><input type="checkbox" id="rgReterFederais" style="width:auto;margin-right:6px"> Retém PIS/COFINS/CSLL</label></div>
+        <div class="fld"><label>PIS (%)</label><input type="number" id="rgAliquotaPis" step="0.01" value="0.65"></div>
+        <div class="fld"><label>COFINS (%)</label><input type="number" id="rgAliquotaCofins" step="0.01" value="3"></div>
+        <div class="fld"><label>CSLL (%)</label><input type="number" id="rgAliquotaCsll" step="0.01" value="1"></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost btn-sm" onclick="fecharModal('modalRegra')">Cancelar</button><button class="btn btn-sm" onclick="salvarRegra()">💾 Salvar</button></div>
+  </div>
+</div>
+
+<!-- ═══════════ MODAL: CARTA DE CORREÇÃO ═══════════ -->
+<div class="modal-overlay hidden" id="modalCarta">
+  <div class="modal-box">
+    <div class="modal-head"><h3>✉️ Carta de Correção</h3><button class="fechar" onclick="fecharModal('modalCarta')">✕</button></div>
+    <div class="modal-body">
+      <div class="fld"><label>Texto da correção</label><textarea id="ccTexto" placeholder="Descreva o que está sendo corrigido — não pode alterar valores, apenas dados cadastrais/descritivos."></textarea></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost btn-sm" onclick="fecharModal('modalCarta')">Cancelar</button><button class="btn btn-sm" onclick="salvarCarta()">💾 Emitir Carta</button></div>
+  </div>
+</div>
+
+<!-- ═══════════ MODAL: CANCELAR NOTA ═══════════ -->
+<div class="modal-overlay hidden" id="modalCancelar">
+  <div class="modal-box">
+    <div class="modal-head"><h3>✕ Cancelar Nota</h3><button class="fechar" onclick="fecharModal('modalCancelar')">✕</button></div>
+    <div class="modal-body">
+      <div class="fld"><label>Motivo do cancelamento *</label><textarea id="cancMotivo"></textarea></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost btn-sm" onclick="fecharModal('modalCancelar')">Voltar</button><button class="btn btn-sm btn-danger" onclick="confirmarCancelamento()">✕ Confirmar Cancelamento</button></div>
+  </div>
+</div>
+
+
+<script>
+/* ── CONEXÃO ─────────────────────────────────────────────── */
+const SUPABASE_URL = 'https://bddjdpyfypsiwnirbyhv.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkZGpkcHlmeXBzaXduaXJieWh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NDk1MjgsImV4cCI6MjEwMDQyNTUyOH0.0HnH7caYH6sLp5n68izQXqbCJ-cLqTyxELl1EqoHHww';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ── ESTADO ──────────────────────────────────────────────── */
+let CLIENTES=[], PROJETOS=[], PEDIDOS=[], REGRAS=[], NOTAS_SAIDA=[], NOTAS_ENTRADA=[];
+let notaAtualId = null, entradaAtualId = null;
+
+const STATUS_NOTA_LABEL = {rascunho:'Rascunho', emitida:'Emitida', cancelada:'Cancelada', com_erro:'Com erro'};
+const STATUS_MANIFESTO_LABEL = {pendente:'Pendente', ciencia:'Ciência dada', confirmado:'Confirmado', desconhecido:'Operação desconhecida', nao_realizada:'Não realizada'};
+const TIPO_NOTA_LABEL = {nfse:'NFS-e', nfe_produto:'NF-e Produto', nfe_remessa:'NF-e Remessa', nfe_devolucao:'NF-e Devolução'};
+
+/* ── UTILITÁRIOS ─────────────────────────────────────────── */
+function toast(msg,cor){ const t=document.getElementById('toast'); t.textContent=msg; t.style.borderColor=cor||'#fd8a14'; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3200); }
+function fmtMoeda(v){ if(v===null||v===undefined||isNaN(v)) return 'R$ 0,00'; return 'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtData(d){ if(!d) return '—'; const p=d.split('T')[0].split('-'); return `${p[2]}/${p[1]}/${p[0]}`; }
+function abrirModal(id){ document.getElementById(id).classList.remove('hidden'); }
+function fecharModal(id){ document.getElementById(id).classList.add('hidden'); }
+
+/* ── NAVEGAÇÃO ───────────────────────────────────────────── */
+function mudarView(nome){
+  const views=['dashboard','saidas','novaNota','detalheNota','entradas','apuracao','regras'];
+  views.forEach(v=>{ const el=document.getElementById('view'+v.charAt(0).toUpperCase()+v.slice(1)); if(el) el.classList.toggle('hidden', v!==nome); });
+  document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.classList.toggle('active', b.dataset.view===nome));
+  if(nome==='dashboard') renderizarDashboard();
+  if(nome==='saidas') renderizarSaidas();
+  if(nome==='entradas') renderizarEntradas();
+  if(nome==='regras') renderizarRegras();
+}
+document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.addEventListener('click',()=>mudarView(b.dataset.view)));
+
+/* ── CARREGAMENTO ────────────────────────────────────────── */
+async function carregarClientes(){
+  try{ const{data,error}=await supabaseClient.from('crm_clientes').select('id,nome').order('nome'); if(error) throw error;
+    CLIENTES=data||[]; document.getElementById('nCliente').innerHTML='<option value="">— Selecione —</option>'+CLIENTES.map(c=>`<option value="${c.id}">${c.nome}</option>`).join(''); }
+  catch(e){ console.error(e); }
+}
+async function carregarProjetos(){
+  try{ const{data,error}=await supabaseClient.from('projetos').select('id,nome,codigo').order('nome'); if(error) throw error;
+    PROJETOS=data||[];
+    const opts='<option value="">— Selecione —</option>'+PROJETOS.map(p=>`<option value="${p.id}">${p.codigo} — ${p.nome}</option>`).join('');
+    ['nProjeto','eProjeto'].forEach(id=>document.getElementById(id).innerHTML=opts); }
+  catch(e){ console.error(e); }
+}
+async function carregarPedidos(){
+  try{ const{data,error}=await supabaseClient.from('crm_pedidos').select('id,numero_pedido,valor_total').eq('status','liberado'); if(error) throw error;
+    PEDIDOS=data||[]; document.getElementById('nPedido').innerHTML='<option value="">— Nenhum / avulsa —</option>'+PEDIDOS.map(p=>`<option value="${p.id}">${p.numero_pedido} — ${fmtMoeda(p.valor_total)}</option>`).join(''); }
+  catch(e){ console.error(e); }
+}
+async function carregarRegras(){
+  try{ const{data,error}=await supabaseClient.from('fiscal_regras_tributacao').select('*').eq('ativa',true).order('nome'); if(error) throw error;
+    REGRAS=data||[]; document.getElementById('nRegra').innerHTML='<option value="">— Selecione —</option>'+REGRAS.map(r=>`<option value="${r.id}">${r.nome}</option>`).join(''); }
+  catch(e){ console.error(e); }
+}
+async function carregarSaidas(){
+  try{ const{data,error}=await supabaseClient.from('fiscal_notas_saida').select('*, crm_clientes(nome)').order('created_at',{ascending:false}); if(error) throw error; NOTAS_SAIDA=data||[]; }
+  catch(e){ console.error(e); }
+}
+async function carregarEntradas(){
+  try{ const{data,error}=await supabaseClient.from('fiscal_notas_entrada').select('*, projetos(codigo)').order('created_at',{ascending:false}); if(error) throw error; NOTAS_ENTRADA=data||[]; }
+  catch(e){ console.error(e); }
+}
+
+/* ── DASHBOARD ───────────────────────────────────────────── */
+function renderizarDashboard(){
+  const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0,0,0,0);
+  const notasMes = NOTAS_SAIDA.filter(n=>n.status==='emitida' && n.data_emissao && new Date(n.data_emissao)>=inicioMes);
+  const faturadoMes = notasMes.reduce((s,n)=>s+Number(n.valor_bruto),0);
+  const retidoMes = notasMes.reduce((s,n)=>s+Number(n.valor_total_retencoes||0),0);
+  const impostoAberto = notasMes.reduce((s,n)=>s+Number(n.valor_iss||0),0) + retidoMes;
+
+  document.getElementById('kpiNotasMes').textContent = notasMes.length;
+  document.getElementById('kpiFaturadoMes').textContent = fmtMoeda(faturadoMes);
+  document.getElementById('kpiRetidoMes').textContent = fmtMoeda(retidoMes);
+  document.getElementById('kpiImpostosAbertos').textContent = fmtMoeda(impostoAberto);
+
+  document.getElementById('listaDashNotas').innerHTML = NOTAS_SAIDA.length ? NOTAS_SAIDA.slice(0,5).map(renderizarLinhaNota).join('') : '<div class="vazio">Nenhuma nota emitida ainda.</div>';
+
+  const pendentes = NOTAS_ENTRADA.filter(n=>n.status_manifesto==='pendente');
+  document.getElementById('listaDashEntradas').innerHTML = pendentes.length ? pendentes.slice(0,5).map(renderizarLinhaEntrada).join('') : '<div class="vazio">Nada pendente de manifesto. 🎉</div>';
+}
+
+/* ── NOTAS DE SAÍDA ──────────────────────────────────────── */
+function renderizarLinhaNota(n){
+  return `<div class="nota-linha" onclick="abrirDetalheNota('${n.id}')">
+    <div style="flex:1"><div class="num">${n.numero||'—'} · ${TIPO_NOTA_LABEL[n.tipo]}</div><div class="desc">${n.descricao_servico||'—'}</div><div class="meta">${n.crm_clientes?.nome||'—'} · ${fmtData(n.data_emissao||n.created_at)}</div></div>
+    <div class="val">${fmtMoeda(n.valor_bruto)}</div>
+    <span class="status-pill status-${n.status}">${STATUS_NOTA_LABEL[n.status]}</span>
+  </div>`;
+}
+function renderizarSaidas(){
+  const filtro=document.getElementById('filtroStatusNota').value;
+  const lista=filtro?NOTAS_SAIDA.filter(n=>n.status===filtro):NOTAS_SAIDA;
+  document.getElementById('listaSaidas').innerHTML = lista.length?lista.map(renderizarLinhaNota).join(''):'<div class="vazio">Nenhuma nota encontrada.</div>';
+}
+
+function abrirNovaNota(){
+  ['nDescricao','nValor'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('nTipo').value='nfse'; document.getElementById('nCliente').value='';
+  document.getElementById('nPedido').value=''; document.getElementById('nProjeto').value=''; document.getElementById('nRegra').value='';
+  atualizarPreviaImpostos();
+  mudarView('novaNota');
+}
+
+// Mesma fórmula do gatilho SQL — calcula localmente pra mostrar prévia
+// antes de salvar, sem precisar ir e voltar do banco.
+function calcularImpostosLocal(valorBruto, regraId){
+  const regra = REGRAS.find(r=>r.id===regraId);
+  if(!regra || !valorBruto) return {iss:0,inss:0,irrf:0,pis:0,cofins:0,csll:0,totalRetencoes:0,liquido:valorBruto||0};
+  const iss = round2(valorBruto * (regra.aliquota_iss||0) / 100);
+  const podeReterFederais = valorBruto >= (regra.valor_minimo_retencao||0);
+  const inss = (regra.reter_inss && podeReterFederais) ? round2(valorBruto * (regra.aliquota_inss||0)/100) : 0;
+  const irrf = (regra.reter_irrf && podeReterFederais) ? round2(valorBruto * (regra.aliquota_irrf||0)/100) : 0;
+  let pis=0, cofins=0, csll=0;
+  if(regra.reter_pis_cofins_csll && podeReterFederais){
+    pis = round2(valorBruto * (regra.aliquota_pis||0)/100);
+    cofins = round2(valorBruto * (regra.aliquota_cofins||0)/100);
+    csll = round2(valorBruto * (regra.aliquota_csll||0)/100);
+  }
+  const totalRetencoes = inss+irrf+pis+cofins+csll;
+  return {iss, inss, irrf, pis, cofins, csll, totalRetencoes, liquido: valorBruto - totalRetencoes};
+}
+function round2(v){ return Math.round(v*100)/100; }
+
+function atualizarPreviaImpostos(){
+  const valor = parseFloat(document.getElementById('nValor').value)||0;
+  const regraId = document.getElementById('nRegra').value;
+  const r = calcularImpostosLocal(valor, regraId);
+  const box = document.getElementById('previaImpostos');
+  box.innerHTML = `
+    <div class="retencao-item"><div class="lbl">ISS</div><div class="val">${fmtMoeda(r.iss)}</div></div>
+    <div class="retencao-item"><div class="lbl">INSS</div><div class="val">${fmtMoeda(r.inss)}</div></div>
+    <div class="retencao-item"><div class="lbl">IRRF</div><div class="val">${fmtMoeda(r.irrf)}</div></div>
+    <div class="retencao-item"><div class="lbl">PIS</div><div class="val">${fmtMoeda(r.pis)}</div></div>
+    <div class="retencao-item"><div class="lbl">COFINS</div><div class="val">${fmtMoeda(r.cofins)}</div></div>
+    <div class="retencao-item"><div class="lbl">CSLL</div><div class="val">${fmtMoeda(r.csll)}</div></div>`;
+  document.getElementById('valorLiquidoDisplay').textContent = fmtMoeda(r.liquido);
+}
+
+async function salvarNota(statusDesejado){
+  const clienteId=document.getElementById('nCliente').value;
+  const descricao=document.getElementById('nDescricao').value.trim();
+  const valor=parseFloat(document.getElementById('nValor').value);
+  if(!clienteId||!descricao||isNaN(valor)){ toast('Preenche cliente, descrição e valor.','#dc2626'); return; }
+
+  const linha = {
+    tipo: document.getElementById('nTipo').value,
+    cliente_id: clienteId,
+    pedido_origem_id: document.getElementById('nPedido').value||null,
+    projeto_id: document.getElementById('nProjeto').value||null,
+    regra_tributacao_id: document.getElementById('nRegra').value||null,
+    descricao_servico: descricao,
+    valor_bruto: valor,
+    status: statusDesejado,
+    data_emissao: statusDesejado==='emitida' ? new Date().toISOString() : null,
+  };
+  try{
+    const{data,error} = await supabaseClient.from('fiscal_notas_saida').insert(linha).select().single();
+    if(error) throw error;
+
+    // Emitida de verdade -> gera automaticamente o título a receber no Financeiro
+    if(statusDesejado==='emitida'){
+      const{data:titulo, error:errTitulo} = await supabaseClient.from('fin_titulos_receber').insert({
+        cliente_id: clienteId, projeto_id: linha.projeto_id,
+        descricao: `${TIPO_NOTA_LABEL[linha.tipo]} ${data.numero} — ${descricao}`,
+        valor: data.valor_liquido, data_vencimento: new Date().toISOString().slice(0,10),
+      }).select().single();
+      if(!errTitulo && titulo){
+        await supabaseClient.from('fiscal_notas_saida').update({titulo_receber_id: titulo.id}).eq('id', data.id);
+      }
+      toast(`✓ Nota ${data.numero} emitida — líquido de ${fmtMoeda(data.valor_liquido)} enviado pro Financeiro.`, '#16a34a');
+    }else{
+      toast('✓ Rascunho salvo.','#16a34a');
+    }
+    await carregarSaidas();
+    abrirDetalheNota(data.id);
+  }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
+}
+
+async function abrirDetalheNota(id){
+  notaAtualId = id;
+  let n = NOTAS_SAIDA.find(x=>x.id===id);
+  if(!n){ const r=await supabaseClient.from('fiscal_notas_saida').select('*,crm_clientes(nome)').eq('id',id).single(); n=r.data; }
+  if(!n) return;
+
+  document.getElementById('dnNumero').textContent = `${n.numero} · ${TIPO_NOTA_LABEL[n.tipo]}`;
+  document.getElementById('dnDescricao').textContent = n.descricao_servico || '—';
+  document.getElementById('dnMeta').textContent = `${n.crm_clientes?.nome||'—'} · Bruto: ${fmtMoeda(n.valor_bruto)} · ${fmtData(n.data_emissao||n.created_at)}`;
+  document.getElementById('dnStatusPill').className = 'status-pill status-'+n.status;
+  document.getElementById('dnStatusPill').textContent = STATUS_NOTA_LABEL[n.status];
+  document.getElementById('dnLiquido').textContent = fmtMoeda(n.valor_liquido);
+
+  document.getElementById('dnRetencoes').innerHTML = `
+    <div class="retencao-item"><div class="lbl">ISS</div><div class="val">${fmtMoeda(n.valor_iss)}</div></div>
+    <div class="retencao-item"><div class="lbl">INSS</div><div class="val">${fmtMoeda(n.valor_inss)}</div></div>
+    <div class="retencao-item"><div class="lbl">IRRF</div><div class="val">${fmtMoeda(n.valor_irrf)}</div></div>
+    <div class="retencao-item"><div class="lbl">PIS</div><div class="val">${fmtMoeda(n.valor_pis)}</div></div>
+    <div class="retencao-item"><div class="lbl">COFINS</div><div class="val">${fmtMoeda(n.valor_cofins)}</div></div>
+    <div class="retencao-item"><div class="lbl">CSLL</div><div class="val">${fmtMoeda(n.valor_csll)}</div></div>`;
+
+  const botoes = document.getElementById('dnBotoes');
+  let html = '';
+  if(n.status==='rascunho') html += `<button class="btn btn-sm" onclick="emitirRascunho()">📤 Emitir Agora</button>`;
+  if(n.status==='emitida') html += `<button class="btn btn-sm btn-danger" onclick="abrirCancelamento()">✕ Cancelar Nota</button>`;
+  botoes.innerHTML = html || '<span style="color:var(--mu);font-size:12.5px">Nenhuma ação disponível.</span>';
+
+  carregarCartas(id);
+  mudarView('detalheNota');
+}
+
+async function emitirRascunho(){
+  const n = NOTAS_SAIDA.find(x=>x.id===notaAtualId);
+  try{
+    const{error} = await supabaseClient.from('fiscal_notas_saida').update({status:'emitida', data_emissao:new Date().toISOString()}).eq('id', notaAtualId);
+    if(error) throw error;
+    const{data:titulo} = await supabaseClient.from('fin_titulos_receber').insert({
+      cliente_id: n.cliente_id, projeto_id: n.projeto_id,
+      descricao: `${TIPO_NOTA_LABEL[n.tipo]} ${n.numero} — ${n.descricao_servico}`,
+      valor: n.valor_liquido, data_vencimento: new Date().toISOString().slice(0,10),
+    }).select().single();
+    if(titulo) await supabaseClient.from('fiscal_notas_saida').update({titulo_receber_id:titulo.id}).eq('id', notaAtualId);
+    toast('✓ Nota emitida.','#16a34a');
+    await carregarSaidas(); abrirDetalheNota(notaAtualId);
+  }catch(e){ console.error(e); toast('Não foi possível emitir.','#dc2626'); }
+}
+
+function abrirCancelamento(){ document.getElementById('cancMotivo').value=''; abrirModal('modalCancelar'); }
+async function confirmarCancelamento(){
+  const motivo = document.getElementById('cancMotivo').value.trim();
+  if(!motivo){ toast('Descreve o motivo.','#dc2626'); return; }
+  try{
+    const{error}=await supabaseClient.from('fiscal_notas_saida').update({status:'cancelada', motivo_cancelamento:motivo}).eq('id', notaAtualId);
+    if(error) throw error;
+    toast('Nota cancelada.','#dc2626');
+    fecharModal('modalCancelar');
+    await carregarSaidas(); abrirDetalheNota(notaAtualId);
+  }catch(e){ console.error(e); toast('Não foi possível cancelar.','#dc2626'); }
+}
+
+async function carregarCartas(notaId){
+  try{
+    const{data,error}=await supabaseClient.from('fiscal_cartas_correcao').select('*').eq('nota_saida_id',notaId).order('created_at',{ascending:false});
+    if(error) throw error;
+    document.getElementById('dnCartas').innerHTML = (data&&data.length) ? data.map(c=>`<div class="item-linha"><div class="principal">${fmtData(c.created_at)}</div><div class="sec">${c.texto_correcao}</div></div>`).join('') : '<div class="vazio">Nenhuma carta de correção emitida.</div>';
+  }catch(e){ console.error(e); }
+}
+function abrirNovaCarta(){ document.getElementById('ccTexto').value=''; abrirModal('modalCarta'); }
+async function salvarCarta(){
+  const texto=document.getElementById('ccTexto').value.trim();
+  if(!texto){ toast('Escreve o texto da correção.','#dc2626'); return; }
+  try{
+    const{error}=await supabaseClient.from('fiscal_cartas_correcao').insert({nota_saida_id:notaAtualId, texto_correcao:texto});
+    if(error) throw error;
+    toast('✓ Carta de correção emitida.','#16a34a');
+    fecharModal('modalCarta');
+    carregarCartas(notaAtualId);
+  }catch(e){ console.error(e); toast('Não foi possível emitir.','#dc2626'); }
+}
+
+/* ── NOTAS DE ENTRADA ────────────────────────────────────── */
+function renderizarLinhaEntrada(n){
+  return `<div class="nota-linha" onclick="abrirEntradaAcoes('${n.id}')">
+    <div style="flex:1"><div class="num">${n.numero||'sem número'}</div><div class="desc">${n.fornecedor}</div><div class="meta">${n.projetos?.codigo||'Sem projeto'} · ${fmtData(n.data_emissao)}</div></div>
+    <div class="val">${fmtMoeda(n.valor_total)}</div>
+    <span class="status-pill status-${n.status_manifesto}">${STATUS_MANIFESTO_LABEL[n.status_manifesto]}</span>
+  </div>`;
+}
+function renderizarEntradas(){
+  document.getElementById('listaEntradas').innerHTML = NOTAS_ENTRADA.length ? NOTAS_ENTRADA.map(renderizarLinhaEntrada).join('') : '<div class="vazio">Nenhuma nota de entrada registrada.</div>';
+}
+function abrirNovaEntrada(){
+  ['eFornecedor','eCnpj','eNumero','eDescricao','eValor'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('eProjeto').value=''; document.getElementById('eData').value=new Date().toISOString().slice(0,10);
+  abrirModal('modalEntrada');
+}
+async function salvarEntrada(){
+  const fornecedor=document.getElementById('eFornecedor').value.trim();
+  const valor=parseFloat(document.getElementById('eValor').value);
+  if(!fornecedor||isNaN(valor)){ toast('Preenche fornecedor e valor.','#dc2626'); return; }
+  try{
+    const{error}=await supabaseClient.from('fiscal_notas_entrada').insert({
+      fornecedor, cnpj_fornecedor:document.getElementById('eCnpj').value||null, numero:document.getElementById('eNumero').value||null,
+      projeto_id:document.getElementById('eProjeto').value||null, descricao:document.getElementById('eDescricao').value||null,
+      valor_total:valor, data_emissao:document.getElementById('eData').value||null,
+    });
+    if(error) throw error;
+    toast('✓ Nota de entrada registrada.','#16a34a');
+    fecharModal('modalEntrada');
+    await carregarEntradas(); renderizarEntradas(); renderizarDashboard();
+  }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
+}
+async function abrirEntradaAcoes(id){
+  const n = NOTAS_ENTRADA.find(x=>x.id===id);
+  if(!n) return;
+  const opcoes = ['ciencia','confirmado','desconhecido','nao_realizada'];
+  const escolha = prompt(`Manifesto do destinatário para "${n.fornecedor}":\n1. Ciência\n2. Confirmado\n3. Operação desconhecida\n4. Não realizada\n\nDigite o número:`);
+  const idx = parseInt(escolha)-1;
+  if(!opcoes[idx]) return;
+  try{
+    const{error}=await supabaseClient.from('fiscal_notas_entrada').update({status_manifesto:opcoes[idx]}).eq('id',id);
+    if(error) throw error;
+    toast('✓ Manifesto atualizado.','#16a34a');
+    await carregarEntradas(); renderizarEntradas(); renderizarDashboard();
+  }catch(e){ console.error(e); toast('Não foi possível atualizar.','#dc2626'); }
+}
+
+/* ── APURAÇÃO DE IMPOSTOS ────────────────────────────────── */
+async function apurarCompetencia(){
+  const competencia = document.getElementById('apCompetencia').value; // formato AAAA-MM
+  if(!competencia){ toast('Escolhe a competência.','#dc2626'); return; }
+
+  const notasCompetencia = NOTAS_SAIDA.filter(n=>n.status==='emitida' && n.data_emissao && n.data_emissao.slice(0,7)===competencia);
+  if(!notasCompetencia.length){ toast('Nenhuma nota emitida nessa competência.','#e8a33d'); return; }
+
+  const totais = {iss:0, inss:0, irrf:0, pis:0, cofins:0, csll:0};
+  notasCompetencia.forEach(n=>{ totais.iss+=Number(n.valor_iss||0); totais.inss+=Number(n.valor_inss||0); totais.irrf+=Number(n.valor_irrf||0); totais.pis+=Number(n.valor_pis||0); totais.cofins+=Number(n.valor_cofins||0); totais.csll+=Number(n.valor_csll||0); });
+
+  const linhas = Object.entries(totais).filter(([,v])=>v>0);
+  if(!linhas.length){ toast('Nenhum imposto a apurar nessa competência.','#8fa3c4'); return; }
+
+  try{
+    for(const [tipo, valor] of linhas){
+      const{data:titulo} = await supabaseClient.from('fin_titulos_pagar').insert({
+        fornecedor: 'Receita Federal / Prefeitura', origem_tipo:'outro',
+        descricao: `Guia ${tipo.toUpperCase()} — competência ${competencia}`,
+        valor: round2(valor), data_vencimento: proximoVencimento(competencia),
+      }).select().single();
+      await supabaseClient.from('fiscal_apuracoes').insert({
+        competencia, tipo_imposto: tipo, valor_apurado: round2(valor), status:'guia_gerada',
+        titulo_pagar_id: titulo?.id || null, data_vencimento: proximoVencimento(competencia),
+      });
+    }
+    toast(`✓ ${linhas.length} guia(s) gerada(s) e enviada(s) pro Contas a Pagar.`,'#16a34a');
+    renderizarApuracoes(competencia);
+  }catch(e){ console.error(e); toast('Não foi possível apurar.','#dc2626'); }
+}
+function proximoVencimento(competencia){
+  const [ano,mes] = competencia.split('-').map(Number);
+  const prox = new Date(ano, mes, 20); // dia 20 do mês seguinte, aproximação comum de vencimento
+  return prox.toISOString().slice(0,10);
+}
+async function renderizarApuracoes(competencia){
+  try{
+    const{data,error}=await supabaseClient.from('fiscal_apuracoes').select('*').eq('competencia',competencia).order('tipo_imposto');
+    if(error) throw error;
+    document.getElementById('listaApuracoes').innerHTML = (data&&data.length) ? data.map(a=>`
+      <div class="nota-linha"><div style="flex:1"><div class="num">${a.tipo_imposto.toUpperCase()}</div><div class="desc">Competência ${a.competencia}</div><div class="meta">Vencimento: ${fmtData(a.data_vencimento)}</div></div>
+      <div class="val">${fmtMoeda(a.valor_apurado)}</div><span class="status-pill status-${a.status}">${a.status}</span></div>`).join('') : '<div class="vazio">Nenhuma guia gerada pra essa competência ainda.</div>';
+  }catch(e){ console.error(e); }
+}
+
+/* ── REGRAS DE TRIBUTAÇÃO ────────────────────────────────── */
+function renderizarRegras(){
+  document.getElementById('listaRegras').innerHTML = REGRAS.length ? REGRAS.map(r=>`
+    <div class="item-linha"><div><div class="principal">${r.nome}</div><div class="sec">ISS ${r.aliquota_iss}% · ${r.reter_inss?'INSS '+r.aliquota_inss+'% · ':''}${r.reter_irrf?'IRRF '+r.aliquota_irrf+'% · ':''}${r.reter_pis_cofins_csll?'PIS/COFINS/CSLL':''}</div></div></div>
+  `).join('') : '<div class="vazio">Nenhuma regra cadastrada ainda.</div>';
+}
+function abrirNovaRegra(){
+  ['rgNome','rgCodigoServico','rgMunicipio'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('rgAliquotaIss').value='5'; document.getElementById('rgMinimo').value='215.05';
+  document.getElementById('rgReterInss').checked=false; document.getElementById('rgAliquotaInss').value='11';
+  document.getElementById('rgReterIrrf').checked=false; document.getElementById('rgAliquotaIrrf').value='1.5';
+  document.getElementById('rgReterFederais').checked=false;
+  document.getElementById('rgAliquotaPis').value='0.65'; document.getElementById('rgAliquotaCofins').value='3'; document.getElementById('rgAliquotaCsll').value='1';
+  abrirModal('modalRegra');
+}
+async function salvarRegra(){
+  const nome=document.getElementById('rgNome').value.trim();
+  if(!nome){ toast('Preenche o nome da regra.','#dc2626'); return; }
+  try{
+    const{error}=await supabaseClient.from('fiscal_regras_tributacao').insert({
+      nome, codigo_servico_municipal:document.getElementById('rgCodigoServico').value||null,
+      municipio_incidencia:document.getElementById('rgMunicipio').value||null,
+      aliquota_iss:parseFloat(document.getElementById('rgAliquotaIss').value)||0,
+      valor_minimo_retencao:parseFloat(document.getElementById('rgMinimo').value)||0,
+      reter_inss:document.getElementById('rgReterInss').checked, aliquota_inss:parseFloat(document.getElementById('rgAliquotaInss').value)||0,
+      reter_irrf:document.getElementById('rgReterIrrf').checked, aliquota_irrf:parseFloat(document.getElementById('rgAliquotaIrrf').value)||0,
+      reter_pis_cofins_csll:document.getElementById('rgReterFederais').checked,
+      aliquota_pis:parseFloat(document.getElementById('rgAliquotaPis').value)||0,
+      aliquota_cofins:parseFloat(document.getElementById('rgAliquotaCofins').value)||0,
+      aliquota_csll:parseFloat(document.getElementById('rgAliquotaCsll').value)||0,
+    });
+    if(error) throw error;
+    toast('✓ Regra criada.','#16a34a');
+    fecharModal('modalRegra');
+    await carregarRegras(); renderizarRegras();
+  }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
+}
+
+/* ── INICIALIZAÇÃO ───────────────────────────────────────── */
+(async function init(){
+  await Promise.all([carregarClientes(), carregarProjetos(), carregarPedidos(), carregarRegras(), carregarSaidas(), carregarEntradas()]);
+  renderizarDashboard();
+})();
+</script>
+</body>
+</html>
