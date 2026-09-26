@@ -358,6 +358,12 @@ a{color:inherit;}
         <div id="resumoImportacaoAfd"></div>
       </div>
       <div class="card">
+        <h2>Funcionários duplicados</h2>
+        <p class="sub">Acontece quando a mesma pessoa tem mais de um PIS no relógio (troca de crachá, recadastro). Detecta pelo nome e deixa juntar num cadastro só, sem perder marcação nenhuma.</p>
+        <button class="btn btn-sm btn-ghost" onclick="detectarDuplicados()">🔍 Detectar Duplicados</button>
+        <div id="listaDuplicados" style="margin-top:12px"></div>
+      </div>
+      <div class="card">
         <h2>Lançamento manual</h2>
         <div class="form-grid">
           <div class="fld"><label>Funcionário</label><select id="mFuncionarioId"></select></div>
@@ -640,7 +646,67 @@ function parseArquivoAfd(texto){
   return { batidas, nomesDoArquivo };
 }
 
+let gruposDuplicados = [];
 let dadosAfdProcessados = null;
+
+async function detectarDuplicados(){
+  const wrap = document.getElementById('listaDuplicados');
+  wrap.innerHTML = 'Procurando...';
+  try{
+    const{data: todos, error} = await supabaseClient.from('funcionarios').select('id,nome,pis');
+    if(error) throw error;
+
+    const porNomeNormalizado = {};
+    (todos||[]).forEach(f=>{
+      const chave = normalizarNome(f.nome);
+      (porNomeNormalizado[chave] = porNomeNormalizado[chave]||[]).push(f);
+    });
+
+    const grupos = Object.values(porNomeNormalizado).filter(g=>g.length>1);
+    if(!grupos.length){ wrap.innerHTML = '<div class="vazio">Nenhum duplicado encontrado. 🎉</div>'; return; }
+
+    // Conta quantas marcações cada cadastro tem, pra sugerir qual é o principal
+    for(const grupo of grupos){
+      for(const f of grupo){
+        const{data:batidas} = await supabaseClient.from('rh_batidas_ponto').select('id').eq('funcionario_id',f.id);
+        f.qtdBatidas = (batidas||[]).length;
+      }
+      grupo.sort((a,b)=>b.qtdBatidas-a.qtdBatidas); // o que tem mais marcação vira sugestão de principal
+    }
+    gruposDuplicados = grupos;
+
+    wrap.innerHTML = grupos.map((grupo,i)=>`
+      <div class="item-linha" style="flex-direction:column;align-items:stretch;gap:8px">
+        <div class="principal">${grupo[0].nome} — ${grupo.length} cadastros duplicados</div>
+        ${grupo.map((f,j)=>`<div class="sec">${j===0?'👑 ':''}PIS: ${f.pis||'—'} · ${f.qtdBatidas} marcação(ões) ${j===0?'(sugerido como principal)':''}</div>`).join('')}
+        <button class="btn btn-sm" style="align-self:flex-start" onclick="mesclarDuplicados(${i})">🔗 Juntar num cadastro só</button>
+      </div>`).join('');
+  }catch(e){ console.error(e); wrap.innerHTML = '<div class="vazio">Não foi possível verificar.</div>'; }
+}
+
+async function mesclarDuplicados(indice){
+  const grupo = gruposDuplicados[indice];
+  if(!grupo) return;
+  const principal = grupo[0]; // o que tem mais marcações
+  const outros = grupo.slice(1);
+
+  if(!confirm(`Todas as marcações de ${outros.length} cadastro(s) duplicado(s) vão passar pro cadastro principal de "${principal.nome}" (PIS ${principal.pis||'—'}). Os duplicados serão apagados. Confirma?`)) return;
+
+  try{
+    for(const dup of outros){
+      // Move as marcações pro cadastro principal
+      await supabaseClient.from('rh_batidas_ponto').update({funcionario_id: principal.id}).eq('funcionario_id', dup.id);
+      // Se o duplicado tinha PIS e o principal não tinha, aproveita
+      if(dup.pis && !principal.pis){
+        await supabaseClient.from('funcionarios').update({pis: dup.pis}).eq('id', principal.id);
+      }
+      await supabaseClient.from('funcionarios').delete().eq('id', dup.id);
+    }
+    toast(`✓ ${outros.length} duplicado(s) juntado(s) em "${principal.nome}".`,'#16a34a');
+    await carregarFuncionarios();
+    detectarDuplicados();
+  }catch(e){ console.error(e); toast('Não foi possível juntar. Confere se sua conta tem permissão de apagar funcionário.','#dc2626'); }
+}
 
 async function importarArquivoPonto(){
   const arquivoInput = document.getElementById('arquivoAfd');
@@ -713,7 +779,14 @@ async function confirmarImportacaoAfd(cadastrarNovos){
 
       if(!funcId && cadastrarNovos && nome){
         const{data: novo, error: errNovo} = await supabaseClient.from('funcionarios').insert({nome, pis}).select().single();
-        if(!errNovo && novo){ funcId = novo.id; totalCadastrado++; }
+        if(!errNovo && novo){
+          funcId = novo.id; totalCadastrado++;
+          // Atualiza os mapas NA HORA — sem isso, o segundo PIS da mesma
+          // pessoa (comum quando alguém troca de crachá) não encontra esse
+          // cadastro que acabou de nascer, e cria um duplicado por engano.
+          porPisSistema[pis] = {id:funcId, nome, pis};
+          porNomeSistema[normalizarNome(nome)] = {id:funcId, nome, pis};
+        }
       }
       if(!funcId) continue; // sem cadastro e sem nome no arquivo — não dá pra importar essa pessoa
 
