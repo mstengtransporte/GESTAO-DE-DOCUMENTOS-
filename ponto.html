@@ -310,6 +310,7 @@ a{color:inherit;}
 
     <div class="nav-lbl">Configuração</div>
     <button class="nav-item" data-view="turnos"><span class="ic">🗓️</span>Turnos e Escalas</button>
+    <button class="nav-item" data-view="absenteismo"><span class="ic">📉</span>Absenteísmo</button>
 
     <div class="sidebar-foot">
       ESF · Ponto/RH — v2026.09.22<br>
@@ -429,6 +430,16 @@ a{color:inherit;}
         <button class="btn btn-sm" style="margin-top:10px" onclick="salvarPreAbono()">💾 Lançar Período</button>
         <div id="listaPreAbono" style="margin-top:16px"></div>
       </div>
+      <div class="card">
+        <h2>Abono Coletivo</h2>
+        <p class="sub">Abona vários funcionários de uma vez, pro mesmo motivo e data — ex: relógio quebrou, chuva forte fechou a obra.</p>
+        <div class="form-grid">
+          <div class="fld" style="grid-column:1/-1"><label>Funcionários</label><select id="acFuncionarios" multiple size="5"></select></div>
+          <div class="fld"><label>Motivo</label><select id="acMotivo"></select></div>
+          <div class="fld"><label>Data</label><input type="date" id="acData"></div>
+        </div>
+        <button class="btn btn-sm" style="margin-top:10px" onclick="salvarAbonoColetivo()">💾 Abonar Todos Selecionados</button>
+      </div>
     </div>
 
     <!-- ═══════════ BANCO DE HORAS ═══════════ -->
@@ -437,6 +448,16 @@ a{color:inherit;}
       <div class="card">
         <h2>Saldo atual (não fechado)</h2>
         <div id="listaBanco"><div class="vazio">Carregando...</div></div>
+      </div>
+      <div class="card">
+        <h2>Compensação de Dia</h2>
+        <p class="sub">Concede uma folga em troca de saldo do banco de horas — debita o saldo e já marca o dia como "Folga" no Espelho, automaticamente.</p>
+        <div class="form-grid">
+          <div class="fld"><label>Funcionário</label><select id="cpFuncionario"></select></div>
+          <div class="fld"><label>Data da folga</label><input type="date" id="cpData"></div>
+          <div class="fld"><label>Horas compensadas</label><input type="number" id="cpHoras" step="0.5" placeholder="Vazio = usa a jornada do dia"></div>
+        </div>
+        <button class="btn btn-sm" style="margin-top:10px" onclick="salvarCompensacaoDia()">💾 Conceder Compensação</button>
       </div>
       <div class="card">
         <h2>Fechamento de Banco de Horas</h2>
@@ -497,6 +518,35 @@ a{color:inherit;}
       </div>
 
       <div class="card">
+        <h2>Relógios de Ponto</h2>
+        <p class="sub">Qual aparelho físico é de qual obra — pra rastrear de onde veio cada arquivo importado.</p>
+        <div class="form-grid">
+          <div class="fld"><label>Identificador (número de série)</label><input type="text" id="rlIdentificador"></div>
+          <div class="fld"><label>Apelido</label><input type="text" id="rlApelido" placeholder="Ex: Portaria Henkel"></div>
+          <div class="fld"><label>Obra</label><select id="rlProjeto"></select></div>
+        </div>
+        <button class="btn btn-sm" style="margin-top:10px" onclick="salvarRelogio()">💾 Cadastrar Relógio</button>
+        <div id="listaRelogios" style="margin-top:16px"></div>
+      </div>
+
+      <div class="card">
+        <h2>Exceção por Funcionário</h2>
+        <p class="sub">Muda o tipo de um dia específico só pra uma pessoa, sem precisar trocar de turno inteiro — ex: "esse domingo é trabalhado, folga na quarta desta semana".</p>
+        <div class="form-grid">
+          <div class="fld"><label>Funcionário</label><select id="exFuncionario"></select></div>
+          <div class="fld"><label>Data</label><input type="date" id="exData"></div>
+          <div class="fld"><label><input type="checkbox" id="exDiaTrabalhado" style="width:auto;margin-right:6px" checked> Dia trabalhado (desmarca pra virar folga)</label></div>
+          <div class="fld"><label>Entrada</label><input type="time" id="exEntrada"></div>
+          <div class="fld"><label>Saída almoço</label><input type="time" id="exSaidaAlmoco"></div>
+          <div class="fld"><label>Volta almoço</label><input type="time" id="exVoltaAlmoco"></div>
+          <div class="fld"><label>Saída</label><input type="time" id="exSaida"></div>
+          <div class="fld" style="grid-column:1/-1"><label>Observação (aparece no Espelho)</label><input type="text" id="exObservacao"></div>
+        </div>
+        <button class="btn btn-sm" style="margin-top:10px" onclick="salvarExcecaoFuncionario()">💾 Criar Exceção</button>
+        <div id="listaExcecoes" style="margin-top:16px"></div>
+      </div>
+
+      <div class="card">
         <h2>Troca de Turno</h2>
         <p class="sub">Liga um funcionário a um turno, a partir de uma data — troca antiga fica no histórico, não se apaga.</p>
         <div class="form-grid">
@@ -508,6 +558,18 @@ a{color:inherit;}
         <button class="btn btn-sm" style="margin-top:10px" onclick="salvarTrocaTurno()">💾 Registrar Troca de Turno</button>
         <div id="listaTrocasTurno" style="margin-top:16px"></div>
       </div>
+    </div>
+
+    <!-- ═══════════ ABSENTEÍSMO ═══════════ -->
+    <div id="viewAbsenteismo" class="hidden">
+      <div class="pg-head"><div><h1>Relatório de Absenteísmo</h1><p>Faltas, atrasos e horas não realizadas, por funcionário, num período.</p></div></div>
+      <div class="card">
+        <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+          <div class="fld" style="max-width:160px"><label>Competência</label><input type="month" id="abscCompetencia"></div>
+          <button class="btn btn-sm" onclick="gerarRelatorioAbsenteismo()">📊 Gerar Relatório</button>
+        </div>
+      </div>
+      <div class="card"><div id="listaAbsenteismo"><div class="vazio">Escolhe a competência e gera o relatório.</div></div></div>
     </div>
 
   </main>
@@ -622,13 +684,13 @@ const DIAS_SEMANA = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 
 /* ── NAVEGAÇÃO ───────────────────────────────────────────── */
 function mudarView(nome){
-  const views=['dashboard','custo','batidas','espelho','abonos','banco','turnos'];
+  const views=['dashboard','custo','batidas','espelho','abonos','banco','turnos','absenteismo'];
   views.forEach(v=>{ const el=document.getElementById('view'+v.charAt(0).toUpperCase()+v.slice(1)); if(el) el.classList.toggle('hidden', v!==nome); });
   document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.classList.toggle('active', b.dataset.view===nome));
   if(nome==='dashboard') renderizarDashboard();
   if(nome==='abonos'){ renderizarAbonos(); carregarPreAbono(); }
   if(nome==='banco') renderizarBanco();
-  if(nome==='turnos'){ renderizarTurnos(); carregarTrocasTurno(); renderizarMotivosAbono(); carregarFaixasHe(); }
+  if(nome==='turnos'){ renderizarTurnos(); carregarTrocasTurno(); renderizarMotivosAbono(); carregarFaixasHe(); carregarRelogios(); carregarExcecoes(); }
 }
 document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.addEventListener('click',()=>mudarView(b.dataset.view)));
 
@@ -639,9 +701,10 @@ async function carregarFuncionarios(){
     if(error) throw error;
     FUNCIONARIOS=data||[];
     const opts='<option value="">— Selecione —</option>'+FUNCIONARIOS.map(f=>`<option value="${f.id}">${f.nome}</option>`).join('');
-    ['custoFuncionarioId','mFuncionarioId','espFuncionarioId','abFuncionarioId','ttFuncionario','faFuncionario','paFuncionario'].forEach(id=>{
+    ['custoFuncionarioId','mFuncionarioId','espFuncionarioId','abFuncionarioId','ttFuncionario','faFuncionario','paFuncionario','exFuncionario','cpFuncionario'].forEach(id=>{
       const el=document.getElementById(id); if(el) el.innerHTML = opts;
     });
+    const elMulti=document.getElementById('acFuncionarios'); if(elMulti) elMulti.innerHTML = FUNCIONARIOS.map(f=>`<option value="${f.id}">${f.nome}</option>`).join('');
   }catch(e){ console.error(e); }
 }
 async function carregarProjetosPonto(){
@@ -650,6 +713,7 @@ async function carregarProjetosPonto(){
     if(error) throw error;
     const opts='<option value="">— Não sei / várias —</option>'+(data||[]).map(p=>`<option value="${p.id}">${p.codigo} — ${p.nome}</option>`).join('');
     const el=document.getElementById('arquivoObraId'); if(el) el.innerHTML = opts;
+    const el2=document.getElementById('rlProjeto'); if(el2) el2.innerHTML = opts;
   }catch(e){ console.error(e); }
 }
 async function carregarFeriados(){
@@ -1297,6 +1361,7 @@ async function processarEspelho(){
     const{data:preAbonosDoFuncionario} = await supabaseClient.from('rh_pre_abono').select('*, rh_motivos_abono(*)').eq('funcionario_id',funcId);
     const{data:faixasHeDoMes} = await supabaseClient.from('rh_faixa_he_autorizada').select('*').eq('funcionario_id',funcId).gte('data',competencia+'-01').lte('data',competencia+'-31');
     const{data:trocas} = await supabaseClient.from('rh_troca_turno').select('turno_id,data_inicio').eq('funcionario_id',funcId);
+    const{data:excecoesDoMes} = await supabaseClient.from('rh_excecao_funcionario').select('*').eq('funcionario_id',funcId).gte('data',competencia+'-01').lte('data',competencia+'-31');
 
     if(!trocas || !trocas.length){
       toast('Esse funcionário ainda não tem Turno de Trabalho atribuído — vai em "Turnos e Escalas" e registra a Troca de Turno dele primeiro. Sem isso, não dá pra saber a jornada certa.', '#e8a33d');
@@ -1332,7 +1397,12 @@ async function processarEspelho(){
       // horário correspondente a esse dia da semana — nada de jornada fixa.
       const turnoId = turnoDoDia(trocas, dataStr);
       const turno = TURNOS.find(t=>t.id===turnoId);
-      const horarioDia = turno?.rh_tabela_horario?.find(h=>h.dia_semana===diaSemanaIdx);
+      // Exceção por Funcionário tem PRIORIDADE sobre o turno normal -- é
+      // pra isso que ela existe, mudar só esse dia sem trocar turno inteiro.
+      const excecao = (excecoesDoMes||[]).find(e=>e.data===dataStr);
+      const horarioDia = excecao
+        ? {dia_trabalhado:excecao.dia_trabalhado, hora_entrada:excecao.hora_entrada, hora_saida_almoco:excecao.hora_saida_almoco, hora_volta_almoco:excecao.hora_volta_almoco, hora_saida:excecao.hora_saida, taxa_he_pct:excecao.taxa_he_pct}
+        : turno?.rh_tabela_horario?.find(h=>h.dia_semana===diaSemanaIdx);
       const diaTrabalhado = horarioDia ? horarioDia.dia_trabalhado : (diaSemanaIdx>=1 && diaSemanaIdx<=5);
       const taxaHeDia = feriado ? 100 : (horarioDia?.taxa_he_pct ?? 70);
       const horaAlmocoRef1 = horarioDia?.hora_saida_almoco || '12:00';
@@ -1436,7 +1506,25 @@ async function processarEspelho(){
         linha.ocorrencia = `* ${marcacoes.length} batidas no dia (usada 1ª e última, ${marcacoes.length-2} do meio ignoradas — confere manual)`;
         linha.ajuste = true; linha.tipoAjuste = 'cinco_mais_batidas';
       }
+      if(excecao?.observacao) linha.ocorrencia = (linha.ocorrencia?linha.ocorrencia+' · ':'') + `[Exceção] ${excecao.observacao}`;
       espelhoAtual.push(linha);
+    }
+
+    // Hora Extra Interjornada -- confere se sobrou pelo menos 11h de
+    // descanso entre a última batida de um dia e a primeira do
+    // seguinte (Art. 66 CLT). Roda depois do loop principal porque
+    // precisa comparar um dia com o próximo.
+    for(let i=0; i<espelhoAtual.length-1; i++){
+      const hoje = espelhoAtual[i], amanha = espelhoAtual[i+1];
+      if(!hoje.s2 && !hoje.s1) continue;
+      if(!amanha.e1) continue;
+      const saidaHoje = horaParaDecimal(hoje.s2||hoje.s1);
+      const entradaAmanha = horaParaDecimal(amanha.e1);
+      const descanso = (24-saidaHoje) + entradaAmanha;
+      if(descanso < 11){
+        amanha.ocorrencia = (amanha.ocorrencia?amanha.ocorrencia+' · ':'') + `⚠️ Descanso interjornada insuficiente (${fmtHoras(descanso)} de 11h mínimas — Art. 66 CLT)`;
+        amanha.ajuste = true;
+      }
     }
 
     // Gera os lançamentos de Banco de Horas automaticamente -- só se
@@ -1616,6 +1704,7 @@ async function carregarMotivosAbono(){
     const opts = '<option value="">— Selecione —</option>' + MOTIVOS_ABONO.map(m=>`<option value="${m.id}">${m.nome}</option>`).join('');
     const el = document.getElementById('abMotivoId'); if(el) el.innerHTML = opts;
     const el2 = document.getElementById('paMotivo'); if(el2) el2.innerHTML = opts;
+    const el3 = document.getElementById('acMotivo'); if(el3) el3.innerHTML = opts;
   }catch(e){ console.error(e); }
 }
 function renderizarMotivosAbono(){
@@ -1677,7 +1766,148 @@ async function salvarMotivoAbono(){
   }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
 }
 
-/* ── PRÉ-ABONO / AFASTAMENTO (por período) ──────────────── */
+/* ── RELÓGIOS DE PONTO ───────────────────────────────────── */
+async function carregarRelogios(){
+  try{
+    const{data,error} = await supabaseClient.from('rh_relogios_ponto').select('*, projetos(codigo)').eq('ativo',true).order('apelido');
+    if(error) throw error;
+    document.getElementById('listaRelogios').innerHTML = (data&&data.length) ? data.map(r=>`
+      <div class="item-linha"><div><div class="principal">${r.apelido||r.identificador}</div><div class="sec">${r.identificador} · ${r.projetos?.codigo||'Sem obra vinculada'}</div></div></div>`).join('') : '<div class="vazio">Nenhum relógio cadastrado ainda.</div>';
+  }catch(e){ console.error(e); }
+}
+async function salvarRelogio(){
+  const identificador = document.getElementById('rlIdentificador').value.trim();
+  if(!identificador){ toast('Preenche o identificador do relógio.','#dc2626'); return; }
+  try{
+    const{error} = await supabaseClient.from('rh_relogios_ponto').insert({
+      identificador, apelido:document.getElementById('rlApelido').value||null, projeto_id:document.getElementById('rlProjeto').value||null,
+    });
+    if(error) throw error;
+    toast('✓ Relógio cadastrado.','#16a34a');
+    document.getElementById('rlIdentificador').value=''; document.getElementById('rlApelido').value='';
+    carregarRelogios();
+  }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
+}
+
+/* ── EXCEÇÃO POR FUNCIONÁRIO ─────────────────────────────── */
+async function carregarExcecoes(){
+  try{
+    const{data,error} = await supabaseClient.from('rh_excecao_funcionario').select('*, funcionarios(nome)').order('data',{ascending:false}).limit(30);
+    if(error) throw error;
+    document.getElementById('listaExcecoes').innerHTML = (data&&data.length) ? data.map(e=>`
+      <div class="item-linha"><div><div class="principal">${e.funcionarios?.nome||'—'}</div><div class="sec">${fmtData(e.data)} · ${e.dia_trabalhado?'Trabalhado':'Folga'} ${e.observacao?'· '+e.observacao:''}</div></div>
+      <button class="btn btn-sm btn-danger" onclick="excluirExcecao('${e.id}')">✕ Excluir</button></div>`).join('') : '<div class="vazio">Nenhuma exceção lançada ainda.</div>';
+  }catch(e){ console.error(e); }
+}
+async function salvarExcecaoFuncionario(){
+  const funcId = document.getElementById('exFuncionario').value;
+  const data = document.getElementById('exData').value;
+  if(!funcId||!data){ toast('Escolhe funcionário e data.','#dc2626'); return; }
+  const trabalhado = document.getElementById('exDiaTrabalhado').checked;
+  try{
+    const{error} = await supabaseClient.from('rh_excecao_funcionario').upsert({
+      funcionario_id:funcId, data, dia_trabalhado:trabalhado,
+      hora_entrada: trabalhado ? document.getElementById('exEntrada').value||null : null,
+      hora_saida_almoco: trabalhado ? document.getElementById('exSaidaAlmoco').value||null : null,
+      hora_volta_almoco: trabalhado ? document.getElementById('exVoltaAlmoco').value||null : null,
+      hora_saida: trabalhado ? document.getElementById('exSaida').value||null : null,
+      observacao: document.getElementById('exObservacao').value||null,
+    }, {onConflict:'funcionario_id,data'});
+    if(error) throw error;
+    toast('✓ Exceção criada — vale só pra esse dia, sem trocar o turno inteiro.','#16a34a');
+    carregarExcecoes();
+  }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
+}
+async function excluirExcecao(id){
+  if(!confirm('Excluir essa exceção? O dia volta a seguir o turno normal.')) return;
+  try{
+    const{error} = await supabaseClient.from('rh_excecao_funcionario').delete().eq('id',id);
+    if(error) throw error;
+    toast('✓ Exceção excluída.','#16a34a');
+    carregarExcecoes();
+  }catch(e){ console.error(e); toast('Não foi possível excluir.','#dc2626'); }
+}
+
+/* ── ABONO COLETIVO ──────────────────────────────────────── */
+async function salvarAbonoColetivo(){
+  const selecionados = [...document.getElementById('acFuncionarios').selectedOptions].map(o=>o.value);
+  const motivoId = document.getElementById('acMotivo').value;
+  const data = document.getElementById('acData').value;
+  if(!selecionados.length||!motivoId||!data){ toast('Escolhe pelo menos um funcionário, o motivo e a data.','#dc2626'); return; }
+  try{
+    const linhas = selecionados.map(funcionario_id=>({funcionario_id, motivo_id:motivoId, data, status:'aprovado', justificativa:'Abono coletivo'}));
+    const{error} = await supabaseClient.from('rh_abonos').insert(linhas);
+    if(error) throw error;
+    toast(`✓ ${selecionados.length} funcionário(s) abonado(s) de uma vez.`,'#16a34a');
+    await carregarAbonos(); renderizarAbonos();
+  }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
+}
+
+/* ── COMPENSAÇÃO DE DIA ──────────────────────────────────── */
+async function salvarCompensacaoDia(){
+  const funcId = document.getElementById('cpFuncionario').value;
+  const data = document.getElementById('cpData').value;
+  const horas = parseFloat(document.getElementById('cpHoras').value) || REGRA_APONTAMENTO.jornada_diaria_padrao_horas;
+  if(!funcId||!data){ toast('Escolhe funcionário e data.','#dc2626'); return; }
+  try{
+    const{error} = await supabaseClient.from('rh_compensacao_dia').insert({funcionario_id:funcId, data, horas_compensadas:horas});
+    if(error) throw error;
+    // Débito no banco de horas
+    await supabaseClient.from('rh_banco_horas_lancamentos').insert({funcionario_id:funcId, data, tipo:'debito', horas, origem:'compensacao_manual'});
+    // Marca o dia como Folga no espelho -- procura ou usa o motivo "Folga" do catálogo
+    const motivoFolga = MOTIVOS_ABONO.find(m=>m.nome.toLowerCase().includes('folga'));
+    if(motivoFolga){
+      await supabaseClient.from('rh_abonos').insert({funcionario_id:funcId, data, motivo_id:motivoFolga.id, status:'aprovado', justificativa:'Compensação de banco de horas'});
+    }
+    toast(`✓ Compensação concedida — ${fmtHoras(horas)} debitado do banco.`,'#16a34a');
+    document.getElementById('cpHoras').value='';
+    renderizarBanco();
+  }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
+}
+
+/* ── RELATÓRIO DE ABSENTEÍSMO ────────────────────────────── */
+async function gerarRelatorioAbsenteismo(){
+  const competencia = document.getElementById('abscCompetencia').value;
+  if(!competencia){ toast('Escolhe a competência.','#dc2626'); return; }
+  const wrap = document.getElementById('listaAbsenteismo');
+  wrap.innerHTML = 'Processando todos os funcionários...';
+
+  const resultados = [];
+  for(const func of FUNCIONARIOS){
+    const{data:trocas} = await supabaseClient.from('rh_troca_turno').select('turno_id,data_inicio').eq('funcionario_id',func.id);
+    if(!trocas || !trocas.length) continue; // sem turno, não dá pra apurar
+
+    const[ano,mes] = competencia.split('-').map(Number);
+    const inicio = `${competencia}-01T00:00:00`;
+    const fim = `${competencia}-${String(new Date(ano,mes,0).getDate()).padStart(2,'0')}T23:59:59`;
+    const{data:batidas} = await supabaseClient.from('rh_batidas_ponto').select('data_hora').eq('funcionario_id',func.id).gte('data_hora',inicio).lte('data_hora',fim);
+    const{data:abonos} = await supabaseClient.from('rh_abonos').select('data').eq('funcionario_id',func.id).eq('status','aprovado').gte('data',competencia+'-01').lte('data',competencia+'-31');
+    const{data:preAbonos} = await supabaseClient.from('rh_pre_abono').select('data_inicio,data_fim').eq('funcionario_id',func.id);
+
+    const diasComBatida = new Set((batidas||[]).map(b=>paraHorarioBrasil(b.data_hora).data));
+    const diasAbonados = new Set((abonos||[]).map(a=>a.data));
+    const totalDias = new Date(ano,mes,0).getDate();
+    let faltas = 0;
+    for(let d=1; d<=totalDias; d++){
+      const dataStr = `${competencia}-${String(d).padStart(2,'0')}`;
+      const dataObj = new Date(ano,mes-1,d);
+      const turnoId = turnoDoDia(trocas, dataStr);
+      const turno = TURNOS.find(t=>t.id===turnoId);
+      const horarioDia = turno?.rh_tabela_horario?.find(h=>h.dia_semana===dataObj.getDay());
+      const diaTrabalhado = horarioDia ? horarioDia.dia_trabalhado : (dataObj.getDay()>=1 && dataObj.getDay()<=5);
+      if(!diaTrabalhado) continue;
+      if(diasComBatida.has(dataStr) || diasAbonados.has(dataStr)) continue;
+      const dentroPreAbono = (preAbonos||[]).some(p=>dataStr>=p.data_inicio && dataStr<=p.data_fim);
+      if(dentroPreAbono) continue;
+      faltas++;
+    }
+    if(faltas>0) resultados.push({nome:func.nome, faltas});
+  }
+
+  resultados.sort((a,b)=>b.faltas-a.faltas);
+  wrap.innerHTML = resultados.length ? resultados.map(r=>`
+    <div class="item-linha"><div class="principal">${r.nome}</div><span class="status-pill status-inconsistente">${r.faltas} falta(s)</span></div>`).join('') : '<div class="vazio">Nenhuma falta encontrada nesse mês. 🎉</div>';
+}
 let PRE_ABONOS_ATIVOS = []; // cache carregado uma vez por processamento de espelho
 async function carregarPreAbono(){
   try{
@@ -1895,7 +2125,7 @@ async function executarFechamentoBancoHoras(){
 /* ── INICIALIZAÇÃO ───────────────────────────────────────── */
 (async function init(){
   document.getElementById('espCompetencia').value = new Date().toISOString().slice(0,7);
-  await Promise.all([carregarFuncionarios(), carregarFeriados(), carregarAbonos(), carregarProjetosPonto(), carregarTurnos(), carregarRegraApontamento(), carregarMotivosAbono(), carregarPreAbono()]);
+  await Promise.all([carregarFuncionarios(), carregarFeriados(), carregarAbonos(), carregarProjetosPonto(), carregarTurnos(), carregarRegraApontamento(), carregarMotivosAbono(), carregarPreAbono(), carregarRelogios(), carregarExcecoes()]);
   renderizarDashboard();
 })();
 </script>
