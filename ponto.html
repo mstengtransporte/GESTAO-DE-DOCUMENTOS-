@@ -405,10 +405,17 @@ a{color:inherit;}
     <!-- ═══════════ ABONOS ═══════════ -->
     <div id="viewAbonos" class="hidden">
       <div class="pg-head">
-        <div><h1>Abonos e Atestados</h1><p>Atestados, férias, licenças e folgas — zera a falta automaticamente no espelho.</p></div>
+        <div><h1>Abonos e Justificativas</h1><p>Qualquer motivo — não só atestado médico. Passa por aprovação antes de zerar falta no espelho.</p></div>
         <button class="btn" onclick="abrirNovoAbono()">➕ Lançar Abono</button>
       </div>
-      <div class="card"><div id="listaAbonos"><div class="vazio">Carregando...</div></div></div>
+      <div class="card">
+        <h2>Aguardando aprovação</h2>
+        <div id="listaAbonosPendentes"><div class="vazio">Carregando...</div></div>
+      </div>
+      <div class="card">
+        <h2>Histórico</h2>
+        <div id="listaAbonos"><div class="vazio">Carregando...</div></div>
+      </div>
     </div>
 
     <!-- ═══════════ BANCO DE HORAS ═══════════ -->
@@ -435,8 +442,29 @@ a{color:inherit;}
           <div class="fld"><label>Gap mínimo p/ considerar almoço real (horas)</label><input type="number" id="raGapAlmoco" step="0.1"></div>
           <div class="fld"><label>Destino da hora extra</label><select id="raDestinoHe"><option value="banco_horas">Banco de Horas</option><option value="folha_pagamento">Folha de Pagamento</option></select></div>
           <div class="fld"><label><input type="checkbox" id="raExigeAutorizacao" style="width:auto;margin-right:6px"> Hora extra precisa de autorização antes de virar banco/folha</label></div>
+          <div class="fld"><label><input type="checkbox" id="raAplicarSumula437" style="width:auto;margin-right:6px"> Aplicar Súmula 437 (avisa quando o almoço vier mais curto que o programado — não calcula sozinho, só sinaliza pra revisão)</label></div>
         </div>
         <button class="btn btn-sm" style="margin-top:10px" onclick="salvarRegraApontamento()">💾 Salvar Regra</button>
+      </div>
+
+      <div class="card">
+        <h2>Motivos de Abono/Justificativa</h2>
+        <p class="sub">Catálogo aberto — não é só atestado médico. Transporte, clima, ou qualquer outro motivo que a empresa aceitar.</p>
+        <button class="btn btn-sm btn-ghost" onclick="abrirNovoMotivoAbono()">➕ Novo Motivo</button>
+        <div id="listaMotivosAbono" style="margin-top:12px"></div>
+      </div>
+
+      <div class="card">
+        <h2>Faixa de Hora Extra Autorizada</h2>
+        <p class="sub">Autoriza com antecedência um intervalo de horário pra hora extra — o que for batido dentro da faixa vira "autorizada"; o que passar, vira "não autorizada". O sistema compara sozinho, sem precisar aprovar depois.</p>
+        <div class="form-grid">
+          <div class="fld"><label>Funcionário</label><select id="faFuncionario"></select></div>
+          <div class="fld"><label>Data</label><input type="date" id="faData"></div>
+          <div class="fld"><label>Início da faixa autorizada</label><input type="time" id="faHoraInicio"></div>
+          <div class="fld"><label>Fim da faixa autorizada</label><input type="time" id="faHoraFim"></div>
+        </div>
+        <button class="btn btn-sm" style="margin-top:10px" onclick="salvarFaixaHeAutorizada()">💾 Autorizar Faixa</button>
+        <div id="listaFaixasHe" style="margin-top:16px"></div>
       </div>
 
       <div class="card">
@@ -461,24 +489,17 @@ a{color:inherit;}
 <!-- ═══════════ MODAL: NOVO ABONO ═══════════ -->
 <div class="modal-overlay hidden" id="modalAbono">
   <div class="modal-box">
-    <div class="modal-head"><h3>📝 Lançar Abono</h3><button class="fechar" onclick="fecharModal('modalAbono')">✕</button></div>
+    <div class="modal-head"><h3>📝 Lançar Abono / Justificativa</h3><button class="fechar" onclick="fecharModal('modalAbono')">✕</button></div>
     <div class="modal-body">
       <div class="form-grid">
         <div class="fld"><label>Funcionário *</label><select id="abFuncionarioId"></select></div>
         <div class="fld"><label>Data *</label><input type="date" id="abData"></div>
-        <div class="fld"><label>Tipo</label>
-          <select id="abTipo">
-            <option value="atestado_total">Atestado médico — dia inteiro</option>
-            <option value="atestado_parcial">Atestado médico — parcial</option>
-            <option value="ferias">Férias</option>
-            <option value="licenca">Licença</option>
-            <option value="folga">Folga</option>
-            <option value="dsr">DSR</option>
-          </select>
-        </div>
+        <div class="fld" style="grid-column:1/-1"><label>Motivo *</label><select id="abMotivoId" onchange="atualizarCamposAbono()"></select></div>
         <div class="fld" id="wrapHorasAbonadas" style="display:none"><label>Horas abonadas</label><input type="number" id="abHoras" step="0.5"></div>
+        <div class="fld" id="wrapDocumentoAbono" style="display:none"><label>Documento/comprovante (link ou descrição)</label><input type="text" id="abDocumento"></div>
         <div class="fld" style="grid-column:1/-1"><label>Justificativa</label><textarea id="abJustificativa"></textarea></div>
       </div>
+      <p class="sub" id="avisoStatusAbono" style="margin-top:8px"></p>
     </div>
     <div class="modal-foot"><button class="btn btn-ghost btn-sm" onclick="fecharModal('modalAbono')">Cancelar</button><button class="btn btn-sm" onclick="salvarAbono()">💾 Salvar</button></div>
   </div>
@@ -499,6 +520,24 @@ a{color:inherit;}
       <p class="sub" style="margin-top:10px">Em dia marcado como "não trabalhado" (ex: sábado), qualquer hora batida já nasce como extra, na taxa informada — não desconta almoço nem compara com jornada.</p>
     </div>
     <div class="modal-foot"><button class="btn btn-ghost btn-sm" onclick="fecharModal('modalTurno')">Cancelar</button><button class="btn btn-sm" onclick="salvarTurno()">💾 Criar Turno</button></div>
+  </div>
+</div>
+
+<!-- ═══════════ MODAL: NOVO MOTIVO DE ABONO ═══════════ -->
+<div class="modal-overlay hidden" id="modalMotivoAbono">
+  <div class="modal-box">
+    <div class="modal-head"><h3>📝 Novo Motivo de Abono</h3><button class="fechar" onclick="fecharModal('modalMotivoAbono')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="fld" style="grid-column:1/-1"><label>Nome *</label><input type="text" id="maNome" placeholder="Ex: Atraso de transporte público"></div>
+        <div class="fld"><label>Categoria</label><select id="maCategoria"><option value="medico">Médico</option><option value="transporte">Transporte</option><option value="clima">Clima</option><option value="formal">Formal (férias/licença)</option><option value="outro">Outro</option></select></div>
+        <div class="fld"><label><input type="checkbox" id="maAbonaHoras" style="width:auto;margin-right:6px" checked> Abona as horas (não desconta)</label></div>
+        <div class="fld"><label><input type="checkbox" id="maAbonaParcial" style="width:auto;margin-right:6px"> Abona só parte — resto vai pro Banco de Horas</label></div>
+        <div class="fld"><label><input type="checkbox" id="maRequerDocumento" style="width:auto;margin-right:6px"> Exige documento/comprovante</label></div>
+        <div class="fld"><label><input type="checkbox" id="maPreAbona" style="width:auto;margin-right:6px"> Pode ser usado em Pré-Abono (lançar com antecedência)</label></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost btn-sm" onclick="fecharModal('modalMotivoAbono')">Cancelar</button><button class="btn btn-sm" onclick="salvarMotivoAbono()">💾 Salvar</button></div>
   </div>
 </div>
 
@@ -544,7 +583,7 @@ function mudarView(nome){
   if(nome==='dashboard') renderizarDashboard();
   if(nome==='abonos') renderizarAbonos();
   if(nome==='banco') renderizarBanco();
-  if(nome==='turnos'){ renderizarTurnos(); carregarTrocasTurno(); }
+  if(nome==='turnos'){ renderizarTurnos(); carregarTrocasTurno(); renderizarMotivosAbono(); carregarFaixasHe(); }
 }
 document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.addEventListener('click',()=>mudarView(b.dataset.view)));
 
@@ -555,7 +594,7 @@ async function carregarFuncionarios(){
     if(error) throw error;
     FUNCIONARIOS=data||[];
     const opts='<option value="">— Selecione —</option>'+FUNCIONARIOS.map(f=>`<option value="${f.id}">${f.nome}</option>`).join('');
-    ['custoFuncionarioId','mFuncionarioId','espFuncionarioId','abFuncionarioId','ttFuncionario'].forEach(id=>{
+    ['custoFuncionarioId','mFuncionarioId','espFuncionarioId','abFuncionarioId','ttFuncionario','faFuncionario'].forEach(id=>{
       const el=document.getElementById(id); if(el) el.innerHTML = opts;
     });
   }catch(e){ console.error(e); }
@@ -573,7 +612,7 @@ async function carregarFeriados(){
   catch(e){ console.error(e); }
 }
 async function carregarAbonos(){
-  try{ const{data,error}=await supabaseClient.from('rh_abonos').select('*, funcionarios(nome)').order('data',{ascending:false}); if(error) throw error; ABONOS=data||[]; }
+  try{ const{data,error}=await supabaseClient.from('rh_abonos').select('*, funcionarios(nome), rh_motivos_abono(nome)').order('data',{ascending:false}); if(error) throw error; ABONOS=data||[]; }
   catch(e){ console.error(e); }
 }
 
@@ -1021,7 +1060,7 @@ async function lancarBatidaManual(){
    em carregarRegraApontamento() — nada de número fixo escrito aqui.
    Os valores abaixo só existem como plano B, se por algum motivo a
    regra ainda não tiver sido cadastrada no banco (evita travar). */
-let REGRA_APONTAMENTO = { tolerancia_por_marcacao_min:5, tolerancia_por_periodo_min:10, jornada_diaria_padrao_horas:8.8, limite_gap_almoco_horas:2, destino_horas_extras:'banco_horas', exige_autorizacao_he:false };
+let REGRA_APONTAMENTO = { tolerancia_por_marcacao_min:5, tolerancia_por_periodo_min:10, jornada_diaria_padrao_horas:8.8, limite_gap_almoco_horas:2, destino_horas_extras:'banco_horas', exige_autorizacao_he:false, aplicar_sumula_437:false };
 let JORNADA_DIARIA_HORAS = REGRA_APONTAMENTO.jornada_diaria_padrao_horas;
 
 async function carregarRegraApontamento(){
@@ -1044,6 +1083,7 @@ function preencherFormularioRegra(){
   document.getElementById('raGapAlmoco').value = r.limite_gap_almoco_horas;
   document.getElementById('raDestinoHe').value = r.destino_horas_extras;
   document.getElementById('raExigeAutorizacao').checked = !!r.exige_autorizacao_he;
+  document.getElementById('raAplicarSumula437').checked = !!r.aplicar_sumula_437;
 }
 async function salvarRegraApontamento(){
   const payload = {
@@ -1053,6 +1093,7 @@ async function salvarRegraApontamento(){
     limite_gap_almoco_horas: parseFloat(document.getElementById('raGapAlmoco').value)||2,
     destino_horas_extras: document.getElementById('raDestinoHe').value,
     exige_autorizacao_he: document.getElementById('raExigeAutorizacao').checked,
+    aplicar_sumula_437: document.getElementById('raAplicarSumula437').checked,
   };
   try{
     const{error} = await supabaseClient.from('rh_regra_apontamento').update(payload).eq('id', REGRA_APONTAMENTO.id);
@@ -1089,7 +1130,26 @@ function horaParaDecimalComTolerancia(hhmm){
   return (totalMin+ajuste)/60;
 }
 
+/* Compara o intervalo em que a hora extra aconteceu (do fim da
+   jornada até a última batida) contra a Faixa de HE Autorizada
+   daquele dia — o que cai dentro da faixa é autorizada, o que
+   passa é não autorizada. Sem faixa cadastrada, tudo é não
+   autorizada (não significa que não é paga — só que não tinha
+   autorização prévia registrada). */
 function horaParaDecimal(hhmm){ if(!hhmm) return null; const [h,m]=hhmm.split(':').map(Number); return h + m/60; }
+function classificarAutorizacaoHe(extra, fimJornadaDecimal, ultimaBatidaDecimal, dataStr, faixasHeDoMes){
+  if(extra<=0) return {autorizada:0, naoAutorizada:0};
+  const faixa = (faixasHeDoMes||[]).find(f=>f.data===dataStr);
+  if(!faixa) return {autorizada:0, naoAutorizada:extra};
+  const inicioFaixa = horaParaDecimal(faixa.hora_inicio.slice(0,5));
+  const fimFaixa = horaParaDecimal(faixa.hora_fim.slice(0,5));
+  const inicioExtra = fimJornadaDecimal;
+  const fimExtra = ultimaBatidaDecimal;
+  const overlapInicio = Math.max(inicioExtra, inicioFaixa);
+  const overlapFim = Math.min(fimExtra, fimFaixa);
+  const autorizada = Math.max(0, Math.min(extra, overlapFim-overlapInicio));
+  return {autorizada: round2(autorizada), naoAutorizada: round2(extra-autorizada)};
+}
 function decimalParaHora(dec){ if(dec===null||dec===undefined) return null; const h=Math.floor(dec), m=Math.round((dec-h)*60); return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`; }
 
 function calcularHoraNoturna(entrada, saida){
@@ -1139,7 +1199,8 @@ async function processarEspelho(){
   try{
     const{data:batidas,error} = await supabaseClient.from('rh_batidas_ponto').select('*').eq('funcionario_id',funcId).gte('data_hora',inicio).lte('data_hora',fim).order('data_hora');
     if(error) throw error;
-    const{data:abonosDoMes} = await supabaseClient.from('rh_abonos').select('*').eq('funcionario_id',funcId).gte('data',competencia+'-01').lte('data',competencia+'-31');
+    const{data:abonosDoMes} = await supabaseClient.from('rh_abonos').select('*, rh_motivos_abono(*)').eq('funcionario_id',funcId).eq('status','aprovado').gte('data',competencia+'-01').lte('data',competencia+'-31');
+    const{data:faixasHeDoMes} = await supabaseClient.from('rh_faixa_he_autorizada').select('*').eq('funcionario_id',funcId).gte('data',competencia+'-01').lte('data',competencia+'-31');
     const{data:trocas} = await supabaseClient.from('rh_troca_turno').select('turno_id,data_inicio').eq('funcionario_id',funcId);
 
     if(!trocas || !trocas.length){
@@ -1178,11 +1239,11 @@ async function processarEspelho(){
         ? (horaParaDecimal(horarioDia.hora_saida) - horaParaDecimal(horarioDia.hora_entrada) - (horaParaDecimal(horarioDia.hora_volta_almoco) - horaParaDecimal(horarioDia.hora_saida_almoco)))
         : JORNADA_DIARIA_HORAS; // sem turno cadastrado pro dia, cai no valor de referência antigo
 
-      let linha = {data:dataStr, dia:diaSemana, e1:null,s1:null,e2:null,s2:null, normais:0, he50:0, he100:0, noturno:0, ocorrencia:'', ajuste:false, tipoAjuste:null, taxaAplicada:taxaHeDia};
+      let linha = {data:dataStr, dia:diaSemana, e1:null,s1:null,e2:null,s2:null, normais:0, he50:0, he100:0, noturno:0, ocorrencia:'', ajuste:false, tipoAjuste:null, taxaAplicada:taxaHeDia, heAutorizada:0, heNaoAutorizada:0, horasNaoRealizadas:0};
 
       if(abono){
-        linha.ocorrencia = ({atestado_total:'Atestado médico', atestado_parcial:'Atestado médico (parcial)', ferias:'Férias', licenca:'Licença', folga:'Folga', dsr:'DSR'})[abono.tipo] || abono.tipo;
-        if(abono.tipo==='atestado_parcial' && abono.horas_abonadas) linha.normais = horasEsperadasDia - abono.horas_abonadas;
+        linha.ocorrencia = abono.rh_motivos_abono?.nome || 'Abono';
+        if(abono.rh_motivos_abono?.abona_parcial && abono.horas_abonadas) linha.normais = horasEsperadasDia - abono.horas_abonadas;
       }else if(marcacoes.length===0){
         if(!diaTrabalhado && !feriado) linha.ocorrencia = diaSemana==='Dom' ? 'DSR' : 'Dia não trabalhado (turno)';
         else if(feriado) linha.ocorrencia = 'Feriado — '+feriado.nome;
@@ -1232,6 +1293,34 @@ async function processarEspelho(){
           linha.normais = Math.min(trabalhado, horasEsperadasDia);
           const extra = Math.max(0, trabalhado - horasEsperadasDia);
           if(taxaHeDia>=100) linha.he100 = extra; else linha.he50 = extra;
+
+          // Faixa de HE Autorizada -- compara o intervalo da extra (do fim
+          // da jornada até a última batida) contra o que foi pré-autorizado
+          if(extra>0 && horarioDia?.hora_saida){
+            const fimJornada = horaParaDecimal(horarioDia.hora_saida);
+            const cls = classificarAutorizacaoHe(extra, fimJornada, m4, dataStr, faixasHeDoMes);
+            linha.heAutorizada = cls.autorizada; linha.heNaoAutorizada = cls.naoAutorizada;
+          }else if(extra>0){
+            linha.heNaoAutorizada = extra;
+          }
+
+          // Hora Não Realizada -- trabalhou menos que o esperado, além da
+          // tolerância (chegou tarde, saiu cedo, ou os dois)
+          if(trabalhado < horasEsperadasDia){
+            linha.horasNaoRealizadas = round2(horasEsperadasDia - trabalhado);
+          }
+
+          // Súmula 437 -- só entra se a Regra de Apontamento tiver isso
+          // ligado, e só AVISA (não desconta nem soma nada sozinho)
+          if(REGRA_APONTAMENTO.aplicar_sumula_437 && horarioDia?.hora_saida_almoco && horarioDia?.hora_volta_almoco){
+            const almocoProgramado = horaParaDecimal(horarioDia.hora_volta_almoco) - horaParaDecimal(horarioDia.hora_saida_almoco);
+            const almocoReal = m3 - m2;
+            const tolHoras = (REGRA_APONTAMENTO.tolerancia_por_periodo_min||10)/60;
+            if(almocoReal < (almocoProgramado - tolHoras)){
+              linha.ocorrencia = (linha.ocorrencia?linha.ocorrencia+' · ':'') + `⚠️ Intervalo reduzido (${fmtHoras(almocoReal)} de ${fmtHoras(almocoProgramado)}) — confere Súmula 437`;
+              linha.ajuste = true;
+            }
+          }
         }
         linha.noturno = calcularHoraNoturna(m1,m4);
       }else{
@@ -1365,26 +1454,82 @@ function renderizarFolhaA4(funcId, competencia){
   `;
 }
 
-/* ── ABONOS ──────────────────────────────────────────────── */
-document.getElementById('abTipo').addEventListener('change', function(){
-  document.getElementById('wrapHorasAbonadas').style.display = this.value==='atestado_parcial' ? '' : 'none';
-});
+/* ── MOTIVOS DE ABONO (catálogo) ─────────────────────────── */
+let MOTIVOS_ABONO = [];
+async function carregarMotivosAbono(){
+  try{
+    const{data,error} = await supabaseClient.from('rh_motivos_abono').select('*').eq('ativo',true).order('nome');
+    if(error) throw error;
+    MOTIVOS_ABONO = data||[];
+    const opts = '<option value="">— Selecione —</option>' + MOTIVOS_ABONO.map(m=>`<option value="${m.id}">${m.nome}</option>`).join('');
+    const el = document.getElementById('abMotivoId'); if(el) el.innerHTML = opts;
+  }catch(e){ console.error(e); }
+}
+function renderizarMotivosAbono(){
+  const wrap = document.getElementById('listaMotivosAbono');
+  if(!wrap) return;
+  wrap.innerHTML = MOTIVOS_ABONO.length ? MOTIVOS_ABONO.map(m=>`
+    <div class="item-linha"><div><div class="principal">${m.nome}</div><div class="sec">${m.categoria} ${m.abona_parcial?'· abona parcial':''} ${m.requer_documento?'· exige documento':''} ${m.pre_abona?'· usável em pré-abono':''}</div></div></div>`).join('') : '<div class="vazio">Nenhum motivo cadastrado.</div>';
+}
+function abrirNovoMotivoAbono(){
+  document.getElementById('maNome').value=''; document.getElementById('maCategoria').value='outro';
+  document.getElementById('maAbonaHoras').checked=true; document.getElementById('maAbonaParcial').checked=false;
+  document.getElementById('maRequerDocumento').checked=false; document.getElementById('maPreAbona').checked=false;
+  abrirModal('modalMotivoAbono');
+}
+async function salvarMotivoAbono(){
+  const nome = document.getElementById('maNome').value.trim();
+  if(!nome){ toast('Preenche o nome do motivo.','#dc2626'); return; }
+  try{
+    const{error} = await supabaseClient.from('rh_motivos_abono').insert({
+      nome, categoria:document.getElementById('maCategoria').value,
+      abona_horas:document.getElementById('maAbonaHoras').checked,
+      abona_parcial:document.getElementById('maAbonaParcial').checked,
+      requer_documento:document.getElementById('maRequerDocumento').checked,
+      pre_abona:document.getElementById('maPreAbona').checked,
+    });
+    if(error) throw error;
+    toast('✓ Motivo criado.','#16a34a');
+    fecharModal('modalMotivoAbono');
+    await carregarMotivosAbono(); renderizarMotivosAbono();
+  }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
+}
+
+/* ── ABONOS — catálogo de motivo + fluxo de aprovação ────── */
+function atualizarCamposAbono(){
+  const motivo = MOTIVOS_ABONO.find(m=>m.id===document.getElementById('abMotivoId').value);
+  document.getElementById('wrapHorasAbonadas').style.display = (motivo?.abona_parcial) ? '' : 'none';
+  document.getElementById('wrapDocumentoAbono').style.display = (motivo?.requer_documento) ? '' : 'none';
+  document.getElementById('avisoStatusAbono').textContent = motivo?.requer_documento ? '⚠️ Esse motivo normalmente exige comprovante.' : '';
+}
 function renderizarAbonos(){
-  document.getElementById('listaAbonos').innerHTML = ABONOS.length ? ABONOS.map(a=>`
-    <div class="item-linha"><div><div class="principal">${a.funcionarios?.nome||'—'} — ${a.tipo}</div><div class="sec">${fmtData(a.data)} · ${a.justificativa||'—'}</div></div></div>`).join('') : '<div class="vazio">Nenhum abono lançado.</div>';
+  const aprovados = ABONOS.filter(a=>a.status!=='pendente');
+  document.getElementById('listaAbonos').innerHTML = aprovados.length ? aprovados.map(a=>`
+    <div class="item-linha"><div><div class="principal">${a.funcionarios?.nome||'—'} — ${a.rh_motivos_abono?.nome||a.tipo||'—'}</div><div class="sec">${fmtData(a.data)} · ${a.justificativa||'—'}</div></div>
+    <span class="status-pill ${a.status==='reprovado'?'status-cancelado':'status-normal'}">${a.status}</span></div>`).join('') : '<div class="vazio">Nenhum abono no histórico.</div>';
+
+  const pendentes = ABONOS.filter(a=>a.status==='pendente');
+  document.getElementById('listaAbonosPendentes').innerHTML = pendentes.length ? pendentes.map(a=>`
+    <div class="item-linha"><div><div class="principal">${a.funcionarios?.nome||'—'} — ${a.rh_motivos_abono?.nome||'—'}</div><div class="sec">${fmtData(a.data)} · ${a.justificativa||'—'}</div></div>
+    <div style="display:flex;gap:6px"><button class="btn btn-sm" onclick="aprovarAbono('${a.id}')">✅ Aprovar</button><button class="btn btn-sm btn-danger" onclick="reprovarAbono('${a.id}')">✕ Reprovar</button></div></div>`).join('') : '<div class="vazio">Nada esperando aprovação. 🎉</div>';
 }
 function abrirNovoAbono(){
   document.getElementById('abFuncionarioId').value=''; document.getElementById('abData').value='';
-  document.getElementById('abTipo').value='atestado_total'; document.getElementById('abHoras').value='';
-  document.getElementById('abJustificativa').value=''; document.getElementById('wrapHorasAbonadas').style.display='none';
+  document.getElementById('abMotivoId').value=''; document.getElementById('abHoras').value='';
+  document.getElementById('abDocumento').value=''; document.getElementById('abJustificativa').value='';
+  document.getElementById('wrapHorasAbonadas').style.display='none'; document.getElementById('wrapDocumentoAbono').style.display='none';
+  document.getElementById('avisoStatusAbono').textContent='';
   abrirModal('modalAbono');
 }
 async function salvarAbono(){
   const funcId=document.getElementById('abFuncionarioId').value, data=document.getElementById('abData').value;
-  if(!funcId||!data){ toast('Escolhe funcionário e data.','#dc2626'); return; }
+  const motivoId=document.getElementById('abMotivoId').value;
+  if(!funcId||!data||!motivoId){ toast('Escolhe funcionário, data e motivo.','#dc2626'); return; }
   try{
+    // Lançado direto pelo RH aqui já nasce aprovado -- "pendente" fica
+    // reservado pro fluxo de autoatendimento do funcionário (futuro)
     const{error}=await supabaseClient.from('rh_abonos').insert({
-      funcionario_id:funcId, data, tipo:document.getElementById('abTipo').value,
+      funcionario_id:funcId, data, motivo_id:motivoId, status:'aprovado',
       horas_abonadas:parseFloat(document.getElementById('abHoras').value)||null,
       justificativa:document.getElementById('abJustificativa').value||null,
     });
@@ -1393,6 +1538,49 @@ async function salvarAbono(){
     fecharModal('modalAbono');
     await carregarAbonos(); renderizarAbonos();
   }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
+}
+async function aprovarAbono(id){
+  try{
+    const{error}=await supabaseClient.from('rh_abonos').update({status:'aprovado', aprovado_em:new Date().toISOString()}).eq('id',id);
+    if(error) throw error;
+    toast('✓ Abono aprovado.','#16a34a');
+    await carregarAbonos(); renderizarAbonos();
+  }catch(e){ console.error(e); toast('Não foi possível aprovar.','#dc2626'); }
+}
+async function reprovarAbono(id){
+  const motivo = prompt('Motivo da reprovação:');
+  if(!motivo) return;
+  try{
+    const{error}=await supabaseClient.from('rh_abonos').update({status:'reprovado', motivo_reprovacao:motivo}).eq('id',id);
+    if(error) throw error;
+    toast('Abono reprovado.','#dc2626');
+    await carregarAbonos(); renderizarAbonos();
+  }catch(e){ console.error(e); toast('Não foi possível reprovar.','#dc2626'); }
+}
+
+/* ── FAIXA DE HORA EXTRA AUTORIZADA ─────────────────────── */
+async function salvarFaixaHeAutorizada(){
+  const funcId = document.getElementById('faFuncionario').value;
+  const data = document.getElementById('faData').value;
+  const inicio = document.getElementById('faHoraInicio').value;
+  const fim = document.getElementById('faHoraFim').value;
+  if(!funcId||!data||!inicio||!fim){ toast('Preenche funcionário, data e a faixa de horário.','#dc2626'); return; }
+  try{
+    const{error} = await supabaseClient.from('rh_faixa_he_autorizada').upsert({
+      funcionario_id:funcId, data, hora_inicio:inicio, hora_fim:fim,
+    }, {onConflict:'funcionario_id,data'});
+    if(error) throw error;
+    toast('✓ Faixa de hora extra autorizada.','#16a34a');
+    carregarFaixasHe();
+  }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
+}
+async function carregarFaixasHe(){
+  try{
+    const{data,error} = await supabaseClient.from('rh_faixa_he_autorizada').select('*, funcionarios(nome)').order('data',{ascending:false}).limit(20);
+    if(error) throw error;
+    document.getElementById('listaFaixasHe').innerHTML = (data&&data.length) ? data.map(f=>`
+      <div class="item-linha"><div><div class="principal">${f.funcionarios?.nome||'—'}</div><div class="sec">${fmtData(f.data)} · ${f.hora_inicio?.slice(0,5)} às ${f.hora_fim?.slice(0,5)}</div></div></div>`).join('') : '<div class="vazio">Nenhuma faixa autorizada ainda.</div>';
+  }catch(e){ console.error(e); }
 }
 
 /* ── BANCO DE HORAS ──────────────────────────────────────── */
@@ -1409,7 +1597,7 @@ async function renderizarBanco(){
 /* ── INICIALIZAÇÃO ───────────────────────────────────────── */
 (async function init(){
   document.getElementById('espCompetencia').value = new Date().toISOString().slice(0,7);
-  await Promise.all([carregarFuncionarios(), carregarFeriados(), carregarAbonos(), carregarProjetosPonto(), carregarTurnos(), carregarRegraApontamento()]);
+  await Promise.all([carregarFuncionarios(), carregarFeriados(), carregarAbonos(), carregarProjetosPonto(), carregarTurnos(), carregarRegraApontamento(), carregarMotivosAbono()]);
   renderizarDashboard();
 })();
 </script>
