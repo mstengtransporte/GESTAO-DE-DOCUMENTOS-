@@ -308,6 +308,9 @@ a{color:inherit;}
     <button class="nav-item" data-view="abonos"><span class="ic">📝</span>Abonos e Atestados</button>
     <button class="nav-item" data-view="banco"><span class="ic">🏦</span>Banco de Horas</button>
 
+    <div class="nav-lbl">Configuração</div>
+    <button class="nav-item" data-view="turnos"><span class="ic">🗓️</span>Turnos e Escalas</button>
+
     <div class="sidebar-foot">
       ESF · Ponto/RH — v2026.09.22<br>
       <span id="statusConexao">🟢 Online</span>
@@ -386,13 +389,13 @@ a{color:inherit;}
           <div class="fld" style="max-width:160px"><label>Competência</label><input type="month" id="espCompetencia"></div>
           <button class="btn btn-sm" onclick="processarEspelho()">⚙️ Processar Mês</button>
           <button class="btn btn-sm btn-ghost" onclick="tratarInconsistenciasLote()">🔧 Tratar Inconsistências em Lote</button>
-          <button class="btn btn-sm btn-ghost" onclick="window.print()">🖨️ Imprimir Espelho A4</button>
+          <button class="btn btn-sm btn-ghost" onclick="imprimirEspelhoA4()">🖨️ Imprimir Espelho A4</button>
         </div>
         <div id="mesesComDados" style="margin-top:10px;font-size:12px;color:var(--mu)"></div>
       </div>
       <div class="card">
         <h2>Tabela do mês (tela)</h2>
-        <div style="overflow-x:auto"><table class="tabela-ponto" id="tabelaEspelhoTela"><thead><tr><th>Data</th><th>Dia</th><th>Ent.1</th><th>Saí.1</th><th>Ent.2</th><th>Saí.2</th><th>Normais</th><th>HE 50%</th><th>HE 100%</th><th>Ad.Not.</th><th>Ocorrência</th></tr></thead><tbody id="corpoTabelaEspelho"></tbody></table></div>
+        <div style="overflow-x:auto"><table class="tabela-ponto" id="tabelaEspelhoTela"><thead><tr><th>Data</th><th>Dia</th><th>Ent.1</th><th>Saí.1</th><th>Ent.2</th><th>Saí.2</th><th>Normais</th><th>HE 70%</th><th>HE 100%</th><th>Ad.Not.</th><th>Ocorrência</th></tr></thead><tbody id="corpoTabelaEspelho"></tbody></table></div>
       </div>
 
       <!-- Folha A4 -- só aparece na impressão, fica escondida na tela normal -->
@@ -412,6 +415,42 @@ a{color:inherit;}
     <div id="viewBanco" class="hidden">
       <div class="pg-head"><div><h1>Banco de Horas</h1><p>Saldo acumulado por funcionário, mês a mês.</p></div></div>
       <div class="card"><div id="listaBanco"><div class="vazio">Carregando...</div></div></div>
+    </div>
+
+    <!-- ═══════════ TURNOS E ESCALAS ═══════════ -->
+    <div id="viewTurnos" class="hidden">
+      <div class="pg-head">
+        <div><h1>Turnos e Escalas</h1><p>A jornada de cada turno — dia a dia, com a taxa de hora extra própria de cada dia. Isso é o que o cálculo do Espelho usa, em vez de jornada fixa no código.</p></div>
+        <button class="btn" onclick="abrirNovoTurno()">➕ Novo Turno</button>
+      </div>
+      <div class="card"><div id="listaTurnos"><div class="vazio">Carregando...</div></div></div>
+
+      <div class="card">
+        <h2>Regra de Apontamento</h2>
+        <p class="sub">Como o sistema trata o que foi batido — tolerância, destino da hora extra, autorização. Isso nunca muda o horário batido, só como ele vira conta de horas.</p>
+        <div class="form-grid">
+          <div class="fld"><label>Tolerância por marcação (min)</label><input type="number" id="raTolMarcacao"></div>
+          <div class="fld"><label>Tolerância por período/dia (min)</label><input type="number" id="raTolPeriodo"></div>
+          <div class="fld"><label>Jornada de referência (plano B, horas)</label><input type="number" id="raJornadaRef" step="0.1"></div>
+          <div class="fld"><label>Gap mínimo p/ considerar almoço real (horas)</label><input type="number" id="raGapAlmoco" step="0.1"></div>
+          <div class="fld"><label>Destino da hora extra</label><select id="raDestinoHe"><option value="banco_horas">Banco de Horas</option><option value="folha_pagamento">Folha de Pagamento</option></select></div>
+          <div class="fld"><label><input type="checkbox" id="raExigeAutorizacao" style="width:auto;margin-right:6px"> Hora extra precisa de autorização antes de virar banco/folha</label></div>
+        </div>
+        <button class="btn btn-sm" style="margin-top:10px" onclick="salvarRegraApontamento()">💾 Salvar Regra</button>
+      </div>
+
+      <div class="card">
+        <h2>Troca de Turno</h2>
+        <p class="sub">Liga um funcionário a um turno, a partir de uma data — troca antiga fica no histórico, não se apaga.</p>
+        <div class="form-grid">
+          <div class="fld"><label>Funcionário</label><select id="ttFuncionario"></select></div>
+          <div class="fld"><label>Turno</label><select id="ttTurno"></select></div>
+          <div class="fld"><label>A partir de</label><input type="date" id="ttDataInicio"></div>
+          <div class="fld"><label>Motivo (opcional)</label><input type="text" id="ttMotivo"></div>
+        </div>
+        <button class="btn btn-sm" style="margin-top:10px" onclick="salvarTrocaTurno()">💾 Registrar Troca de Turno</button>
+        <div id="listaTrocasTurno" style="margin-top:16px"></div>
+      </div>
     </div>
 
   </main>
@@ -442,6 +481,24 @@ a{color:inherit;}
       </div>
     </div>
     <div class="modal-foot"><button class="btn btn-ghost btn-sm" onclick="fecharModal('modalAbono')">Cancelar</button><button class="btn btn-sm" onclick="salvarAbono()">💾 Salvar</button></div>
+  </div>
+</div>
+
+<!-- ═══════════ MODAL: NOVO TURNO ═══════════ -->
+<div class="modal-overlay hidden" id="modalTurno">
+  <div class="modal-box" style="max-width:760px">
+    <div class="modal-head"><h3>🗓️ Novo Turno de Trabalho</h3><button class="fechar" onclick="fecharModal('modalTurno')">✕</button></div>
+    <div class="modal-body">
+      <div class="fld" style="margin-bottom:14px"><label>Nome do turno *</label><input type="text" id="turnoNome" placeholder="Ex: Administrativo Seg-Sex 07:12-17:00"></div>
+      <div style="overflow-x:auto">
+        <table class="tabela-ponto" style="min-width:680px">
+          <thead><tr><th>Dia</th><th>Trabalhado?</th><th>Entrada</th><th>Saí. Almoço</th><th>Volta Almoço</th><th>Saída</th><th>Taxa HE (%)</th></tr></thead>
+          <tbody id="corpoTabelaTurno"></tbody>
+        </table>
+      </div>
+      <p class="sub" style="margin-top:10px">Em dia marcado como "não trabalhado" (ex: sábado), qualquer hora batida já nasce como extra, na taxa informada — não desconta almoço nem compara com jornada.</p>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost btn-sm" onclick="fecharModal('modalTurno')">Cancelar</button><button class="btn btn-sm" onclick="salvarTurno()">💾 Criar Turno</button></div>
   </div>
 </div>
 
@@ -481,12 +538,13 @@ const DIAS_SEMANA = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 
 /* ── NAVEGAÇÃO ───────────────────────────────────────────── */
 function mudarView(nome){
-  const views=['dashboard','custo','batidas','espelho','abonos','banco'];
+  const views=['dashboard','custo','batidas','espelho','abonos','banco','turnos'];
   views.forEach(v=>{ const el=document.getElementById('view'+v.charAt(0).toUpperCase()+v.slice(1)); if(el) el.classList.toggle('hidden', v!==nome); });
   document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.classList.toggle('active', b.dataset.view===nome));
   if(nome==='dashboard') renderizarDashboard();
   if(nome==='abonos') renderizarAbonos();
   if(nome==='banco') renderizarBanco();
+  if(nome==='turnos'){ renderizarTurnos(); carregarTrocasTurno(); }
 }
 document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.addEventListener('click',()=>mudarView(b.dataset.view)));
 
@@ -497,7 +555,7 @@ async function carregarFuncionarios(){
     if(error) throw error;
     FUNCIONARIOS=data||[];
     const opts='<option value="">— Selecione —</option>'+FUNCIONARIOS.map(f=>`<option value="${f.id}">${f.nome}</option>`).join('');
-    ['custoFuncionarioId','mFuncionarioId','espFuncionarioId','abFuncionarioId'].forEach(id=>{
+    ['custoFuncionarioId','mFuncionarioId','espFuncionarioId','abFuncionarioId','ttFuncionario'].forEach(id=>{
       const el=document.getElementById(id); if(el) el.innerHTML = opts;
     });
   }catch(e){ console.error(e); }
@@ -658,6 +716,111 @@ function parseArquivoAfd(texto){
 
 let gruposDuplicados = [];
 let dadosAfdProcessados = null;
+
+/* ── TURNOS E ESCALAS ────────────────────────────────────── */
+let TURNOS = [];
+const NOMES_DIAS_SEMANA = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+
+async function carregarTurnos(){
+  try{
+    const{data,error} = await supabaseClient.from('rh_turnos_trabalho').select('*, rh_tabela_horario(*)').eq('ativo',true).order('nome');
+    if(error) throw error;
+    TURNOS = data||[];
+    const opts = '<option value="">— Selecione —</option>' + TURNOS.map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
+    const elTt = document.getElementById('ttTurno'); if(elTt) elTt.innerHTML = opts;
+  }catch(e){ console.error(e); }
+}
+
+function renderizarTurnos(){
+  const wrap = document.getElementById('listaTurnos');
+  if(!TURNOS.length){ wrap.innerHTML = '<div class="vazio">Nenhum turno cadastrado ainda.</div>'; return; }
+  wrap.innerHTML = TURNOS.map(t=>{
+    const dias = (t.rh_tabela_horario||[]).sort((a,b)=>a.dia_semana-b.dia_semana);
+    return `<div class="item-linha" style="flex-direction:column;align-items:stretch;gap:6px">
+      <div class="principal">${t.nome}</div>
+      <div style="overflow-x:auto"><table class="tabela-ponto" style="font-size:11px"><thead><tr><th>Dia</th><th>Trabalhado</th><th>Horário</th><th>Taxa HE</th></tr></thead><tbody>
+        ${dias.map(d=>`<tr><td>${NOMES_DIAS_SEMANA[d.dia_semana]}</td><td>${d.dia_trabalhado?'Sim':'Não'}</td><td>${d.dia_trabalhado?`${d.hora_entrada?.slice(0,5)}-${d.hora_saida_almoco?.slice(0,5)} / ${d.hora_volta_almoco?.slice(0,5)}-${d.hora_saida?.slice(0,5)}`:'—'}</td><td>${d.taxa_he_pct}%</td></tr>`).join('')}
+      </tbody></table></div>
+    </div>`;
+  }).join('');
+}
+
+function abrirNovoTurno(){
+  document.getElementById('turnoNome').value = '';
+  const corpo = document.getElementById('corpoTabelaTurno');
+  corpo.innerHTML = NOMES_DIAS_SEMANA.map((nome,i)=>{
+    const diaUtil = i>=1 && i<=5;
+    return `<tr data-dia="${i}">
+      <td>${nome}</td>
+      <td><input type="checkbox" class="turno-trabalhado" ${diaUtil?'checked':''} onchange="this.closest('tr').querySelectorAll('input[type=time]').forEach(el=>el.disabled=!this.checked)"></td>
+      <td><input type="time" class="turno-entrada" value="${diaUtil?'07:12':''}" ${diaUtil?'':'disabled'} style="width:90px"></td>
+      <td><input type="time" class="turno-saida-almoco" value="${diaUtil?'12:00':''}" ${diaUtil?'':'disabled'} style="width:90px"></td>
+      <td><input type="time" class="turno-volta-almoco" value="${diaUtil?'13:00':''}" ${diaUtil?'':'disabled'} style="width:90px"></td>
+      <td><input type="time" class="turno-saida" value="${diaUtil?'17:00':''}" ${diaUtil?'':'disabled'} style="width:90px"></td>
+      <td><input type="number" class="turno-taxa" value="${diaUtil?70:(i===0?100:70)}" style="width:70px"></td>
+    </tr>`;
+  }).join('');
+  abrirModal('modalTurno');
+}
+
+async function salvarTurno(){
+  const nome = document.getElementById('turnoNome').value.trim();
+  if(!nome){ toast('Preenche o nome do turno.','#dc2626'); return; }
+  try{
+    const{data:turno, error} = await supabaseClient.from('rh_turnos_trabalho').insert({nome}).select().single();
+    if(error) throw error;
+
+    const linhas = [...document.querySelectorAll('#corpoTabelaTurno tr')].map(tr=>{
+      const dia = parseInt(tr.dataset.dia);
+      const trabalhado = tr.querySelector('.turno-trabalhado').checked;
+      return {
+        turno_id: turno.id, dia_semana: dia, dia_trabalhado: trabalhado,
+        hora_entrada: trabalhado ? tr.querySelector('.turno-entrada').value || null : null,
+        hora_saida_almoco: trabalhado ? tr.querySelector('.turno-saida-almoco').value || null : null,
+        hora_volta_almoco: trabalhado ? tr.querySelector('.turno-volta-almoco').value || null : null,
+        hora_saida: trabalhado ? tr.querySelector('.turno-saida').value || null : null,
+        taxa_he_pct: parseFloat(tr.querySelector('.turno-taxa').value) || 70,
+      };
+    });
+    const{error:errHorario} = await supabaseClient.from('rh_tabela_horario').insert(linhas);
+    if(errHorario) throw errHorario;
+
+    toast('✓ Turno criado.','#16a34a');
+    fecharModal('modalTurno');
+    await carregarTurnos(); renderizarTurnos();
+  }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
+}
+
+/* ── TROCA DE TURNO ──────────────────────────────────────── */
+async function salvarTrocaTurno(){
+  const funcId = document.getElementById('ttFuncionario').value;
+  const turnoId = document.getElementById('ttTurno').value;
+  const dataInicio = document.getElementById('ttDataInicio').value;
+  if(!funcId||!turnoId||!dataInicio){ toast('Preenche funcionário, turno e data.','#dc2626'); return; }
+  try{
+    const{error} = await supabaseClient.from('rh_troca_turno').insert({funcionario_id:funcId, turno_id:turnoId, data_inicio:dataInicio, motivo:document.getElementById('ttMotivo').value||null});
+    if(error) throw error;
+    toast('✓ Troca de turno registrada.','#16a34a');
+    document.getElementById('ttMotivo').value='';
+    carregarTrocasTurno();
+  }catch(e){ console.error(e); toast('Não foi possível registrar.','#dc2626'); }
+}
+async function carregarTrocasTurno(){
+  try{
+    const{data,error} = await supabaseClient.from('rh_troca_turno').select('*, funcionarios(nome), rh_turnos_trabalho(nome)').order('data_inicio',{ascending:false}).limit(30);
+    if(error) throw error;
+    document.getElementById('listaTrocasTurno').innerHTML = (data&&data.length) ? data.map(t=>`
+      <div class="item-linha"><div><div class="principal">${t.funcionarios?.nome||'—'}</div><div class="sec">${t.rh_turnos_trabalho?.nome||'—'} · a partir de ${fmtData(t.data_inicio)} ${t.motivo?'· '+t.motivo:''}</div></div></div>`).join('') : '<div class="vazio">Nenhuma troca registrada ainda.</div>';
+  }catch(e){ console.error(e); }
+}
+
+/* Acha qual turno vale pra essa pessoa, numa data específica — pega
+   a troca de turno mais recente cuja data de início seja <= a data
+   pedida (histórico: se nunca trocou, usa a única que existir). */
+function turnoDoDia(historicoTrocas, dataStr){
+  const validas = historicoTrocas.filter(t=>t.data_inicio<=dataStr).sort((a,b)=>b.data_inicio.localeCompare(a.data_inicio));
+  return validas.length ? validas[0].turno_id : null;
+}
 
 async function detectarDuplicados(){
   const wrap = document.getElementById('listaDuplicados');
@@ -854,8 +1017,77 @@ async function lancarBatidaManual(){
    noturno, aplica tolerância de 5min/10min por dia (Art. 58 CLT),
    marca inconsistência quando faltar batida de almoço, e aplica
    abono quando existir pro dia. */
-const TOLERANCIA_MIN = 5, TOLERANCIA_MAX_DIA_MIN = 10;
-const JORNADA_DIARIA_HORAS = 8.8; // 44h/semana ÷ 5 dias ≈ 8h48
+/* Esses valores agora vêm do banco (rh_regra_apontamento), carregados
+   em carregarRegraApontamento() — nada de número fixo escrito aqui.
+   Os valores abaixo só existem como plano B, se por algum motivo a
+   regra ainda não tiver sido cadastrada no banco (evita travar). */
+let REGRA_APONTAMENTO = { tolerancia_por_marcacao_min:5, tolerancia_por_periodo_min:10, jornada_diaria_padrao_horas:8.8, limite_gap_almoco_horas:2, destino_horas_extras:'banco_horas', exige_autorizacao_he:false };
+let JORNADA_DIARIA_HORAS = REGRA_APONTAMENTO.jornada_diaria_padrao_horas;
+
+async function carregarRegraApontamento(){
+  try{
+    const{data,error} = await supabaseClient.from('rh_regra_apontamento').select('*').eq('ativa',true).limit(1).single();
+    if(error) throw error;
+    if(data){
+      REGRA_APONTAMENTO = data;
+      JORNADA_DIARIA_HORAS = data.jornada_diaria_padrao_horas;
+      preencherFormularioRegra();
+    }
+  }catch(e){ console.error('Regra de Apontamento não encontrada, usando valores de referência.', e); }
+}
+function preencherFormularioRegra(){
+  const r = REGRA_APONTAMENTO;
+  if(!document.getElementById('raTolMarcacao')) return;
+  document.getElementById('raTolMarcacao').value = r.tolerancia_por_marcacao_min;
+  document.getElementById('raTolPeriodo').value = r.tolerancia_por_periodo_min;
+  document.getElementById('raJornadaRef').value = r.jornada_diaria_padrao_horas;
+  document.getElementById('raGapAlmoco').value = r.limite_gap_almoco_horas;
+  document.getElementById('raDestinoHe').value = r.destino_horas_extras;
+  document.getElementById('raExigeAutorizacao').checked = !!r.exige_autorizacao_he;
+}
+async function salvarRegraApontamento(){
+  const payload = {
+    tolerancia_por_marcacao_min: parseFloat(document.getElementById('raTolMarcacao').value)||5,
+    tolerancia_por_periodo_min: parseFloat(document.getElementById('raTolPeriodo').value)||10,
+    jornada_diaria_padrao_horas: parseFloat(document.getElementById('raJornadaRef').value)||8.8,
+    limite_gap_almoco_horas: parseFloat(document.getElementById('raGapAlmoco').value)||2,
+    destino_horas_extras: document.getElementById('raDestinoHe').value,
+    exige_autorizacao_he: document.getElementById('raExigeAutorizacao').checked,
+  };
+  try{
+    const{error} = await supabaseClient.from('rh_regra_apontamento').update(payload).eq('id', REGRA_APONTAMENTO.id);
+    if(error) throw error;
+    toast('✓ Regra de Apontamento atualizada — já vale pro próximo mês processado.','#16a34a');
+    await carregarRegraApontamento();
+  }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
+}
+
+/* Tolerância do Art. 58 CLT: variação de até 5min por batida não conta
+   como atraso/hora extra, limitado a 10min por dia no total. Sem um
+   horário contratual salvo por funcionário pra comparar, a forma
+   correta de aplicar isso é arredondar cada batida pro múltiplo de
+   5 minutos mais próximo — é a interpretação padrão quando não há
+   jornada de referência cadastrada, e reflete o espírito da regra
+   (variações pequenas somem, sem precisar saber a escala exata). */
+/* IMPORTANTE: a hora batida é inviolável — nunca aparece arredondada
+   na tela nem salva diferente do que a pessoa bateu de verdade. A
+   tolerância do Art. 58 CLT só pode entrar na CONTA das horas (pra
+   não considerar 2 minutos de atraso como falta/desconto), nunca
+   reescrevendo o horário em si. Por isso são duas funções agora:
+   uma preserva a hora original (pro que aparece na tela e é salvo),
+   outra só ajusta o número usado no cálculo de horas trabalhadas. */
+function horaParaDecimalComTolerancia(hhmm){
+  const dec = horaParaDecimal(hhmm);
+  if(dec===null) return null;
+  const totalMin = Math.round(dec*60);
+  const tol = REGRA_APONTAMENTO.tolerancia_por_marcacao_min || 0;
+  const restoDoMultiplo = totalMin % 5;
+  // Só absorve a diferença se ela cabe dentro da tolerância configurada
+  // (ex: 5min) — variações maiores continuam contando normalmente,
+  // exatamente como a lei manda (variação de até X min não conta).
+  const ajuste = (restoDoMultiplo<=tol) ? -restoDoMultiplo : ((5-restoDoMultiplo)<=tol ? (5-restoDoMultiplo) : 0);
+  return (totalMin+ajuste)/60;
+}
 
 function horaParaDecimal(hhmm){ if(!hhmm) return null; const [h,m]=hhmm.split(':').map(Number); return h + m/60; }
 function decimalParaHora(dec){ if(dec===null||dec===undefined) return null; const h=Math.floor(dec), m=Math.round((dec-h)*60); return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`; }
@@ -908,6 +1140,12 @@ async function processarEspelho(){
     const{data:batidas,error} = await supabaseClient.from('rh_batidas_ponto').select('*').eq('funcionario_id',funcId).gte('data_hora',inicio).lte('data_hora',fim).order('data_hora');
     if(error) throw error;
     const{data:abonosDoMes} = await supabaseClient.from('rh_abonos').select('*').eq('funcionario_id',funcId).gte('data',competencia+'-01').lte('data',competencia+'-31');
+    const{data:trocas} = await supabaseClient.from('rh_troca_turno').select('turno_id,data_inicio').eq('funcionario_id',funcId);
+
+    if(!trocas || !trocas.length){
+      toast('Esse funcionário ainda não tem Turno de Trabalho atribuído — vai em "Turnos e Escalas" e registra a Troca de Turno dele primeiro. Sem isso, não dá pra saber a jornada certa.', '#e8a33d');
+      return;
+    }
 
     const porDia = {};
     (batidas||[]).forEach(b=>{
@@ -921,72 +1159,91 @@ async function processarEspelho(){
     for(let d=1; d<=totalDias; d++){
       const dataStr = `${competencia}-${String(d).padStart(2,'0')}`;
       const dataObj = new Date(ano, mes-1, d);
-      const diaSemana = DIAS_SEMANA[dataObj.getDay()];
+      const diaSemanaIdx = dataObj.getDay(); // 0=domingo...6=sábado, bate com rh_tabela_horario
+      const diaSemana = DIAS_SEMANA[diaSemanaIdx];
       const feriado = FERIADOS.find(f=>f.data===dataStr);
       const abono = (abonosDoMes||[]).find(a=>a.data===dataStr);
-      const marcacoes = (porDia[dataStr]||[]).sort();
+      const marcacoes = (porDia[dataStr]||[]).sort(); // hora ORIGINAL, sem tolerância — inviolável
 
-      let linha = {data:dataStr, dia:diaSemana, e1:null,s1:null,e2:null,s2:null, normais:0, he50:0, he100:0, noturno:0, ocorrencia:'', ajuste:false};
+      // Acha o turno válido pra esse dia específico, e a linha da tabela de
+      // horário correspondente a esse dia da semana — nada de jornada fixa.
+      const turnoId = turnoDoDia(trocas, dataStr);
+      const turno = TURNOS.find(t=>t.id===turnoId);
+      const horarioDia = turno?.rh_tabela_horario?.find(h=>h.dia_semana===diaSemanaIdx);
+      const diaTrabalhado = horarioDia ? horarioDia.dia_trabalhado : (diaSemanaIdx>=1 && diaSemanaIdx<=5);
+      const taxaHeDia = feriado ? 100 : (horarioDia?.taxa_he_pct ?? 70);
+      const horaAlmocoRef1 = horarioDia?.hora_saida_almoco || '12:00';
+      const horaAlmocoRef2 = horarioDia?.hora_volta_almoco || '13:00';
+      const horasEsperadasDia = (horarioDia?.dia_trabalhado && horarioDia.hora_entrada && horarioDia.hora_saida)
+        ? (horaParaDecimal(horarioDia.hora_saida) - horaParaDecimal(horarioDia.hora_entrada) - (horaParaDecimal(horarioDia.hora_volta_almoco) - horaParaDecimal(horarioDia.hora_saida_almoco)))
+        : JORNADA_DIARIA_HORAS; // sem turno cadastrado pro dia, cai no valor de referência antigo
+
+      let linha = {data:dataStr, dia:diaSemana, e1:null,s1:null,e2:null,s2:null, normais:0, he50:0, he100:0, noturno:0, ocorrencia:'', ajuste:false, tipoAjuste:null, taxaAplicada:taxaHeDia};
 
       if(abono){
         linha.ocorrencia = ({atestado_total:'Atestado médico', atestado_parcial:'Atestado médico (parcial)', ferias:'Férias', licenca:'Licença', folga:'Folga', dsr:'DSR'})[abono.tipo] || abono.tipo;
-        if(abono.tipo==='atestado_parcial' && abono.horas_abonadas) linha.normais = JORNADA_DIARIA_HORAS - abono.horas_abonadas;
+        if(abono.tipo==='atestado_parcial' && abono.horas_abonadas) linha.normais = horasEsperadasDia - abono.horas_abonadas;
       }else if(marcacoes.length===0){
-        if(diaSemana==='Dom') linha.ocorrencia = 'DSR';
+        if(!diaTrabalhado && !feriado) linha.ocorrencia = diaSemana==='Dom' ? 'DSR' : 'Dia não trabalhado (turno)';
         else if(feriado) linha.ocorrencia = 'Feriado — '+feriado.nome;
         else linha.ocorrencia = 'FALTA — sem batida registrada';
       }else if(marcacoes.length===1){
         linha.e1 = marcacoes[0];
         linha.ocorrencia = 'INCOMPLETO — só 1 batida registrada (esqueceu de bater de novo, ou dia em aberto)';
-        linha.ajuste = true;
+        linha.ajuste = true; linha.tipoAjuste = 'so_uma_batida';
       }else if(marcacoes.length===2){
         linha.e1=marcacoes[0]; linha.s1=marcacoes[1];
-        const ent=horaParaDecimal(marcacoes[0]), sai=horaParaDecimal(marcacoes[1]);
+        const ent=horaParaDecimalComTolerancia(marcacoes[0]), sai=horaParaDecimalComTolerancia(marcacoes[1]);
         const bruto = sai-ent;
-        if(bruto > 2){
-          // Deu pra caber 1h de almoço com folga -> aplica a pré-assinalação normalmente
-          linha.ocorrencia = '* Sem batida de almoço — pré-assinalação aplicada (12:00-13:00)';
-          linha.ajuste = true;
-          const trabalhado = bruto - 1;
-          linha.normais = Math.min(trabalhado, JORNADA_DIARIA_HORAS);
-          const extra = Math.max(0, trabalhado - JORNADA_DIARIA_HORAS);
-          if(feriado || diaSemana==='Dom') linha.he100 = trabalhado; else linha.he50 = extra;
+        if(!diaTrabalhado || feriado){
+          // Dia que não era pra trabalhar (ou feriado) -- toda hora batida já
+          // nasce extra na taxa do dia, sem descontar almoço de ninguém
+          linha.ocorrencia = feriado ? `Feriado trabalhado — ${feriado.nome}` : 'Dia não trabalhado, mas teve marcação — tudo extra';
+          if(taxaHeDia>=100) linha.he100 = Math.max(0,bruto); else linha.he50 = Math.max(0,bruto);
+          linha.noturno = calcularHoraNoturna(ent,sai);
+        }else if(bruto > REGRA_APONTAMENTO.limite_gap_almoco_horas){
+          linha.ocorrencia = `* Sem batida de almoço — pré-assinalação aplicada (${horaAlmocoRef1}-${horaAlmocoRef2})`;
+          linha.ajuste = true; linha.tipoAjuste = 'pre_assinalacao';
+          const duracaoAlmoco = horaParaDecimal(horaAlmocoRef2) - horaParaDecimal(horaAlmocoRef1);
+          const trabalhado = bruto - duracaoAlmoco;
+          linha.normais = Math.min(trabalhado, horasEsperadasDia);
+          const extra = Math.max(0, trabalhado - horasEsperadasDia);
+          if(taxaHeDia>=100) linha.he100 = extra; else linha.he50 = extra;
           linha.noturno = calcularHoraNoturna(ent,sai);
         }else{
-          // Intervalo curto demais pra ter cabido almoço de 1h -> não desconta
-          // nada, só mostra o tempo corrido, e marca pra revisão manual
           linha.normais = Math.max(0, bruto);
           linha.ocorrencia = 'INCOMPLETO — intervalo curto (' + fmtHoras(bruto) + '), confere se não falta batida';
-          linha.ajuste = true;
+          linha.ajuste = true; linha.tipoAjuste = 'intervalo_curto';
         }
       }else if(marcacoes.length===3){
         linha.e1=marcacoes[0]; linha.s1=marcacoes[1]; linha.e2=marcacoes[2];
         linha.ocorrencia = 'INCOMPLETO — 3 batidas (provavelmente esqueceu 1) — confere manual necessária';
-        linha.ajuste = true;
-        // Mostra o que dá pra calcular com segurança: primeira até a última
-        // batida do dia, sem tentar adivinhar qual está faltando
-        const primeira = horaParaDecimal(marcacoes[0]), ultima = horaParaDecimal(marcacoes[2]);
-        linha.normais = Math.min(Math.max(0, ultima-primeira), JORNADA_DIARIA_HORAS);
+        linha.ajuste = true; linha.tipoAjuste = 'tres_batidas';
+        const primeira = horaParaDecimalComTolerancia(marcacoes[0]), ultima = horaParaDecimalComTolerancia(marcacoes[2]);
+        linha.normais = Math.min(Math.max(0, ultima-primeira), horasEsperadasDia);
       }else if(marcacoes.length===4){
         linha.e1=marcacoes[0]; linha.s1=marcacoes[1]; linha.e2=marcacoes[2]; linha.s2=marcacoes[3];
-        const m1=horaParaDecimal(marcacoes[0]), m2=horaParaDecimal(marcacoes[1]), m3=horaParaDecimal(marcacoes[2]), m4=horaParaDecimal(marcacoes[3]);
+        const m1=horaParaDecimalComTolerancia(marcacoes[0]), m2=horaParaDecimalComTolerancia(marcacoes[1]), m3=horaParaDecimalComTolerancia(marcacoes[2]), m4=horaParaDecimalComTolerancia(marcacoes[3]);
         const trabalhado = (m2-m1)+(m4-m3);
-        linha.normais = Math.min(trabalhado, JORNADA_DIARIA_HORAS);
-        const extra = Math.max(0, trabalhado - JORNADA_DIARIA_HORAS);
-        if(feriado || diaSemana==='Dom') linha.he100 = trabalhado; else linha.he50 = extra;
+        if(!diaTrabalhado || feriado){
+          linha.ocorrencia = feriado ? `Feriado trabalhado — ${feriado.nome}` : 'Dia não trabalhado, mas teve marcação — tudo extra';
+          if(taxaHeDia>=100) linha.he100 = trabalhado; else linha.he50 = trabalhado;
+        }else{
+          linha.normais = Math.min(trabalhado, horasEsperadasDia);
+          const extra = Math.max(0, trabalhado - horasEsperadasDia);
+          if(taxaHeDia>=100) linha.he100 = extra; else linha.he50 = extra;
+        }
         linha.noturno = calcularHoraNoturna(m1,m4);
       }else{
-        // 5 ou mais batidas -> usa a primeira e a última do dia, ignora as do
-        // meio (provável batida duplicada por engano), mas avisa claramente
         linha.e1=marcacoes[0]; linha.s2=marcacoes[marcacoes.length-1];
-        const primeira = horaParaDecimal(marcacoes[0]), ultima = horaParaDecimal(marcacoes[marcacoes.length-1]);
+        const primeira = horaParaDecimalComTolerancia(marcacoes[0]), ultima = horaParaDecimalComTolerancia(marcacoes[marcacoes.length-1]);
         const bruto = Math.max(0, ultima-primeira);
-        const trabalhado = bruto > 2 ? bruto - 1 : bruto;
-        linha.normais = Math.min(trabalhado, JORNADA_DIARIA_HORAS);
-        const extra = Math.max(0, trabalhado - JORNADA_DIARIA_HORAS);
-        if(feriado || diaSemana==='Dom') linha.he100 = trabalhado; else linha.he50 = extra;
+        const trabalhado = (diaTrabalhado && bruto > REGRA_APONTAMENTO.limite_gap_almoco_horas) ? bruto - 1 : bruto;
+        linha.normais = Math.min(trabalhado, horasEsperadasDia);
+        const extra = Math.max(0, trabalhado - horasEsperadasDia);
+        if(taxaHeDia>=100) linha.he100 = extra; else linha.he50 = extra;
         linha.ocorrencia = `* ${marcacoes.length} batidas no dia (usada 1ª e última, ${marcacoes.length-2} do meio ignoradas — confere manual)`;
-        linha.ajuste = true;
+        linha.ajuste = true; linha.tipoAjuste = 'cinco_mais_batidas';
       }
       espelhoAtual.push(linha);
     }
@@ -1017,21 +1274,46 @@ function renderizarTabelaEspelho(){
 async function tratarInconsistenciasLote(){
   const funcId = document.getElementById('espFuncionarioId').value;
   if(!espelhoAtual.length){ toast('Processa o mês primeiro.','#e8a33d'); return; }
-  const linhasAjuste = espelhoAtual.filter(l=>l.ajuste);
-  if(!linhasAjuste.length){ toast('Nenhuma inconsistência de almoço pra tratar nesse mês.','#8fa3c4'); return; }
+
+  // Esse botão, pela lei (Art. 74 §2º CLT), só se aplica ao caso de
+  // "esqueceu de bater o almoço" — os outros tipos (1 batida, 3 batidas,
+  // 5+ batidas) precisam de alguém olhando, não dá pra adivinhar com
+  // segurança o que aconteceu, então ficam de fora do lote de propósito.
+  const linhasAlmoco = espelhoAtual.filter(l=>l.tipoAjuste==='pre_assinalacao');
+  const linhasPendentesManual = espelhoAtual.filter(l=>l.ajuste && l.tipoAjuste!=='pre_assinalacao');
+
+  if(!linhasAlmoco.length){
+    toast(linhasPendentesManual.length ? `Nenhuma pré-assinalação de almoço pra tratar — mas tem ${linhasPendentesManual.length} dia(s) com outro tipo de inconsistência, que precisam de revisão manual (1, 3 ou 5+ batidas).` : 'Nenhuma inconsistência de almoço pra tratar nesse mês.', '#8fa3c4');
+    return;
+  }
   try{
-    for(const l of linhasAjuste){
+    for(const l of linhasAlmoco){
       await supabaseClient.from('rh_espelho_dia').upsert({
         funcionario_id: funcId, data: l.data, entrada1:l.e1, saida1:'12:00', entrada2:'13:00', saida2:l.s1,
         horas_normais: l.normais, horas_extras_50: l.he50, horas_extras_100: l.he100, adicional_noturno_horas: l.noturno,
         ocorrencia: l.ocorrencia, ajuste_manual: true, justificativa_ajuste: 'Pré-assinalação de almoço (Art. 74 §2º CLT) — tratamento em lote',
       }, {onConflict:'funcionario_id,data'});
     }
-    toast(`✓ ${linhasAjuste.length} dia(s) tratado(s) e gravado(s) no espelho oficial.`,'#16a34a');
+    let msg = `✓ ${linhasAlmoco.length} dia(s) de almoço tratado(s) e gravado(s) no espelho oficial.`;
+    if(linhasPendentesManual.length) msg += ` Ainda restam ${linhasPendentesManual.length} dia(s) com outro tipo de inconsistência, que precisam de revisão manual.`;
+    toast(msg,'#16a34a');
   }catch(e){ console.error(e); toast('Não foi possível gravar o tratamento.','#dc2626'); }
 }
 
 /* ── FOLHA A4 ────────────────────────────────────────────── */
+/* O window.print() sozinho imprimia em branco: a folha-a4 tinha
+   "display:none" fixo no HTML, e o CSS de impressão só mexia em
+   "visibility" — que não religa um elemento com display:none. Aqui
+   troca pra "block" antes de chamar a impressão, e devolve pra
+   "none" depois, sem deixar a folha aparecendo solta na tela normal. */
+function imprimirEspelhoA4(){
+  const folha = document.getElementById('folhaA4');
+  if(!folha.innerHTML.trim()){ toast('Processa o mês primeiro, antes de imprimir.','#e8a33d'); return; }
+  folha.style.display = 'block';
+  window.print();
+  setTimeout(()=>{ folha.style.display = 'none'; }, 300);
+}
+
 function renderizarFolhaA4(funcId, competencia){
   const func = FUNCIONARIOS.find(f=>f.id===funcId);
   const totais = espelhoAtual.reduce((acc,l)=>({
@@ -1064,7 +1346,7 @@ function renderizarFolhaA4(funcId, competencia){
       <div class="totais-a4">
         <b>TOTAIS DO MÊS</b>
         <div><span>Horas normais</span><span>${fmtHoras(totais.normais)}</span></div>
-        <div><span>Horas extras 50%</span><span>${fmtHoras(totais.he50)}</span></div>
+        <div><span>Horas extras 70%</span><span>${fmtHoras(totais.he70)}</span></div>
         <div><span>Horas extras 100%</span><span>${fmtHoras(totais.he100)}</span></div>
         <div><span>Adicional noturno</span><span>${fmtHoras(totais.noturno)}</span></div>
         <div><span>Faltas</span><span>${fmtHoras(totais.faltas)}</span></div>
@@ -1127,7 +1409,7 @@ async function renderizarBanco(){
 /* ── INICIALIZAÇÃO ───────────────────────────────────────── */
 (async function init(){
   document.getElementById('espCompetencia').value = new Date().toISOString().slice(0,7);
-  await Promise.all([carregarFuncionarios(), carregarFeriados(), carregarAbonos(), carregarProjetosPonto()]);
+  await Promise.all([carregarFuncionarios(), carregarFeriados(), carregarAbonos(), carregarProjetosPonto(), carregarTurnos(), carregarRegraApontamento()]);
   renderizarDashboard();
 })();
 </script>
