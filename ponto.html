@@ -416,6 +416,19 @@ a{color:inherit;}
         <h2>Histórico</h2>
         <div id="listaAbonos"><div class="vazio">Carregando...</div></div>
       </div>
+      <div class="card">
+        <h2>Pré-Abono / Afastamento (por período)</h2>
+        <p class="sub">Pra férias, licença, ou qualquer justificativa que já se sabe de antemão — lança uma vez, cobrindo o período inteiro. O sistema aplica sozinho, dia a dia, quando processar o Espelho — não precisa lançar um abono por dia.</p>
+        <div class="form-grid">
+          <div class="fld"><label>Funcionário</label><select id="paFuncionario"></select></div>
+          <div class="fld"><label>Motivo</label><select id="paMotivo"></select></div>
+          <div class="fld"><label>Data início</label><input type="date" id="paDataInicio"></div>
+          <div class="fld"><label>Data fim</label><input type="date" id="paDataFim"></div>
+          <div class="fld" style="grid-column:1/-1"><label>Justificativa</label><input type="text" id="paJustificativa"></div>
+        </div>
+        <button class="btn btn-sm" style="margin-top:10px" onclick="salvarPreAbono()">💾 Lançar Período</button>
+        <div id="listaPreAbono" style="margin-top:16px"></div>
+      </div>
     </div>
 
     <!-- ═══════════ BANCO DE HORAS ═══════════ -->
@@ -613,7 +626,7 @@ function mudarView(nome){
   views.forEach(v=>{ const el=document.getElementById('view'+v.charAt(0).toUpperCase()+v.slice(1)); if(el) el.classList.toggle('hidden', v!==nome); });
   document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.classList.toggle('active', b.dataset.view===nome));
   if(nome==='dashboard') renderizarDashboard();
-  if(nome==='abonos') renderizarAbonos();
+  if(nome==='abonos'){ renderizarAbonos(); carregarPreAbono(); }
   if(nome==='banco') renderizarBanco();
   if(nome==='turnos'){ renderizarTurnos(); carregarTrocasTurno(); renderizarMotivosAbono(); carregarFaixasHe(); }
 }
@@ -626,7 +639,7 @@ async function carregarFuncionarios(){
     if(error) throw error;
     FUNCIONARIOS=data||[];
     const opts='<option value="">— Selecione —</option>'+FUNCIONARIOS.map(f=>`<option value="${f.id}">${f.nome}</option>`).join('');
-    ['custoFuncionarioId','mFuncionarioId','espFuncionarioId','abFuncionarioId','ttFuncionario','faFuncionario'].forEach(id=>{
+    ['custoFuncionarioId','mFuncionarioId','espFuncionarioId','abFuncionarioId','ttFuncionario','faFuncionario','paFuncionario'].forEach(id=>{
       const el=document.getElementById(id); if(el) el.innerHTML = opts;
     });
   }catch(e){ console.error(e); }
@@ -1281,6 +1294,7 @@ async function processarEspelho(){
     const{data:batidas,error} = await supabaseClient.from('rh_batidas_ponto').select('*').eq('funcionario_id',funcId).gte('data_hora',inicio).lte('data_hora',fim).order('data_hora');
     if(error) throw error;
     const{data:abonosDoMes} = await supabaseClient.from('rh_abonos').select('*, rh_motivos_abono(*)').eq('funcionario_id',funcId).eq('status','aprovado').gte('data',competencia+'-01').lte('data',competencia+'-31');
+    const{data:preAbonosDoFuncionario} = await supabaseClient.from('rh_pre_abono').select('*, rh_motivos_abono(*)').eq('funcionario_id',funcId);
     const{data:faixasHeDoMes} = await supabaseClient.from('rh_faixa_he_autorizada').select('*').eq('funcionario_id',funcId).gte('data',competencia+'-01').lte('data',competencia+'-31');
     const{data:trocas} = await supabaseClient.from('rh_troca_turno').select('turno_id,data_inicio').eq('funcionario_id',funcId);
 
@@ -1304,7 +1318,14 @@ async function processarEspelho(){
       const diaSemanaIdx = dataObj.getDay(); // 0=domingo...6=sábado, bate com rh_tabela_horario
       const diaSemana = DIAS_SEMANA[diaSemanaIdx];
       const feriado = FERIADOS.find(f=>f.data===dataStr);
-      const abono = (abonosDoMes||[]).find(a=>a.data===dataStr);
+      // Abono do dia específico tem prioridade; se não tiver, confere se
+      // essa data cai dentro de algum Pré-Abono/Afastamento por período
+      // (férias, licença) -- aplica sozinho, sem precisar lançar dia a dia
+      let abono = (abonosDoMes||[]).find(a=>a.data===dataStr);
+      if(!abono){
+        const preAbono = (preAbonosDoFuncionario||[]).find(p=>dataStr>=p.data_inicio && dataStr<=p.data_fim);
+        if(preAbono) abono = {rh_motivos_abono:preAbono.rh_motivos_abono, horas_abonadas:null};
+      }
       const marcacoes = (porDia[dataStr]||[]).sort(); // hora ORIGINAL, sem tolerância — inviolável
 
       // Acha o turno válido pra esse dia específico, e a linha da tabela de
@@ -1594,6 +1615,7 @@ async function carregarMotivosAbono(){
     MOTIVOS_ABONO = data||[];
     const opts = '<option value="">— Selecione —</option>' + MOTIVOS_ABONO.map(m=>`<option value="${m.id}">${m.nome}</option>`).join('');
     const el = document.getElementById('abMotivoId'); if(el) el.innerHTML = opts;
+    const el2 = document.getElementById('paMotivo'); if(el2) el2.innerHTML = opts;
   }catch(e){ console.error(e); }
 }
 function renderizarMotivosAbono(){
@@ -1655,7 +1677,43 @@ async function salvarMotivoAbono(){
   }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
 }
 
-/* ── ABONOS — catálogo de motivo + fluxo de aprovação ────── */
+/* ── PRÉ-ABONO / AFASTAMENTO (por período) ──────────────── */
+let PRE_ABONOS_ATIVOS = []; // cache carregado uma vez por processamento de espelho
+async function carregarPreAbono(){
+  try{
+    const{data,error} = await supabaseClient.from('rh_pre_abono').select('*, funcionarios(nome), rh_motivos_abono(nome)').order('data_inicio',{ascending:false});
+    if(error) throw error;
+    document.getElementById('listaPreAbono').innerHTML = (data&&data.length) ? data.map(p=>`
+      <div class="item-linha"><div><div class="principal">${p.funcionarios?.nome||'—'} — ${p.rh_motivos_abono?.nome||'—'}</div><div class="sec">${fmtData(p.data_inicio)} até ${fmtData(p.data_fim)} ${p.justificativa?'· '+p.justificativa:''}</div></div>
+      <button class="btn btn-sm btn-danger" onclick="excluirPreAbono('${p.id}')">✕ Excluir</button></div>`).join('') : '<div class="vazio">Nenhum período lançado ainda.</div>';
+  }catch(e){ console.error(e); }
+}
+async function salvarPreAbono(){
+  const funcId = document.getElementById('paFuncionario').value;
+  const motivoId = document.getElementById('paMotivo').value;
+  const dataInicio = document.getElementById('paDataInicio').value;
+  const dataFim = document.getElementById('paDataFim').value;
+  if(!funcId||!motivoId||!dataInicio||!dataFim){ toast('Preenche funcionário, motivo e as duas datas.','#dc2626'); return; }
+  try{
+    const{error} = await supabaseClient.from('rh_pre_abono').insert({
+      funcionario_id:funcId, motivo_id:motivoId, data_inicio:dataInicio, data_fim:dataFim,
+      justificativa:document.getElementById('paJustificativa').value||null,
+    });
+    if(error) throw error;
+    toast('✓ Período lançado — vai aplicar sozinho ao processar o Espelho desses dias.','#16a34a');
+    document.getElementById('paJustificativa').value='';
+    carregarPreAbono();
+  }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
+}
+async function excluirPreAbono(id){
+  if(!confirm('Excluir esse período? Se o mês já foi processado com ele, precisa processar de novo depois de excluir.')) return;
+  try{
+    const{error} = await supabaseClient.from('rh_pre_abono').delete().eq('id',id);
+    if(error) throw error;
+    toast('✓ Período excluído.','#16a34a');
+    carregarPreAbono();
+  }catch(e){ console.error(e); toast('Não foi possível excluir.','#dc2626'); }
+}
 function atualizarCamposAbono(){
   const motivo = MOTIVOS_ABONO.find(m=>m.id===document.getElementById('abMotivoId').value);
   document.getElementById('wrapHorasAbonadas').style.display = (motivo?.abona_parcial) ? '' : 'none';
@@ -1837,7 +1895,7 @@ async function executarFechamentoBancoHoras(){
 /* ── INICIALIZAÇÃO ───────────────────────────────────────── */
 (async function init(){
   document.getElementById('espCompetencia').value = new Date().toISOString().slice(0,7);
-  await Promise.all([carregarFuncionarios(), carregarFeriados(), carregarAbonos(), carregarProjetosPonto(), carregarTurnos(), carregarRegraApontamento(), carregarMotivosAbono()]);
+  await Promise.all([carregarFuncionarios(), carregarFeriados(), carregarAbonos(), carregarProjetosPonto(), carregarTurnos(), carregarRegraApontamento(), carregarMotivosAbono(), carregarPreAbono()]);
   renderizarDashboard();
 })();
 </script>
