@@ -557,6 +557,22 @@ a{color:inherit;}
   </div>
 </div>
 
+<!-- ═══════════ MODAL: COMPLETAR BATIDA ═══════════ -->
+<div class="modal-overlay hidden" id="modalCompletarBatida">
+  <div class="modal-box">
+    <div class="modal-head"><h3>➕ Completar Batida Faltando</h3><button class="fechar" onclick="fecharModal('modalCompletarBatida')">✕</button></div>
+    <div class="modal-body">
+      <p class="sub">A batida original importada nunca é alterada — isso adiciona uma batida complementar, registrada com justificativa, do jeito que o Protheus também trata dia incompleto.</p>
+      <div class="form-grid">
+        <div class="fld"><label>Data</label><input type="date" id="cbData" readonly></div>
+        <div class="fld"><label>Hora que está faltando *</label><input type="time" id="cbHora"></div>
+        <div class="fld" style="grid-column:1/-1"><label>Justificativa *</label><textarea id="cbJustificativa" placeholder="Ex: relógio não registrou a volta do almoço, confirmado com o encarregado"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost btn-sm" onclick="fecharModal('modalCompletarBatida')">Cancelar</button><button class="btn btn-sm" onclick="salvarCompletarBatida()">💾 Completar</button></div>
+  </div>
+</div>
+
 
 <script>
 /* ── CONEXÃO ─────────────────────────────────────────────── */
@@ -792,7 +808,10 @@ function renderizarTurnos(){
   wrap.innerHTML = TURNOS.map(t=>{
     const dias = (t.rh_tabela_horario||[]).sort((a,b)=>a.dia_semana-b.dia_semana);
     return `<div class="item-linha" style="flex-direction:column;align-items:stretch;gap:6px">
-      <div class="principal">${t.nome}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="principal">${t.nome}</div>
+        <div style="display:flex;gap:6px"><button class="btn btn-sm btn-ghost" onclick="editarTurno('${t.id}')">✏️ Editar</button><button class="btn btn-sm btn-danger" onclick="excluirTurno('${t.id}')">✕ Excluir</button></div>
+      </div>
       <div style="overflow-x:auto"><table class="tabela-ponto" style="font-size:11px"><thead><tr><th>Dia</th><th>Trabalhado</th><th>Horário</th><th>Taxa HE</th></tr></thead><tbody>
         ${dias.map(d=>`<tr><td>${NOMES_DIAS_SEMANA[d.dia_semana]}</td><td>${d.dia_trabalhado?'Sim':'Não'}</td><td>${d.dia_trabalhado?`${d.hora_entrada?.slice(0,5)}-${d.hora_saida_almoco?.slice(0,5)} / ${d.hora_volta_almoco?.slice(0,5)}-${d.hora_saida?.slice(0,5)}`:'—'}</td><td>${d.taxa_he_pct}%</td></tr>`).join('')}
       </tbody></table></div>
@@ -800,36 +819,72 @@ function renderizarTurnos(){
   }).join('');
 }
 
-function abrirNovoTurno(){
-  document.getElementById('turnoNome').value = '';
+function preencherLinhasTurno(diasExistentes){
   const corpo = document.getElementById('corpoTabelaTurno');
   corpo.innerHTML = NOMES_DIAS_SEMANA.map((nome,i)=>{
-    const diaUtil = i>=1 && i<=5;
+    const existente = diasExistentes?.find(d=>d.dia_semana===i);
+    const diaUtil = existente ? existente.dia_trabalhado : (i>=1 && i<=5);
+    const taxa = existente ? existente.taxa_he_pct : (diaUtil?70:(i===0?100:70));
     return `<tr data-dia="${i}">
       <td>${nome}</td>
       <td><input type="checkbox" class="turno-trabalhado" ${diaUtil?'checked':''} onchange="this.closest('tr').querySelectorAll('input[type=time]').forEach(el=>el.disabled=!this.checked)"></td>
-      <td><input type="time" class="turno-entrada" value="${diaUtil?'07:12':''}" ${diaUtil?'':'disabled'} style="width:90px"></td>
-      <td><input type="time" class="turno-saida-almoco" value="${diaUtil?'12:00':''}" ${diaUtil?'':'disabled'} style="width:90px"></td>
-      <td><input type="time" class="turno-volta-almoco" value="${diaUtil?'13:00':''}" ${diaUtil?'':'disabled'} style="width:90px"></td>
-      <td><input type="time" class="turno-saida" value="${diaUtil?'17:00':''}" ${diaUtil?'':'disabled'} style="width:90px"></td>
-      <td><input type="number" class="turno-taxa" value="${diaUtil?70:(i===0?100:70)}" style="width:70px"></td>
+      <td><input type="time" class="turno-entrada" value="${existente?.hora_entrada?.slice(0,5)||(diaUtil?'07:12':'')}" ${diaUtil?'':'disabled'} style="width:90px"></td>
+      <td><input type="time" class="turno-saida-almoco" value="${existente?.hora_saida_almoco?.slice(0,5)||(diaUtil?'12:00':'')}" ${diaUtil?'':'disabled'} style="width:90px"></td>
+      <td><input type="time" class="turno-volta-almoco" value="${existente?.hora_volta_almoco?.slice(0,5)||(diaUtil?'13:00':'')}" ${diaUtil?'':'disabled'} style="width:90px"></td>
+      <td><input type="time" class="turno-saida" value="${existente?.hora_saida?.slice(0,5)||(diaUtil?'17:00':'')}" ${diaUtil?'':'disabled'} style="width:90px"></td>
+      <td><input type="number" class="turno-taxa" value="${taxa}" style="width:70px"></td>
     </tr>`;
   }).join('');
+}
+
+function abrirNovoTurno(){
+  document.getElementById('turnoNome').value = '';
+  delete document.getElementById('modalTurno').dataset.editandoId;
+  document.querySelector('#modalTurno .modal-head h3').textContent = '🗓️ Novo Turno de Trabalho';
+  preencherLinhasTurno(null);
   abrirModal('modalTurno');
+}
+function editarTurno(id){
+  const t = TURNOS.find(x=>x.id===id);
+  if(!t) return;
+  document.getElementById('turnoNome').value = t.nome;
+  document.getElementById('modalTurno').dataset.editandoId = id;
+  document.querySelector('#modalTurno .modal-head h3').textContent = '🗓️ Editar Turno de Trabalho';
+  preencherLinhasTurno(t.rh_tabela_horario);
+  abrirModal('modalTurno');
+}
+async function excluirTurno(id){
+  if(!confirm('Excluir esse turno? Funcionários ligados a ele por Troca de Turno ficam sem jornada definida a partir de agora — melhor trocar todo mundo de turno antes de excluir.')) return;
+  try{
+    const{error} = await supabaseClient.from('rh_turnos_trabalho').delete().eq('id',id);
+    if(error) throw error;
+    toast('✓ Turno excluído.','#16a34a');
+    await carregarTurnos(); renderizarTurnos();
+  }catch(e){ console.error(e); toast('Não foi possível excluir — confere se algum funcionário ainda está ligado a ele.','#dc2626'); }
 }
 
 async function salvarTurno(){
   const nome = document.getElementById('turnoNome').value.trim();
   if(!nome){ toast('Preenche o nome do turno.','#dc2626'); return; }
+  const editandoId = document.getElementById('modalTurno').dataset.editandoId;
   try{
-    const{data:turno, error} = await supabaseClient.from('rh_turnos_trabalho').insert({nome}).select().single();
-    if(error) throw error;
+    let turnoId = editandoId;
+    if(editandoId){
+      const{error} = await supabaseClient.from('rh_turnos_trabalho').update({nome}).eq('id',editandoId);
+      if(error) throw error;
+      // Recomeça a tabela de horário do zero, pra não deixar dia órfão duplicado
+      await supabaseClient.from('rh_tabela_horario').delete().eq('turno_id',editandoId);
+    }else{
+      const{data:turno, error} = await supabaseClient.from('rh_turnos_trabalho').insert({nome}).select().single();
+      if(error) throw error;
+      turnoId = turno.id;
+    }
 
     const linhas = [...document.querySelectorAll('#corpoTabelaTurno tr')].map(tr=>{
       const dia = parseInt(tr.dataset.dia);
       const trabalhado = tr.querySelector('.turno-trabalhado').checked;
       return {
-        turno_id: turno.id, dia_semana: dia, dia_trabalhado: trabalhado,
+        turno_id: turnoId, dia_semana: dia, dia_trabalhado: trabalhado,
         hora_entrada: trabalhado ? tr.querySelector('.turno-entrada').value || null : null,
         hora_saida_almoco: trabalhado ? tr.querySelector('.turno-saida-almoco').value || null : null,
         hora_volta_almoco: trabalhado ? tr.querySelector('.turno-volta-almoco').value || null : null,
@@ -840,7 +895,7 @@ async function salvarTurno(){
     const{error:errHorario} = await supabaseClient.from('rh_tabela_horario').insert(linhas);
     if(errHorario) throw errHorario;
 
-    toast('✓ Turno criado.','#16a34a');
+    toast(editandoId ? '✓ Turno atualizado.' : '✓ Turno criado.','#16a34a');
     fecharModal('modalTurno');
     await carregarTurnos(); renderizarTurnos();
   }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
@@ -865,8 +920,18 @@ async function carregarTrocasTurno(){
     const{data,error} = await supabaseClient.from('rh_troca_turno').select('*, funcionarios(nome), rh_turnos_trabalho(nome)').order('data_inicio',{ascending:false}).limit(30);
     if(error) throw error;
     document.getElementById('listaTrocasTurno').innerHTML = (data&&data.length) ? data.map(t=>`
-      <div class="item-linha"><div><div class="principal">${t.funcionarios?.nome||'—'}</div><div class="sec">${t.rh_turnos_trabalho?.nome||'—'} · a partir de ${fmtData(t.data_inicio)} ${t.motivo?'· '+t.motivo:''}</div></div></div>`).join('') : '<div class="vazio">Nenhuma troca registrada ainda.</div>';
+      <div class="item-linha"><div><div class="principal">${t.funcionarios?.nome||'—'}</div><div class="sec">${t.rh_turnos_trabalho?.nome||'—'} · a partir de ${fmtData(t.data_inicio)} ${t.motivo?'· '+t.motivo:''}</div></div>
+      <button class="btn btn-sm btn-danger" onclick="excluirTrocaTurno('${t.id}')">✕ Excluir</button></div>`).join('') : '<div class="vazio">Nenhuma troca registrada ainda.</div>';
   }catch(e){ console.error(e); }
+}
+async function excluirTrocaTurno(id){
+  if(!confirm('Excluir essa troca de turno? Isso pode mudar como os meses já processados desse funcionário calculam se forem processados de novo.')) return;
+  try{
+    const{error} = await supabaseClient.from('rh_troca_turno').delete().eq('id',id);
+    if(error) throw error;
+    toast('✓ Troca de turno excluída.','#16a34a');
+    carregarTrocasTurno();
+  }catch(e){ console.error(e); toast('Não foi possível excluir.','#dc2626'); }
 }
 
 /* Acha qual turno vale pra essa pessoa, numa data específica — pega
@@ -1392,8 +1457,35 @@ function renderizarTabelaEspelho(){
       <td>${l.he50?fmtHoras(l.he50):'—'}</td>
       <td>${l.he100?fmtHoras(l.he100):'—'}</td>
       <td>${l.noturno?fmtHoras(l.noturno):'—'}</td>
-      <td style="text-align:left;font-size:10.5px">${l.ajuste?'<span class="marca-ajuste">* </span>':''}${l.ocorrencia||''}</td>
+      <td style="text-align:left;font-size:10.5px">${l.ajuste?'<span class="marca-ajuste">* </span>':''}${l.ocorrencia||''} ${(l.tipoAjuste==='so_uma_batida'||l.tipoAjuste==='tres_batidas')?`<button class="btn btn-sm btn-ghost" style="padding:2px 8px;font-size:10px" onclick="abrirCompletarBatida('${l.data}')">➕ Completar</button>`:''}</td>
     </tr>`).join('');
+}
+
+/* Completa um dia incompleto ADICIONANDO a batida que falta, com
+   justificativa -- nunca apaga ou altera a batida original importada.
+   Mesma lógica confirmada no Protheus (PONA040): corrige incluindo,
+   não excluindo. */
+function abrirCompletarBatida(data){
+  document.getElementById('cbData').value = data;
+  document.getElementById('cbHora').value = '';
+  document.getElementById('cbJustificativa').value = '';
+  abrirModal('modalCompletarBatida');
+}
+async function salvarCompletarBatida(){
+  const funcId = document.getElementById('espFuncionarioId').value;
+  const data = document.getElementById('cbData').value;
+  const hora = document.getElementById('cbHora').value;
+  const justificativa = document.getElementById('cbJustificativa').value.trim();
+  if(!hora||!justificativa){ toast('Preenche a hora e a justificativa — obrigatória pra completar uma batida manualmente.','#dc2626'); return; }
+  try{
+    const{error} = await supabaseClient.from('rh_batidas_ponto').insert({
+      funcionario_id:funcId, data_hora:`${data}T${hora}:00-03:00`, origem:'manual_ajuste', justificativa:justificativa,
+    });
+    if(error) throw error;
+    toast('✓ Batida completada. A original importada continua intacta — essa é um complemento, registrado à parte.','#16a34a');
+    fecharModal('modalCompletarBatida');
+    processarEspelho();
+  }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
 }
 
 /* Trata em lote: qualquer linha marcada como "ajuste" (2 batidas sem
@@ -1508,27 +1600,56 @@ function renderizarMotivosAbono(){
   const wrap = document.getElementById('listaMotivosAbono');
   if(!wrap) return;
   wrap.innerHTML = MOTIVOS_ABONO.length ? MOTIVOS_ABONO.map(m=>`
-    <div class="item-linha"><div><div class="principal">${m.nome}</div><div class="sec">${m.categoria} ${m.abona_parcial?'· abona parcial':''} ${m.requer_documento?'· exige documento':''} ${m.pre_abona?'· usável em pré-abono':''}</div></div></div>`).join('') : '<div class="vazio">Nenhum motivo cadastrado.</div>';
+    <div class="item-linha"><div><div class="principal">${m.nome}</div><div class="sec">${m.categoria} ${m.abona_parcial?'· abona parcial':''} ${m.requer_documento?'· exige documento':''} ${m.pre_abona?'· usável em pré-abono':''}</div></div>
+    <div style="display:flex;gap:6px"><button class="btn btn-sm btn-ghost" onclick="editarMotivoAbono('${m.id}')">✏️ Editar</button><button class="btn btn-sm btn-danger" onclick="excluirMotivoAbono('${m.id}')">✕ Excluir</button></div></div>`).join('') : '<div class="vazio">Nenhum motivo cadastrado.</div>';
+}
+function editarMotivoAbono(id){
+  const m = MOTIVOS_ABONO.find(x=>x.id===id);
+  if(!m) return;
+  document.getElementById('maNome').value = m.nome;
+  document.getElementById('maCategoria').value = m.categoria;
+  document.getElementById('maAbonaHoras').checked = m.abona_horas;
+  document.getElementById('maAbonaParcial').checked = m.abona_parcial;
+  document.getElementById('maRequerDocumento').checked = m.requer_documento;
+  document.getElementById('maPreAbona').checked = m.pre_abona;
+  document.getElementById('modalMotivoAbono').dataset.editandoId = id;
+  document.querySelector('#modalMotivoAbono .modal-head h3').textContent = '📝 Editar Motivo de Abono';
+  abrirModal('modalMotivoAbono');
+}
+async function excluirMotivoAbono(id){
+  if(!confirm('Excluir esse motivo? Abonos já lançados com ele continuam existindo, só não vai poder escolher ele de novo.')) return;
+  try{
+    const{error} = await supabaseClient.from('rh_motivos_abono').update({ativo:false}).eq('id',id);
+    if(error) throw error;
+    toast('✓ Motivo removido da lista.','#16a34a');
+    await carregarMotivosAbono(); renderizarMotivosAbono();
+  }catch(e){ console.error(e); toast('Não foi possível excluir.','#dc2626'); }
 }
 function abrirNovoMotivoAbono(){
   document.getElementById('maNome').value=''; document.getElementById('maCategoria').value='outro';
   document.getElementById('maAbonaHoras').checked=true; document.getElementById('maAbonaParcial').checked=false;
   document.getElementById('maRequerDocumento').checked=false; document.getElementById('maPreAbona').checked=false;
+  delete document.getElementById('modalMotivoAbono').dataset.editandoId;
+  document.querySelector('#modalMotivoAbono .modal-head h3').textContent = '📝 Novo Motivo de Abono';
   abrirModal('modalMotivoAbono');
 }
 async function salvarMotivoAbono(){
   const nome = document.getElementById('maNome').value.trim();
   if(!nome){ toast('Preenche o nome do motivo.','#dc2626'); return; }
+  const payload = {
+    nome, categoria:document.getElementById('maCategoria').value,
+    abona_horas:document.getElementById('maAbonaHoras').checked,
+    abona_parcial:document.getElementById('maAbonaParcial').checked,
+    requer_documento:document.getElementById('maRequerDocumento').checked,
+    pre_abona:document.getElementById('maPreAbona').checked,
+  };
+  const editandoId = document.getElementById('modalMotivoAbono').dataset.editandoId;
   try{
-    const{error} = await supabaseClient.from('rh_motivos_abono').insert({
-      nome, categoria:document.getElementById('maCategoria').value,
-      abona_horas:document.getElementById('maAbonaHoras').checked,
-      abona_parcial:document.getElementById('maAbonaParcial').checked,
-      requer_documento:document.getElementById('maRequerDocumento').checked,
-      pre_abona:document.getElementById('maPreAbona').checked,
-    });
+    const{error} = editandoId
+      ? await supabaseClient.from('rh_motivos_abono').update(payload).eq('id',editandoId)
+      : await supabaseClient.from('rh_motivos_abono').insert(payload);
     if(error) throw error;
-    toast('✓ Motivo criado.','#16a34a');
+    toast(editandoId ? '✓ Motivo atualizado.' : '✓ Motivo criado.','#16a34a');
     fecharModal('modalMotivoAbono');
     await carregarMotivosAbono(); renderizarMotivosAbono();
   }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
@@ -1618,8 +1739,18 @@ async function carregarFaixasHe(){
     const{data,error} = await supabaseClient.from('rh_faixa_he_autorizada').select('*, funcionarios(nome)').order('data',{ascending:false}).limit(20);
     if(error) throw error;
     document.getElementById('listaFaixasHe').innerHTML = (data&&data.length) ? data.map(f=>`
-      <div class="item-linha"><div><div class="principal">${f.funcionarios?.nome||'—'}</div><div class="sec">${fmtData(f.data)} · ${f.hora_inicio?.slice(0,5)} às ${f.hora_fim?.slice(0,5)}</div></div></div>`).join('') : '<div class="vazio">Nenhuma faixa autorizada ainda.</div>';
+      <div class="item-linha"><div><div class="principal">${f.funcionarios?.nome||'—'}</div><div class="sec">${fmtData(f.data)} · ${f.hora_inicio?.slice(0,5)} às ${f.hora_fim?.slice(0,5)}</div></div>
+      <button class="btn btn-sm btn-danger" onclick="excluirFaixaHe('${f.id}')">✕ Excluir</button></div>`).join('') : '<div class="vazio">Nenhuma faixa autorizada ainda.</div>';
   }catch(e){ console.error(e); }
+}
+async function excluirFaixaHe(id){
+  if(!confirm('Excluir essa autorização de hora extra?')) return;
+  try{
+    const{error} = await supabaseClient.from('rh_faixa_he_autorizada').delete().eq('id',id);
+    if(error) throw error;
+    toast('✓ Faixa excluída.','#16a34a');
+    carregarFaixasHe();
+  }catch(e){ console.error(e); toast('Não foi possível excluir.','#dc2626'); }
 }
 
 /* ── BANCO DE HORAS ──────────────────────────────────────── */
