@@ -480,6 +480,9 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
           <div><label>Matrícula</label><input type="text" id="fMatricula" placeholder="Ex: ME001"></div>
         </div>
         <div class="row">
+          <div><label>PIS/NIS</label><input type="text" id="fPis" placeholder="000.00000.00-0" title="Usado pro sistema de Ponto reconhecer a pessoa automaticamente ao importar o arquivo do relógio"></div>
+        </div>
+        <div class="row">
           <div>
             <label>Cargo</label>
             <select id="fCargoSelect">
@@ -955,7 +958,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
       <div class="card">
         <div class="topbar" style="margin-bottom:2px">
           <h1 style="font-size:15px">🗺️ Mapa completo do ESF ERP</h1>
-          <span class="small">13 de 18 módulos ativos · v2026-09-25</span>
+          <span class="small">14 de 18 módulos ativos · v2026-09-25</span>
         </div>
         <div class="small" style="margin-bottom:14px">Todos os processos da empresa, pensados pra um sistema só — o que já está pronto é clicável, o resto entra conforme for sendo construído.</div>
         <div class="grade-modulos-erp">
@@ -972,6 +975,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
           <a class="modulo-erp-tile ativo" href="ponto.html" target="_blank" rel="noopener"><img src="mod-escala_rh.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Ponto / Custo RH</span></a>
           <a class="modulo-erp-tile ativo" href="compras.html" target="_blank" rel="noopener"><img src="mod-compras.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Compras</span></a>
           <a class="modulo-erp-tile ativo" href="contratos.html" target="_blank" rel="noopener"><img src="mod-manutencao.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Contratos de Mão de Obra</span></a>
+          <a class="modulo-erp-tile ativo" href="gpe.html" target="_blank" rel="noopener"><img src="mod-documental_sst.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Gestão de Pessoal</span></a>
           <div class="modulo-erp-tile"><img src="mod-documentos_ged.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Documentos (GED)</span><em>em breve</em></div>
           <div class="modulo-erp-tile"><img src="mod-patrimonio.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Patrimônio</span><em>em breve</em></div>
           <div class="modulo-erp-tile"><img src="mod-usuarios_seguranca.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Usuários / Segurança</span><em>em breve</em></div>
@@ -1769,6 +1773,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
     const payload = {
       nome, cpf,
       matricula: document.getElementById('fMatricula').value.trim() || null,
+      pis: document.getElementById('fPis').value.replace(/\D/g,'').trim() || null,
       cargo: (() => { const sel = document.getElementById('fCargoSelect').value; return sel === '__outro__' ? document.getElementById('fCargo').value.trim() || null : sel || null; })(),
       telefone: document.getElementById('fTelefone').value.trim() || null,
       status: document.getElementById('fStatus').value,

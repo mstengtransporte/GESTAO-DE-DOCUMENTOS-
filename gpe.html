@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESF ERP · Gestão de Pessoal (RH)</title>
+<link rel="icon" type="image/png" href="/mod-documental_sst.png">
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+:root{
+  --azul-claro:#00b5fe; --azul-escuro:#102b65; --laranja:#fd8a14;
+  --bg:#0a1220; --s1:#0e1a30; --s2:#132038; --bd:#1e2e48;
+  --tx:#e7eefc; --mu:#8fa3c4; --verde:#16a34a; --vermelho:#dc2626; --amarelo:#e8a33d; --roxo:#8b5cf6;
+  --rad:12px; --rad-sm:8px;
+}
+*{box-sizing:border-box;}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--tx);}
+a{color:inherit;}
+
+/* ── LAYOUT ── */
+.app-shell{display:flex;min-height:100vh;}
+.sidebar{
+  width:230px;flex-shrink:0;background:#081020;border-right:1px solid var(--bd);
+  padding:16px 12px;display:flex;flex-direction:column;
+  position:fixed;top:0;left:0;bottom:0;overflow-y:auto;z-index:100;
+}
+.main{flex:1;margin-left:230px;padding:20px 26px 60px;max-width:1400px;}
+@media (max-width:860px){
+  .sidebar{position:fixed;left:-240px;transition:left .2s ease;width:230px;}
+  .sidebar.open{left:0;}
+  .main{margin-left:0;padding:16px;}
+}
+
+/* ── SIDEBAR ── */
+.sidebar-logo{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+.sidebar-logo img{width:44px;height:44px;object-fit:contain;flex-shrink:0;}
+.sidebar-logo .tt{font-size:15px;font-weight:900;}
+.sidebar-logo .tt b{color:var(--azul-claro);}
+.sidebar-logo .st{font-size:9.5px;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+.voltar-hub{
+  display:block;margin:10px 0 14px;font-size:11px;font-weight:700;text-align:center;
+  border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:6px 10px;text-decoration:none;
+  color:#fff;opacity:.8;
+}
+.nav-lbl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--mu);padding:10px 6px 6px;}
+.nav-item{
+  display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  padding:10px 12px;border-radius:10px;font-size:13px;font-weight:700;
+  background:linear-gradient(180deg,var(--azul-claro) 0%,var(--azul-escuro) 30%,var(--azul-escuro) 100%);
+  border:1.5px solid var(--laranja);color:#fff;margin-bottom:6px;
+  cursor:pointer;box-shadow:2px 2px 0 rgba(0,0,0,.3);transition:all .16s ease;
+  text-decoration:none;
+}
+.nav-item .ic{font-size:16px;flex:none;width:18px;text-align:center;}
+.nav-item:hover{filter:brightness(1.15);transform:translate(-2px,-2px) scale(1.02);box-shadow:4px 4px 0 rgba(0,0,0,.3),0 0 12px rgba(253,138,20,.5);}
+.nav-item.active{border-color:#fff;box-shadow:0 0 8px rgba(253,138,20,.7),0 0 16px rgba(253,138,20,.4);}
+.sidebar-foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--bd);font-size:10.5px;color:var(--mu);}
+
+/* ── BANNER ── */
+.banner-topo{width:100%;max-width:960px;margin:0 auto 18px;border-radius:16px;overflow:hidden;height:170px;background:#061224;}
+.banner-topo img{width:100%;height:100%;object-fit:cover;object-position:center center;}
+
+/* ── HEADER DE PÁGINA ── */
+.pg-head{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:18px;}
+.pg-head h1{font-size:21px;margin:0 0 3px;}
+.pg-head p{margin:0;color:var(--mu);font-size:12.5px;}
+
+/* ── BOTÕES ── */
+.btn{
+  display:inline-flex;align-items:center;gap:7px;padding:10px 16px;border-radius:10px;
+  font-size:12.5px;font-weight:800;cursor:pointer;border:1.5px solid var(--laranja);
+  background:linear-gradient(180deg,var(--azul-claro) 0%,var(--azul-escuro) 30%,var(--azul-escuro) 100%);
+  color:#fff;box-shadow:2px 2px 0 rgba(0,0,0,.3);transition:all .16s ease;
+}
+.btn:hover{filter:brightness(1.15);transform:translate(-2px,-2px);box-shadow:4px 4px 0 rgba(0,0,0,.3),0 0 12px rgba(253,138,20,.5);}
+.btn-ghost{background:var(--s2);border-color:var(--bd);}
+.btn-sm{padding:6px 11px;font-size:11.5px;}
+.btn-danger{background:linear-gradient(180deg,#ef4444,#7f1d1d);border-color:#ef4444;}
+
+/* ── CARDS / KPI ── */
+.grid-kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:20px;}
+.kpi{background:var(--s1);border:1px solid var(--bd);border-radius:var(--rad);padding:16px;position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--cor,var(--azul-claro));}
+.kpi .n{font-size:26px;font-weight:900;}
+.kpi .l{font-size:11.5px;color:var(--mu);font-weight:700;}
+
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--rad);padding:18px;margin-bottom:18px;}
+.card h2{font-size:15px;margin:0 0 4px;}
+.card .sub{font-size:12px;color:var(--mu);margin:0 0 14px;}
+
+/* ── TABELA / LISTA DE PROJETOS ── */
+.proj-lista{display:flex;flex-direction:column;gap:10px;}
+.proj-card{
+  background:var(--s2);border:1px solid var(--bd);border-radius:var(--rad-sm);
+  padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;
+  transition:border-color .15s;
+}
+.proj-card:hover{border-color:var(--laranja);}
+.proj-card .cod{font-size:10.5px;font-weight:800;color:var(--azul-claro);}
+.proj-card .nome{font-size:14.5px;font-weight:800;margin:2px 0 4px;}
+.proj-card .meta{font-size:11.5px;color:var(--mu);}
+.proj-card .barra-wrap{flex-shrink:0;width:140px;}
+.proj-card .barra{height:7px;background:var(--bd);border-radius:10px;overflow:hidden;margin-bottom:4px;}
+.proj-card .barra i{display:block;height:100%;background:linear-gradient(90deg,var(--azul-claro),var(--laranja));}
+.status-pill{font-size:10px;font-weight:800;text-transform:uppercase;padding:4px 9px;border-radius:20px;white-space:nowrap;}
+.status-planejamento{background:rgba(139,92,246,.18);color:#c4b5fd;}
+.status-em_andamento{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-pausado{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-concluido{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-cancelado{background:rgba(220,38,38,.18);color:#fca5a5;}
+
+/* Status específicos do CRM */
+.status-prospeccao{background:rgba(139,92,246,.18);color:#c4b5fd;}
+.status-qualificacao{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-proposta{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-negociacao{background:rgba(253,138,20,.18);color:#fdba74;}
+.status-ganho{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-perdido{background:rgba(220,38,38,.18);color:#fca5a5;}
+.status-aberto{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-bloqueado_credito{background:rgba(220,38,38,.18);color:#fca5a5;}
+.status-bloqueado_margem{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-liberado{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-faturando{background:rgba(139,92,246,.18);color:#c4b5fd;}
+.status-rascunho{background:rgba(143,163,196,.18);color:#c3d0e8;}
+.status-enviada{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-aprovada{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-recusada{background:rgba(220,38,38,.18);color:#fca5a5;}
+
+/* Funil de vendas (kanban) */
+.funil-wrap{display:flex;gap:12px;overflow-x:auto;padding-bottom:10px;}
+.funil-col{flex:0 0 240px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rad-sm);padding:10px;}
+.funil-col h3{font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;margin:0 0 10px;padding-bottom:8px;border-bottom:2px solid var(--cor,var(--azul-claro));color:var(--mu);}
+.funil-card{background:var(--s1);border:1px solid var(--bd);border-radius:8px;padding:10px;margin-bottom:8px;cursor:pointer;transition:border-color .15s;}
+.funil-card:hover{border-color:var(--laranja);}
+.funil-card .tit{font-size:12.5px;font-weight:800;margin-bottom:4px;}
+.funil-card .val{font-size:12px;color:var(--azul-claro);font-weight:700;}
+.funil-card .cli{font-size:10.5px;color:var(--mu);margin-top:3px;}
+
+/* Bloco de alerta de bloqueio */
+.alerta-bloqueio{background:rgba(220,38,38,.12);border:1.5px solid #dc2626;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:12.5px;color:#fca5a5;font-weight:700;}
+.alerta-bloqueio.margem{background:rgba(232,163,61,.12);border-color:#e8a33d;color:#fbbf24;}
+
+/* Itens de pedido/proposta */
+.item-produto{display:grid;grid-template-columns:2fr 90px 100px 90px 100px 40px;gap:8px;align-items:center;padding:8px;background:var(--s2);border-radius:8px;margin-bottom:6px;}
+.item-produto input{background:#0d1830;border:1px solid var(--bd);border-radius:6px;color:var(--tx);padding:6px 8px;font-size:12px;width:100%;}
+.item-produto .rm{cursor:pointer;color:#fca5a5;text-align:center;font-weight:900;}
+.totais-box{background:var(--s2);border-radius:8px;padding:12px 16px;margin-top:10px;display:flex;justify-content:space-between;font-size:13px;font-weight:800;}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:900;display:flex;align-items:center;justify-content:center;padding:20px;}
+.modal-box{background:var(--s1);border:1.5px solid var(--laranja);border-radius:var(--rad);max-width:560px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,.5);}
+.modal-head{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--bd);}
+.modal-head h3{margin:0;font-size:15px;}
+.modal-head .fechar{cursor:pointer;font-size:20px;color:var(--mu);background:none;border:none;line-height:1;}
+.modal-body{padding:18px 20px;}
+.modal-foot{padding:14px 20px;border-top:1px solid var(--bd);display:flex;gap:8px;justify-content:flex-end;}
+.credito-barra{height:8px;background:var(--bd);border-radius:10px;overflow:hidden;margin-top:6px;}
+.credito-barra i{display:block;height:100%;}
+
+/* ── FORMULÁRIO ── */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
+.form-grid.full{grid-template-columns:1fr;}
+.fld{display:flex;flex-direction:column;gap:5px;}
+.fld label{font-size:11.5px;font-weight:700;color:var(--mu);}
+.fld input,.fld select,.fld textarea{
+  background:#0d1830;border:1px solid var(--bd);border-radius:8px;color:var(--tx);
+  padding:9px 11px;font-size:13px;font-family:inherit;
+}
+.fld input:focus,.fld select:focus,.fld textarea:focus{outline:none;border-color:var(--azul-claro);}
+.fld textarea{resize:vertical;min-height:70px;}
+
+/* ── ABAS DE DETALHE ── */
+.tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
+.tab-btn{
+  padding:8px 14px;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;
+  background:var(--s2);border:1px solid var(--bd);color:var(--mu);
+}
+.tab-btn.active{background:linear-gradient(180deg,var(--azul-claro),var(--azul-escuro));color:#fff;border-color:var(--laranja);}
+
+.item-linha{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--s2);border-radius:8px;margin-bottom:8px;border:1px solid var(--bd);}
+.item-linha .principal{font-size:13px;font-weight:700;}
+.item-linha .sec{font-size:11px;color:var(--mu);}
+
+.vazio{text-align:center;padding:40px 20px;color:var(--mu);font-size:13px;}
+
+.hidden{display:none !important;}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#102b65;border:1.5px solid var(--laranja);color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:700;z-index:9999;box-shadow:0 6px 20px rgba(0,0,0,.4);opacity:0;transition:opacity .2s;pointer-events:none;}
+.toast.show{opacity:1;}
+
+/* ── FINANCEIRO específico ── */
+.saldo-hero{background:linear-gradient(135deg,#0a1e42,#102b65);border:1.5px solid var(--laranja);border-radius:var(--rad);padding:22px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;}
+.saldo-hero .lbl{font-size:11.5px;color:var(--mu);font-weight:700;text-transform:uppercase;}
+.saldo-hero .val{font-size:30px;font-weight:900;}
+.saldo-hero .val.pos{color:#4ade80;} .saldo-hero .val.neg{color:#fca5a5;}
+
+.titulo-linha{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rad-sm);margin-bottom:8px;cursor:pointer;transition:border-color .15s;}
+.titulo-linha:hover{border-color:var(--laranja);}
+.titulo-linha .num{font-size:10px;font-weight:800;color:var(--azul-claro);}
+.titulo-linha .desc{font-size:13.5px;font-weight:700;margin:2px 0;}
+.titulo-linha .meta{font-size:11px;color:var(--mu);}
+.titulo-linha .val{font-size:14px;font-weight:800;text-align:right;flex-shrink:0;min-width:110px;}
+
+.status-aberto{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-parcial{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-pago{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-vencido{background:rgba(220,38,38,.18);color:#fca5a5;}
+.status-cancelado{background:rgba(143,163,196,.18);color:#c3d0e8;}
+.status-aguardando_aprovacao{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-aprovado{background:rgba(0,181,254,.18);color:#7dd3fc;}
+
+/* DRE */
+.dre-linha{display:flex;justify-content:space-between;padding:9px 4px;border-bottom:1px solid var(--bd);font-size:13px;}
+.dre-linha.total{font-weight:900;font-size:14.5px;border-bottom:none;border-top:2px solid var(--laranja);padding-top:12px;margin-top:4px;}
+.dre-linha .neg{color:#fca5a5;}
+.dre-linha .pos{color:#4ade80;}
+.dre-cat-barra{display:flex;height:26px;border-radius:6px;overflow:hidden;margin:10px 0;}
+.dre-cat-barra span{display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:800;color:#fff;}
+
+/* ── FISCAL específico ── */
+.nota-linha{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rad-sm);margin-bottom:8px;cursor:pointer;transition:border-color .15s;}
+.nota-linha:hover{border-color:var(--laranja);}
+.nota-linha .num{font-size:10px;font-weight:800;color:var(--azul-claro);}
+.nota-linha .desc{font-size:13.5px;font-weight:700;margin:2px 0;}
+.nota-linha .meta{font-size:11px;color:var(--mu);}
+.nota-linha .val{font-size:14px;font-weight:800;text-align:right;flex-shrink:0;min-width:110px;}
+
+.status-rascunho{background:rgba(143,163,196,.18);color:#c3d0e8;}
+.status-emitida{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-cancelada{background:rgba(220,38,38,.18);color:#fca5a5;}
+.status-com_erro{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-pendente{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-ciencia{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-confirmado{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-aberta{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-guia_gerada{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-paga{background:rgba(22,163,74,.18);color:#4ade80;}
+
+.retencoes-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin:12px 0;}
+.retencao-item{background:var(--s2);border-radius:8px;padding:9px 11px;text-align:center;}
+.retencao-item .lbl{font-size:9.5px;color:var(--mu);text-transform:uppercase;font-weight:700;}
+.retencao-item .val{font-size:13px;font-weight:800;margin-top:2px;}
+
+.aviso-integracao{background:rgba(232,163,61,.1);border:1.5px solid #e8a33d;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:#fbbf24;line-height:1.5;}
+
+/* ── PONTO / RH específico ── */
+.status-normal{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-inconsistente{background:rgba(220,38,38,.18);color:#fca5a5;}
+.status-ajustado{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-abonado{background:rgba(0,181,254,.18);color:#7dd3fc;}
+
+.tabela-ponto{width:100%;border-collapse:collapse;font-size:12px;}
+.tabela-ponto th{background:var(--s2);padding:7px 6px;text-align:center;font-size:10px;text-transform:uppercase;color:var(--mu);border-bottom:1.5px solid var(--laranja);}
+.tabela-ponto td{padding:6px;text-align:center;border-bottom:1px solid var(--bd);}
+.tabela-ponto tr:hover td{background:var(--s2);}
+.tabela-ponto td.dia-nome{color:var(--mu);font-size:10.5px;}
+.tabela-ponto td.domingo{color:#fca5a5;}
+.tabela-ponto input{width:64px;background:#0d1830;border:1px solid var(--bd);border-radius:5px;color:var(--tx);padding:4px 5px;font-size:11.5px;text-align:center;}
+.marca-ajuste{color:#fbbf24;font-weight:900;}
+
+.banco-horas-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;font-size:13px;font-weight:800;}
+.banco-horas-badge.pos{background:rgba(22,163,74,.18);color:#4ade80;}
+.banco-horas-badge.neg{background:rgba(220,38,38,.18);color:#fca5a5;}
+
+/* ── ESPELHO DE PONTO — layout A4, pensado pra caber numa folha só ── */
+.folha-a4{
+  background:#fff;color:#111;width:210mm;min-height:297mm;margin:0 auto;
+  padding:10mm 12mm;font-family:Arial,Helvetica,sans-serif;font-size:9.5px;box-sizing:border-box;
+}
+.folha-a4 .cab-a4{display:flex;justify-content:space-between;border-bottom:2px solid #111;padding-bottom:5mm;margin-bottom:4mm;}
+.folha-a4 .cab-a4 h2{font-size:13px;margin:0 0 2mm;}
+.folha-a4 .cab-a4 .col{font-size:9px;line-height:1.5;}
+.folha-a4 table.espelho-tabela{width:100%;border-collapse:collapse;font-size:8px;}
+.folha-a4 table.espelho-tabela th{background:#eee;border:1px solid #999;padding:1mm;font-size:7px;text-transform:uppercase;}
+.folha-a4 table.espelho-tabela td{border:1px solid #ccc;padding:0.8mm 1mm;text-align:center;height:5.5mm;}
+.folha-a4 .rodape-a4{margin-top:4mm;display:flex;gap:10mm;}
+.folha-a4 .totais-a4{flex:1;border:1px solid #999;padding:2mm;font-size:8px;}
+.folha-a4 .totais-a4 div{display:flex;justify-content:space-between;padding:0.6mm 0;}
+.folha-a4 .legenda-a4{flex:1;border:1px solid #999;padding:2mm;font-size:7.5px;line-height:1.5;}
+.folha-a4 .assinaturas-a4{display:flex;justify-content:space-around;margin-top:8mm;}
+.folha-a4 .assinaturas-a4 div{text-align:center;font-size:8px;width:70mm;border-top:1px solid #111;padding-top:1.5mm;}
+
+/* ── SIGAGPE específico ── */
+.colab-card{display:flex;align-items:center;gap:14px;padding:14px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rad-sm);margin-bottom:8px;cursor:pointer;transition:border-color .15s;}
+.colab-card:hover{border-color:var(--laranja);}
+.colab-avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#00b5fe,#102b65);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;color:#fff;flex-shrink:0;}
+.colab-nome{font-size:14px;font-weight:800;}
+.colab-meta{font-size:11.5px;color:var(--mu);margin-top:2px;}
+
+.status-ativo{background:rgba(22,163,74,.18);color:#4ade80;}
+.status-ferias{background:rgba(0,181,254,.18);color:#7dd3fc;}
+.status-afastado{background:rgba(232,163,61,.18);color:#fbbf24;}
+.status-demitido{background:rgba(220,38,38,.18);color:#fca5a5;}
+
+.abas-form{display:flex;gap:4px;border-bottom:1.5px solid var(--bd);margin-bottom:18px;overflow-x:auto;}
+.aba-btn{padding:10px 16px;background:none;border:none;color:var(--mu);font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;}
+.aba-btn.active{color:var(--azul-claro);border-bottom-color:var(--laranja);}
+.aba-conteudo{display:none;}
+.aba-conteudo.active{display:block;}
+
+.dep-linha{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--s2);border-radius:8px;margin-bottom:6px;}
+
+@media print{
+  body *{visibility:hidden;}
+  .folha-a4, .folha-a4 *{visibility:visible;}
+  .folha-a4{position:absolute;top:0;left:0;margin:0;box-shadow:none;}
+  @page{size:A4;margin:0;}
+}
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <img src="esf-logo-oficial.png" alt="ESF">
+      <div><div class="tt">ESF <b>ERP</b></div><div class="st">Gestão de Pessoal</div></div>
+    </div>
+    <a href="index.html" class="voltar-hub">← Sistema de Gestão</a>
+
+    <div class="nav-lbl">Visão Geral</div>
+    <button class="nav-item active" data-view="dashboard"><span class="ic"><img src="icone-dashboard.png" alt="" style="width:17px;height:17px;object-fit:contain;vertical-align:middle"></span>Dashboard</button>
+
+    <div class="nav-lbl">Colaboradores</div>
+    <button class="nav-item" data-view="lista"><span class="ic">👥</span>Todos os Colaboradores</button>
+
+    <div class="nav-lbl">Utilitários</div>
+    <button class="nav-item" data-view="importar"><span class="ic">📥</span>Importar Planilha</button>
+    <button class="nav-item" data-view="esocial"><span class="ic">📡</span>eSocial</button>
+
+    <div class="sidebar-foot">
+      ESF · Gestão de Pessoal — v2026.09.26<br>
+      <span id="statusConexao">🟢 Online</span>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="banner-topo"><img src="esf-banner-panoramico.png" alt="ESF ERP — Sistema de Gestão"></div>
+
+    <!-- ═══════════ DASHBOARD ═══════════ -->
+    <div id="viewDashboard">
+      <div class="pg-head"><div><h1>Dashboard de Gestão de Pessoal</h1><p>Fonte única dos dados de colaborador — Ponto e SST consultam daqui.</p></div></div>
+
+      <div class="grid-kpi">
+        <div class="kpi" style="--cor:#00b5fe"><div class="n" id="kpiTotal">—</div><div class="l">Colaboradores cadastrados</div></div>
+        <div class="kpi" style="--cor:#16a34a"><div class="n" id="kpiAtivos">—</div><div class="l">Ativos</div></div>
+        <div class="kpi" style="--cor:#7dd3fc"><div class="n" id="kpiFerias">—</div><div class="l">De férias</div></div>
+        <div class="kpi" style="--cor:#fbbf24"><div class="n" id="kpiAfastados">—</div><div class="l">Afastados</div></div>
+      </div>
+
+      <div class="card">
+        <h2>Admissões recentes</h2>
+        <div id="listaDashAdmissoes"><div class="vazio">Carregando...</div></div>
+      </div>
+    </div>
+
+    <!-- ═══════════ TODOS OS COLABORADORES ═══════════ -->
+    <div id="viewLista" class="hidden">
+      <div class="pg-head">
+        <div><h1>Todos os Colaboradores</h1><p>Cadastro mestre — usado por todo o sistema.</p></div>
+        <button class="btn" onclick="abrirNovoColaborador()">➕ Novo Colaborador</button>
+      </div>
+      <div class="card">
+        <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+          <select id="filtroSituacao" onchange="renderizarLista()" style="background:#0d1830;border:1px solid var(--bd);border-radius:8px;color:var(--tx);padding:8px 12px;font-size:12.5px">
+            <option value="">Todas as situações</option>
+            <option value="ativo">Ativo</option><option value="ferias">Férias</option>
+            <option value="afastado">Afastado</option><option value="demitido">Demitido</option>
+          </select>
+          <input type="text" id="buscaColaborador" oninput="renderizarLista()" placeholder="Buscar por nome, CPF ou matrícula..." style="flex:1;min-width:200px;background:#0d1830;border:1px solid var(--bd);border-radius:8px;color:var(--tx);padding:8px 12px;font-size:12.5px">
+          <button class="btn btn-sm btn-ghost" onclick="exportarBackupCompleto()">💾 Exportar Backup (JSON)</button>
+        </div>
+        <div id="listaColaboradores"><div class="vazio">Carregando...</div></div>
+      </div>
+    </div>
+
+    <!-- ═══════════ FORMULÁRIO DE COLABORADOR ═══════════ -->
+    <div id="viewFormColaborador" class="hidden">
+      <div class="pg-head"><div><h1 id="tituloFormColaborador">Novo Colaborador</h1><p>Cadastro mestre completo — fonte única pro resto do sistema.</p></div></div>
+
+      <div class="abas-form">
+        <button class="aba-btn active" data-aba="pessoais" onclick="trocarAbaForm('pessoais')">Dados Pessoais</button>
+        <button class="aba-btn" data-aba="documentos" onclick="trocarAbaForm('documentos')">Documentos</button>
+        <button class="aba-btn" data-aba="contrato" onclick="trocarAbaForm('contrato')">Contrato & Salário</button>
+        <button class="aba-btn" data-aba="dependentes" onclick="trocarAbaForm('dependentes')">Dependentes</button>
+        <button class="aba-btn" data-aba="bancarios" onclick="trocarAbaForm('bancarios')">Dados Bancários</button>
+        <button class="aba-btn" data-aba="historico" onclick="trocarAbaForm('historico')">Histórico</button>
+      </div>
+
+      <div class="card">
+        <!-- ABA: DADOS PESSOAIS -->
+        <div class="aba-conteudo active" id="abaPessoais">
+          <div class="form-grid">
+            <div class="fld"><label>Nome completo *</label><input type="text" id="cNome"></div>
+            <div class="fld"><label>Nome social</label><input type="text" id="cNomeSocial"></div>
+            <div class="fld"><label>Nome da mãe</label><input type="text" id="cNomeMae"></div>
+            <div class="fld"><label>Data de nascimento</label><input type="date" id="cDataNascimento"></div>
+            <div class="fld"><label>Estado civil</label><select id="cEstadoCivil"><option value="">—</option><option>Solteiro(a)</option><option>Casado(a)</option><option>Divorciado(a)</option><option>Viúvo(a)</option><option>União estável</option></select></div>
+            <div class="fld"><label>Nacionalidade</label><input type="text" id="cNacionalidade" value="Brasileira"></div>
+            <div class="fld"><label>Telefone</label><input type="text" id="cTelefone"></div>
+            <div class="fld"><label>E-mail</label><input type="email" id="cEmail"></div>
+            <div class="fld" style="grid-column:1/-1"><label>Logradouro</label><input type="text" id="cLogradouro"></div>
+            <div class="fld"><label>Número</label><input type="text" id="cNumero"></div>
+            <div class="fld"><label>Bairro</label><input type="text" id="cBairro"></div>
+            <div class="fld"><label>Cidade</label><input type="text" id="cCidade"></div>
+            <div class="fld"><label>UF</label><input type="text" id="cUf" maxlength="2"></div>
+            <div class="fld"><label>CEP</label><input type="text" id="cCep"></div>
+            <div class="fld"><label>Contato de emergência — nome</label><input type="text" id="cEmergenciaNome"></div>
+            <div class="fld"><label>Contato de emergência — telefone</label><input type="text" id="cEmergenciaTelefone"></div>
+          </div>
+        </div>
+
+        <!-- ABA: DOCUMENTOS -->
+        <div class="aba-conteudo" id="abaDocumentos">
+          <div class="form-grid">
+            <div class="fld"><label>CPF</label><input type="text" id="cCpf"></div>
+            <div class="fld"><label>PIS/PASEP</label><input type="text" id="cPis"></div>
+            <div class="fld"><label>RG — Número</label><input type="text" id="cRgNumero"></div>
+            <div class="fld"><label>RG — Órgão Emissor</label><input type="text" id="cRgOrgao"></div>
+            <div class="fld"><label>RG — UF</label><input type="text" id="cRgUf" maxlength="2"></div>
+            <div class="fld"><label>RG — Data de Emissão</label><input type="date" id="cRgData"></div>
+            <div class="fld"><label>CTPS — Número</label><input type="text" id="cCtpsNumero"></div>
+            <div class="fld"><label>CTPS — Série</label><input type="text" id="cCtpsSerie"></div>
+            <div class="fld"><label>CTPS — UF</label><input type="text" id="cCtpsUf" maxlength="2"></div>
+            <div class="fld"><label>Título de Eleitor</label><input type="text" id="cTituloEleitor"></div>
+            <div class="fld"><label>Reservista</label><input type="text" id="cReservista"></div>
+            <div class="fld"><label>CNH — Número</label><input type="text" id="cCnhNumero"></div>
+            <div class="fld"><label>CNH — Categoria</label><input type="text" id="cCnhCategoria" maxlength="3"></div>
+            <div class="fld"><label>CNH — Validade</label><input type="date" id="cCnhValidade"></div>
+          </div>
+        </div>
+
+        <!-- ABA: CONTRATO & SALÁRIO -->
+        <div class="aba-conteudo" id="abaContrato">
+          <div class="form-grid">
+            <div class="fld"><label>Matrícula</label><input type="text" id="cMatricula" placeholder="Gerada automaticamente se deixar vazio"></div>
+            <div class="fld"><label>Data de Admissão</label><input type="date" id="cAdmissao"></div>
+            <div class="fld"><label>Tipo de Vínculo</label><select id="cVinculo"><option value="clt">CLT</option><option value="horista">Horista</option><option value="estagio">Estágio</option><option value="prolabore">Pró-labore</option></select></div>
+            <div class="fld"><label>Situação</label><select id="cSituacaoFolha"><option value="ativo">Ativo</option><option value="ferias">Férias</option><option value="afastado">Afastado</option><option value="demitido">Demitido</option></select></div>
+            <div class="fld"><label>Cargo</label><input type="text" id="cCargo"></div>
+            <div class="fld"><label>Função</label><input type="text" id="cFuncao"></div>
+            <div class="fld"><label>Centro de Custo</label><input type="text" id="cCentroCusto"></div>
+            <div class="fld"><label>Sindicato</label><input type="text" id="cSindicato"></div>
+            <div class="fld"><label>Salário Base (R$)</label><input type="number" id="cSalarioBase" step="0.01"></div>
+            <div class="fld"><label>Data de Desligamento</label><input type="date" id="cDataDesligamento"></div>
+          </div>
+          <div class="aviso-integracao" style="margin-top:14px">💡 O custo real (HH, com encargos e provisões) é calculado no módulo de Ponto/RH → "Custo Real / HH", a partir do salário base daqui. Não duplica o cálculo, só usa esse valor como ponto de partida.</div>
+        </div>
+
+        <!-- ABA: DEPENDENTES -->
+        <div class="aba-conteudo" id="abaDependentes">
+          <div id="listaDependentesForm"></div>
+          <div class="form-grid" style="margin-top:14px">
+            <div class="fld"><label>Nome</label><input type="text" id="depNome"></div>
+            <div class="fld"><label>Parentesco</label><select id="depParentesco"><option value="filho">Filho(a)</option><option value="conjuge">Cônjuge</option><option value="pai">Pai</option><option value="mae">Mãe</option><option value="outro">Outro</option></select></div>
+            <div class="fld"><label>Data de Nascimento</label><input type="date" id="depDataNascimento"></div>
+            <div class="fld"><label>CPF</label><input type="text" id="depCpf"></div>
+            <div class="fld"><label><input type="checkbox" id="depIrrf" style="width:auto;margin-right:6px" checked> Dependente IRRF</label></div>
+            <div class="fld"><label><input type="checkbox" id="depSalarioFamilia" style="width:auto;margin-right:6px"> Salário Família</label></div>
+            <div class="fld"><label><input type="checkbox" id="depPlanoSaude" style="width:auto;margin-right:6px"> Plano de Saúde</label></div>
+          </div>
+          <button class="btn btn-sm btn-ghost" style="margin-top:10px" onclick="adicionarDependente()">➕ Adicionar Dependente</button>
+        </div>
+
+        <!-- ABA: DADOS BANCÁRIOS -->
+        <div class="aba-conteudo" id="abaBancarios">
+          <div class="form-grid">
+            <div class="fld"><label>Banco</label><input type="text" id="cBanco"></div>
+            <div class="fld"><label>Agência</label><input type="text" id="cAgencia"></div>
+            <div class="fld"><label>Conta</label><input type="text" id="cConta"></div>
+            <div class="fld"><label>Tipo de Conta</label><select id="cTipoConta"><option value="corrente">Corrente</option><option value="poupanca">Poupança</option></select></div>
+            <div class="fld" style="grid-column:1/-1"><label>Chave PIX</label><input type="text" id="cChavePix"></div>
+          </div>
+        </div>
+
+        <!-- ABA: HISTÓRICO -->
+        <div class="aba-conteudo" id="abaHistorico">
+          <div id="listaHistoricoForm"><div class="vazio">Salva o colaborador primeiro pra ver o histórico.</div></div>
+        </div>
+
+        <div style="margin-top:20px;display:flex;gap:8px">
+          <button class="btn" onclick="salvarColaborador()">💾 Salvar Colaborador</button>
+          <button class="btn btn-ghost" onclick="mudarView('lista')">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ IMPORTAR PLANILHA ═══════════ -->
+    <div id="viewImportar" class="hidden">
+      <div class="pg-head"><div><h1>Importar Planilha</h1><p>CSV com cabeçalho — mapeia as colunas automaticamente pelos nomes mais comuns.</p></div></div>
+      <div class="aviso-integracao">📋 Colunas reconhecidas automaticamente: nome, cpf, email, telefone, cargo, admissao, salario_base, matricula. O arquivo pode ter outras colunas — só essas são usadas.</div>
+      <div class="card">
+        <input type="file" id="arquivoCsv" accept=".csv" style="margin-bottom:10px">
+        <button class="btn btn-sm" onclick="processarImportacaoCsv()">📥 Processar Planilha</button>
+        <div id="resumoImportacaoCsv" style="margin-top:14px"></div>
+      </div>
+    </div>
+
+    <!-- ═══════════ ESOCIAL ═══════════ -->
+    <div id="viewEsocial" class="hidden">
+      <div class="pg-head"><div><h1>eSocial — Eventos Iniciais</h1><p>Gera o payload dos eventos S-2200 (Admissão) e S-2206 (Alteração Contratual).</p></div></div>
+      <div class="aviso-integracao">⚠️ Isso gera a <b>estrutura</b> do payload, com os campos principais — não é validado contra o schema XML oficial do eSocial nem enviado ao governo. Sempre revisa com o contábil antes de transmitir de verdade.</div>
+      <div class="card">
+        <div class="form-grid">
+          <div class="fld"><label>Colaborador</label><select id="esColaborador"></select></div>
+          <div class="fld"><label>Tipo de Evento</label><select id="esTipoEvento"><option value="S-2200">S-2200 — Cadastramento Inicial / Admissão</option><option value="S-2206">S-2206 — Alteração Contratual</option></select></div>
+        </div>
+        <button class="btn btn-sm" style="margin-top:10px" onclick="gerarPayloadEsocial()">📡 Gerar Payload</button>
+        <pre id="resultadoEsocial" style="margin-top:14px;background:#0d1830;padding:14px;border-radius:8px;font-size:11px;overflow-x:auto;white-space:pre-wrap;display:none"></pre>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── CONEXÃO ─────────────────────────────────────────────── */
+const SUPABASE_URL = 'https://bddjdpyfypsiwnirbyhv.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkZGpkcHlmeXBzaXduaXJieWh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NDk1MjgsImV4cCI6MjEwMDQyNTUyOH0.0HnH7caYH6sLp5n68izQXqbCJ-cLqTyxELl1EqoHHww';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ── ESTADO ──────────────────────────────────────────────── */
+let COLABORADORES = [];
+let DEPENDENTES_ATUAL = [];
+let colaboradorEditandoId = null;
+
+/* ── UTILITÁRIOS ─────────────────────────────────────────── */
+function toast(msg,cor){ const t=document.getElementById('toast'); t.textContent=msg; t.style.borderColor=cor||'#fd8a14'; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3200); }
+function fmtMoeda(v){ if(v===null||v===undefined||isNaN(v)) return 'R$ 0,00'; return 'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtData(d){ if(!d) return '—'; const p=d.split('T')[0].split('-'); return `${p[2]}/${p[1]}/${p[0]}`; }
+function normalizarBusca(s){ return (s||'').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim(); }
+function iniciais(nome){ return (nome||'?').trim().split(' ').filter(Boolean).slice(0,2).map(p=>p[0]).join('').toUpperCase(); }
+
+/* ── NAVEGAÇÃO ───────────────────────────────────────────── */
+function mudarView(nome){
+  const views=['dashboard','lista','formColaborador','importar','esocial'];
+  views.forEach(v=>{ const el=document.getElementById('view'+v.charAt(0).toUpperCase()+v.slice(1)); if(el) el.classList.toggle('hidden', v!==nome); });
+  document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.classList.toggle('active', b.dataset.view===nome));
+  if(nome==='dashboard') renderizarDashboard();
+  if(nome==='lista') renderizarLista();
+  if(nome==='esocial') popularSelectEsocial();
+}
+document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.addEventListener('click',()=>mudarView(b.dataset.view)));
+
+function trocarAbaForm(aba){
+  document.querySelectorAll('.aba-btn').forEach(b=>b.classList.toggle('active', b.dataset.aba===aba));
+  document.querySelectorAll('.aba-conteudo').forEach(c=>c.classList.toggle('active', c.id==='aba'+aba.charAt(0).toUpperCase()+aba.slice(1)));
+}
+
+/* ── CARREGAMENTO ────────────────────────────────────────── */
+async function carregarColaboradores(){
+  try{
+    const{data,error} = await supabaseClient.from('funcionarios').select('*').order('nome');
+    if(error) throw error;
+    COLABORADORES = data||[];
+  }catch(e){ console.error(e); toast('Não foi possível carregar os colaboradores.','#dc2626'); }
+}
+
+/* ── DASHBOARD ───────────────────────────────────────────── */
+function renderizarDashboard(){
+  document.getElementById('kpiTotal').textContent = COLABORADORES.length;
+  document.getElementById('kpiAtivos').textContent = COLABORADORES.filter(c=>(c.situacao_folha||'ativo')==='ativo').length;
+  document.getElementById('kpiFerias').textContent = COLABORADORES.filter(c=>c.situacao_folha==='ferias').length;
+  document.getElementById('kpiAfastados').textContent = COLABORADORES.filter(c=>c.situacao_folha==='afastado').length;
+
+  const recentes = [...COLABORADORES].filter(c=>c.admissao).sort((a,b)=>(b.admissao||'').localeCompare(a.admissao||'')).slice(0,6);
+  document.getElementById('listaDashAdmissoes').innerHTML = recentes.length ? recentes.map(renderizarLinhaColaborador).join('') : '<div class="vazio">Nenhum colaborador com data de admissão ainda.</div>';
+}
+
+/* ── LISTA ───────────────────────────────────────────────── */
+function renderizarLinhaColaborador(c){
+  const situacao = c.situacao_folha||'ativo';
+  return `<div class="colab-card" onclick="abrirEditarColaborador('${c.id}')">
+    <div class="colab-avatar">${iniciais(c.nome)}</div>
+    <div style="flex:1">
+      <div class="colab-nome">${c.nome}</div>
+      <div class="colab-meta">${c.cargo||'Sem cargo'} · ${c.matricula||'Sem matrícula'} · Admissão: ${fmtData(c.admissao)}</div>
+    </div>
+    <span class="status-pill status-${situacao}">${situacao}</span>
+  </div>`;
+}
+function renderizarLista(){
+  const situacao = document.getElementById('filtroSituacao').value;
+  const busca = normalizarBusca(document.getElementById('buscaColaborador').value);
+  let lista = COLABORADORES;
+  if(situacao) lista = lista.filter(c=>(c.situacao_folha||'ativo')===situacao);
+  if(busca) lista = lista.filter(c=>normalizarBusca(c.nome).includes(busca) || (c.cpf||'').includes(busca) || normalizarBusca(c.matricula).includes(busca));
+  document.getElementById('listaColaboradores').innerHTML = lista.length ? lista.map(renderizarLinhaColaborador).join('') : '<div class="vazio">Nenhum colaborador encontrado.</div>';
+}
+
+/* ── FORMULÁRIO ──────────────────────────────────────────── */
+const CAMPOS_COLABORADOR = ['cNome','cNomeSocial','cNomeMae','cDataNascimento','cEstadoCivil','cNacionalidade','cTelefone','cEmail',
+  'cLogradouro','cNumero','cBairro','cCidade','cUf','cCep','cEmergenciaNome','cEmergenciaTelefone',
+  'cCpf','cPis','cRgNumero','cRgOrgao','cRgUf','cRgData','cCtpsNumero','cCtpsSerie','cCtpsUf','cTituloEleitor','cReservista','cCnhNumero','cCnhCategoria','cCnhValidade',
+  'cMatricula','cAdmissao','cVinculo','cSituacaoFolha','cCargo','cFuncao','cCentroCusto','cSindicato','cSalarioBase','cDataDesligamento',
+  'cBanco','cAgencia','cConta','cTipoConta','cChavePix'];
+
+function abrirNovoColaborador(){
+  colaboradorEditandoId = null;
+  DEPENDENTES_ATUAL = [];
+  CAMPOS_COLABORADOR.forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('cNacionalidade').value='Brasileira';
+  document.getElementById('cVinculo').value='clt';
+  document.getElementById('cSituacaoFolha').value='ativo';
+  document.getElementById('cTipoConta').value='corrente';
+  document.getElementById('tituloFormColaborador').textContent = 'Novo Colaborador';
+  document.getElementById('listaHistoricoForm').innerHTML = '<div class="vazio">Salva o colaborador primeiro pra ver o histórico.</div>';
+  renderizarDependentesForm();
+  trocarAbaForm('pessoais');
+  mudarView('formColaborador');
+}
+
+async function abrirEditarColaborador(id){
+  const c = COLABORADORES.find(x=>x.id===id);
+  if(!c) return;
+  colaboradorEditandoId = id;
+
+  document.getElementById('tituloFormColaborador').textContent = c.nome;
+  const mapa = {
+    cNome:c.nome, cNomeSocial:c.nome_social, cNomeMae:c.nome_mae, cDataNascimento:c.data_nascimento, cEstadoCivil:c.estado_civil,
+    cNacionalidade:c.nacionalidade, cTelefone:c.telefone, cEmail:c.email,
+    cLogradouro:c.endereco_logradouro, cNumero:c.endereco_numero, cBairro:c.endereco_bairro, cCidade:c.endereco_cidade, cUf:c.endereco_uf, cCep:c.endereco_cep,
+    cEmergenciaNome:c.contato_emergencia_nome, cEmergenciaTelefone:c.contato_emergencia_telefone,
+    cCpf:c.cpf, cPis:c.pis, cRgNumero:c.rg_numero, cRgOrgao:c.rg_orgao_emissor, cRgUf:c.rg_uf, cRgData:c.rg_data_emissao,
+    cCtpsNumero:c.ctps_numero, cCtpsSerie:c.ctps_serie, cCtpsUf:c.ctps_uf, cTituloEleitor:c.titulo_eleitor, cReservista:c.reservista,
+    cCnhNumero:c.cnh_numero, cCnhCategoria:c.cnh_categoria, cCnhValidade:c.cnh_validade,
+    cMatricula:c.matricula, cAdmissao:c.admissao, cVinculo:c.vinculo||'clt', cSituacaoFolha:c.situacao_folha||'ativo', cCargo:c.cargo, cFuncao:c.funcao,
+    cCentroCusto:c.centro_custo, cSindicato:c.sindicato, cSalarioBase:c.salario_base, cDataDesligamento:c.data_desligamento,
+    cBanco:c.banco, cAgencia:c.agencia, cConta:c.conta, cTipoConta:c.tipo_conta||'corrente', cChavePix:c.chave_pix,
+  };
+  Object.entries(mapa).forEach(([id,valor])=>{ const el=document.getElementById(id); if(el) el.value = valor ?? ''; });
+
+  await carregarDependentes(id);
+  await carregarHistorico(id);
+  trocarAbaForm('pessoais');
+  mudarView('formColaborador');
+}
+
+async function salvarColaborador(){
+  const nome = document.getElementById('cNome').value.trim();
+  if(!nome){ toast('Preenche o nome completo.','#dc2626'); return; }
+
+  const payload = {
+    nome, nome_social:document.getElementById('cNomeSocial').value||null, nome_mae:document.getElementById('cNomeMae').value||null,
+    data_nascimento:document.getElementById('cDataNascimento').value||null, estado_civil:document.getElementById('cEstadoCivil').value||null,
+    nacionalidade:document.getElementById('cNacionalidade').value||null, telefone:document.getElementById('cTelefone').value||null, email:document.getElementById('cEmail').value||null,
+    endereco_logradouro:document.getElementById('cLogradouro').value||null, endereco_numero:document.getElementById('cNumero').value||null,
+    endereco_bairro:document.getElementById('cBairro').value||null, endereco_cidade:document.getElementById('cCidade').value||null,
+    endereco_uf:document.getElementById('cUf').value||null, endereco_cep:document.getElementById('cCep').value||null,
+    contato_emergencia_nome:document.getElementById('cEmergenciaNome').value||null, contato_emergencia_telefone:document.getElementById('cEmergenciaTelefone').value||null,
+    cpf:document.getElementById('cCpf').value||null, pis:document.getElementById('cPis').value||null,
+    rg_numero:document.getElementById('cRgNumero').value||null, rg_orgao_emissor:document.getElementById('cRgOrgao').value||null,
+    rg_uf:document.getElementById('cRgUf').value||null, rg_data_emissao:document.getElementById('cRgData').value||null,
+    ctps_numero:document.getElementById('cCtpsNumero').value||null, ctps_serie:document.getElementById('cCtpsSerie').value||null, ctps_uf:document.getElementById('cCtpsUf').value||null,
+    titulo_eleitor:document.getElementById('cTituloEleitor').value||null, reservista:document.getElementById('cReservista').value||null,
+    cnh_numero:document.getElementById('cCnhNumero').value||null, cnh_categoria:document.getElementById('cCnhCategoria').value||null, cnh_validade:document.getElementById('cCnhValidade').value||null,
+    matricula:document.getElementById('cMatricula').value||null, admissao:document.getElementById('cAdmissao').value||null,
+    vinculo:document.getElementById('cVinculo').value, situacao_folha:document.getElementById('cSituacaoFolha').value,
+    cargo:document.getElementById('cCargo').value||null, funcao:document.getElementById('cFuncao').value||null,
+    centro_custo:document.getElementById('cCentroCusto').value||null, sindicato:document.getElementById('cSindicato').value||null,
+    salario_base:parseFloat(document.getElementById('cSalarioBase').value)||0, data_desligamento:document.getElementById('cDataDesligamento').value||null,
+    banco:document.getElementById('cBanco').value||null, agencia:document.getElementById('cAgencia').value||null, conta:document.getElementById('cConta').value||null,
+    tipo_conta:document.getElementById('cTipoConta').value, chave_pix:document.getElementById('cChavePix').value||null,
+  };
+
+  try{
+    let novoId = colaboradorEditandoId;
+    if(colaboradorEditandoId){
+      const{error} = await supabaseClient.from('funcionarios').update(payload).eq('id',colaboradorEditandoId);
+      if(error) throw error;
+    }else{
+      const{data,error} = await supabaseClient.from('funcionarios').insert(payload).select().single();
+      if(error) throw error;
+      novoId = data.id;
+    }
+
+    // Salva os dependentes -- limpa e regrava (mais simples que sincronizar diff)
+    await supabaseClient.from('rh_dependentes').delete().eq('funcionario_id',novoId);
+    if(DEPENDENTES_ATUAL.length){
+      const linhas = DEPENDENTES_ATUAL.map(d=>({...d, funcionario_id:novoId}));
+      await supabaseClient.from('rh_dependentes').insert(linhas);
+    }
+
+    toast(colaboradorEditandoId ? '✓ Colaborador atualizado.' : '✓ Colaborador cadastrado.','#16a34a');
+    await carregarColaboradores();
+    mudarView('lista');
+  }catch(e){ console.error(e); toast('Não foi possível salvar. Confere se o CPF já não está cadastrado.','#dc2626'); }
+}
+
+/* ── DEPENDENTES ─────────────────────────────────────────── */
+async function carregarDependentes(funcId){
+  try{
+    const{data,error} = await supabaseClient.from('rh_dependentes').select('*').eq('funcionario_id',funcId);
+    if(error) throw error;
+    DEPENDENTES_ATUAL = data||[];
+    renderizarDependentesForm();
+  }catch(e){ console.error(e); }
+}
+function renderizarDependentesForm(){
+  const wrap = document.getElementById('listaDependentesForm');
+  wrap.innerHTML = DEPENDENTES_ATUAL.length ? DEPENDENTES_ATUAL.map((d,i)=>`
+    <div class="dep-linha"><div><b>${d.nome}</b> — ${d.parentesco} ${d.data_nascimento?'· '+fmtData(d.data_nascimento):''}</div>
+    <button class="btn btn-sm btn-danger" onclick="removerDependente(${i})">✕</button></div>`).join('') : '<div class="vazio">Nenhum dependente adicionado.</div>';
+}
+function adicionarDependente(){
+  const nome = document.getElementById('depNome').value.trim();
+  if(!nome){ toast('Preenche o nome do dependente.','#dc2626'); return; }
+  DEPENDENTES_ATUAL.push({
+    nome, parentesco:document.getElementById('depParentesco').value, data_nascimento:document.getElementById('depDataNascimento').value||null,
+    cpf:document.getElementById('depCpf').value||null, irrf:document.getElementById('depIrrf').checked,
+    salario_familia:document.getElementById('depSalarioFamilia').checked, plano_saude:document.getElementById('depPlanoSaude').checked,
+  });
+  document.getElementById('depNome').value=''; document.getElementById('depCpf').value=''; document.getElementById('depDataNascimento').value='';
+  renderizarDependentesForm();
+  toast('Dependente adicionado — clica em "Salvar Colaborador" pra confirmar de vez.','#8fa3c4');
+}
+function removerDependente(i){ DEPENDENTES_ATUAL.splice(i,1); renderizarDependentesForm(); }
+
+/* ── HISTÓRICO ───────────────────────────────────────────── */
+async function carregarHistorico(funcId){
+  try{
+    const{data,error} = await supabaseClient.from('rh_historico_contratual').select('*').eq('funcionario_id',funcId).order('data_evento',{ascending:false});
+    if(error) throw error;
+    document.getElementById('listaHistoricoForm').innerHTML = (data&&data.length) ? data.map(h=>`
+      <div class="item-linha"><div><div class="principal">${h.tipo_evento}</div><div class="sec">${fmtData(h.data_evento)} ${h.campo_alterado?'· '+h.campo_alterado+': '+(h.valor_anterior||'—')+' → '+(h.valor_novo||'—'):''} ${h.observacao||''}</div></div></div>`).join('') : '<div class="vazio">Nenhum evento registrado ainda.</div>';
+  }catch(e){ console.error(e); }
+}
+
+/* ── EXPORTAR / BACKUP ───────────────────────────────────── */
+async function exportarBackupCompleto(){
+  try{
+    const{data:colaboradores} = await supabaseClient.from('funcionarios').select('*');
+    const{data:dependentes} = await supabaseClient.from('rh_dependentes').select('*');
+    const backup = {geradoEm:new Date().toISOString(), colaboradores, dependentes};
+    const blob = new Blob([JSON.stringify(backup,null,2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `backup_colaboradores_${new Date().toISOString().slice(0,10)}.json`;
+    a.click(); URL.revokeObjectURL(url);
+    toast('✓ Backup exportado.','#16a34a');
+  }catch(e){ console.error(e); toast('Não foi possível exportar.','#dc2626'); }
+}
+
+/* ── IMPORTAR CSV ────────────────────────────────────────── */
+function parseCsvSimples(texto){
+  const linhas = texto.split(/\r?\n/).filter(l=>l.trim());
+  if(!linhas.length) return [];
+  const cabecalho = linhas[0].split(',').map(h=>normalizarBusca(h).replace(/\s+/g,'_'));
+  return linhas.slice(1).map(linha=>{
+    const valores = linha.split(',');
+    const obj = {};
+    cabecalho.forEach((campo,i)=>{ obj[campo] = (valores[i]||'').trim(); });
+    return obj;
+  });
+}
+async function processarImportacaoCsv(){
+  const input = document.getElementById('arquivoCsv');
+  if(!input.files.length){ toast('Escolhe um arquivo CSV.','#dc2626'); return; }
+  const texto = await input.files[0].text();
+  const linhas = parseCsvSimples(texto);
+  if(!linhas.length){ toast('Arquivo vazio ou sem cabeçalho reconhecido.','#e8a33d'); return; }
+
+  const mapaCampos = {nome:'nome', cpf:'cpf', email:'email', telefone:'telefone', cargo:'cargo', admissao:'admissao', salario_base:'salario_base', matricula:'matricula'};
+  let sucesso=0, falha=0;
+  for(const linha of linhas){
+    if(!linha.nome) { falha++; continue; }
+    const payload = {};
+    Object.entries(mapaCampos).forEach(([csvCol,dbCol])=>{ if(linha[csvCol]) payload[dbCol] = linha[csvCol]; });
+    if(payload.salario_base) payload.salario_base = parseFloat(payload.salario_base)||0;
+    try{
+      const{error} = await supabaseClient.from('funcionarios').insert(payload);
+      if(error) throw error;
+      sucesso++;
+    }catch(e){ falha++; }
+  }
+  document.getElementById('resumoImportacaoCsv').innerHTML = `<div class="aviso-integracao">✓ ${sucesso} colaborador(es) importado(s)${falha?', '+falha+' falharam (provavelmente CPF duplicado ou nome vazio)':''}.</div>`;
+  toast(`Importação concluída — ${sucesso} de ${linhas.length}.`, sucesso>0?'#16a34a':'#dc2626');
+  await carregarColaboradores();
+}
+
+/* ── ESOCIAL ─────────────────────────────────────────────── */
+function popularSelectEsocial(){
+  document.getElementById('esColaborador').innerHTML = '<option value="">— Selecione —</option>' + COLABORADORES.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+}
+async function gerarPayloadEsocial(){
+  const id = document.getElementById('esColaborador').value;
+  const tipo = document.getElementById('esTipoEvento').value;
+  const c = COLABORADORES.find(x=>x.id===id);
+  if(!c){ toast('Escolhe um colaborador.','#dc2626'); return; }
+
+  let payload;
+  if(tipo==='S-2200'){
+    payload = {
+      evento: 'S-2200', descricao: 'Cadastramento Inicial do Vínculo / Admissão',
+      ideEvento: { indRetif:1, tpAmb:2 },
+      trabalhador: {
+        cpfTrab: c.cpf, nmTrab: c.nome, sexo: null, racaCor: null, estCiv: c.estado_civil, grauInstr: null,
+        nascimento: { dtNascto: c.data_nascimento, paisNascto: 'Brasil', nmMae: c.nome_mae },
+        endereco: { logradouro: c.endereco_logradouro, numero: c.endereco_numero, bairro: c.endereco_bairro, cep: c.endereco_cep, uf: c.endereco_uf },
+      },
+      vinculo: {
+        matricula: c.matricula, tpRegPrev: 1, cargo: c.cargo, admissao: c.admissao,
+        remuneracao: { vrSalFx: c.salario_base, undSalFixo: 5 },
+        FGTS: { dtOpcFGTS: c.admissao },
+      },
+      _aviso: 'Estrutura simplificada — revisar com contábil antes de transmitir. Não validado contra o schema XSD oficial do eSocial.',
+    };
+  }else{
+    payload = {
+      evento: 'S-2206', descricao: 'Alteração de Contrato de Trabalho',
+      ideEvento: { indRetif:1, tpAmb:2 },
+      trabalhador: { cpfTrab: c.cpf, matricula: c.matricula },
+      alteracaoContratual: { dtAlteracao: new Date().toISOString().slice(0,10), cargo: c.cargo, vrSalFx: c.salario_base, centroCusto: c.centro_custo },
+      _aviso: 'Estrutura simplificada — revisar com contábil antes de transmitir. Não validado contra o schema XSD oficial do eSocial.',
+    };
+  }
+  const el = document.getElementById('resultadoEsocial');
+  el.textContent = JSON.stringify(payload, null, 2);
+  el.style.display = 'block';
+}
+
+/* ── INICIALIZAÇÃO ───────────────────────────────────────── */
+(async function init(){
+  await carregarColaboradores();
+  renderizarDashboard();
+})();
+</script>
+</body>
+</html>
