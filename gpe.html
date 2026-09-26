@@ -322,9 +322,18 @@ a{color:inherit;}
     <div class="nav-lbl">Colaboradores</div>
     <button class="nav-item" data-view="lista"><span class="ic">👥</span>Todos os Colaboradores</button>
 
+    <div class="nav-lbl">Ausências</div>
+    <button class="nav-item" data-view="afastamentos"><span class="ic">🏥</span>Afastamentos</button>
+    <button class="nav-item" data-view="ferias"><span class="ic">🏖️</span>Férias</button>
+
+    <div class="nav-lbl">Folha de Pagamento</div>
+    <button class="nav-item" data-view="folha"><span class="ic">💵</span>Folha & Adiantamento</button>
+    <button class="nav-item" data-view="rescisao"><span class="ic">📋</span>Rescisão</button>
+
     <div class="nav-lbl">Utilitários</div>
     <button class="nav-item" data-view="importar"><span class="ic">📥</span>Importar Planilha</button>
     <button class="nav-item" data-view="esocial"><span class="ic">📡</span>eSocial</button>
+    <button class="nav-item" data-view="tabelasFiscais"><span class="ic">⚙️</span>Tabelas Fiscais</button>
 
     <div class="sidebar-foot">
       ESF · Gestão de Pessoal — v2026.09.26<br>
@@ -366,7 +375,8 @@ a{color:inherit;}
             <option value="afastado">Afastado</option><option value="demitido">Demitido</option>
           </select>
           <input type="text" id="buscaColaborador" oninput="renderizarLista()" placeholder="Buscar por nome, CPF ou matrícula..." style="flex:1;min-width:200px;background:#0d1830;border:1px solid var(--bd);border-radius:8px;color:var(--tx);padding:8px 12px;font-size:12.5px">
-          <button class="btn btn-sm btn-ghost" onclick="exportarBackupCompleto()">💾 Exportar Backup (JSON)</button>
+          <button class="btn btn-sm btn-ghost" onclick="exportarBackupCompleto()">💾 Backup (JSON)</button>
+          <button class="btn btn-sm btn-ghost" onclick="exportarBackupExcel()">📊 Exportar Excel (CSV)</button>
         </div>
         <div id="listaColaboradores"><div class="vazio">Carregando...</div></div>
       </div>
@@ -439,6 +449,7 @@ a{color:inherit;}
             <div class="fld"><label>Função</label><input type="text" id="cFuncao"></div>
             <div class="fld"><label>Centro de Custo</label><input type="text" id="cCentroCusto"></div>
             <div class="fld"><label>Sindicato</label><input type="text" id="cSindicato"></div>
+            <div class="fld"><label>Turno de Trabalho</label><select id="cTurno"><option value="">— Sem turno atribuído —</option></select></div>
             <div class="fld"><label>Salário Base (R$)</label><input type="number" id="cSalarioBase" step="0.01"></div>
             <div class="fld"><label>Data de Desligamento</label><input type="date" id="cDataDesligamento"></div>
           </div>
@@ -478,6 +489,7 @@ a{color:inherit;}
 
         <div style="margin-top:20px;display:flex;gap:8px">
           <button class="btn" onclick="salvarColaborador()">💾 Salvar Colaborador</button>
+          <button class="btn btn-ghost" id="btnExportarFicha" style="display:none" onclick="exportarFichaIndividual(colaboradorEditandoId)">📄 Exportar Ficha</button>
           <button class="btn btn-ghost" onclick="mudarView('lista')">Cancelar</button>
         </div>
       </div>
@@ -492,6 +504,104 @@ a{color:inherit;}
         <button class="btn btn-sm" onclick="processarImportacaoCsv()">📥 Processar Planilha</button>
         <div id="resumoImportacaoCsv" style="margin-top:14px"></div>
       </div>
+    </div>
+
+    <!-- ═══════════ AFASTAMENTOS ═══════════ -->
+    <div id="viewAfastamentos" class="hidden">
+      <div class="pg-head"><div><h1>Afastamentos</h1><p>Atestado, licença-maternidade, CAT ou afastamento INSS — bloqueia o Ponto sozinho, no período informado.</p></div></div>
+      <div class="card">
+        <div class="form-grid">
+          <div class="fld"><label>Colaborador</label><select id="afColaborador"></select></div>
+          <div class="fld"><label>Tipo</label><select id="afTipo">
+            <option value="atestado_medico">Atestado Médico</option>
+            <option value="licenca_maternidade">Licença-Maternidade</option>
+            <option value="acidente_trabalho_cat">Acidente de Trabalho (CAT)</option>
+            <option value="afastamento_inss">Afastamento INSS</option>
+          </select></div>
+          <div class="fld"><label>Data Início</label><input type="date" id="afDataInicio"></div>
+          <div class="fld"><label>Data Fim (vazio = em aberto)</label><input type="date" id="afDataFim"></div>
+          <div class="fld"><label>CID</label><input type="text" id="afCid"></div>
+          <div class="fld"><label>Número CAT</label><input type="text" id="afNumeroCat"></div>
+          <div class="fld" style="grid-column:1/-1"><label>Observação</label><input type="text" id="afObservacao"></div>
+        </div>
+        <button class="btn btn-sm" style="margin-top:10px" onclick="salvarAfastamento()">💾 Registrar Afastamento</button>
+      </div>
+      <div class="card"><h2>Afastamentos registrados</h2><div id="listaAfastamentos"><div class="vazio">Carregando...</div></div></div>
+    </div>
+
+    <!-- ═══════════ FÉRIAS ═══════════ -->
+    <div id="viewFerias" class="hidden">
+      <div class="pg-head"><div><h1>Férias</h1><p>Período aquisitivo/concessivo automático, e calculadora completa (1/3, abono, adiantamento de 13º).</p></div></div>
+      <div class="card">
+        <div class="form-grid">
+          <div class="fld"><label>Colaborador</label><select id="feColaborador" onchange="carregarPeriodosAquisitivos()"></select></div>
+          <div class="fld"><label>Período Aquisitivo</label><select id="fePeriodo"></select></div>
+          <div class="fld"><label>Início do Gozo</label><input type="date" id="feDataInicio"></div>
+          <div class="fld"><label>Dias Gozados</label><input type="number" id="feDias" value="30" max="30"></div>
+          <div class="fld"><label>Abono Pecuniário (dias, até 10)</label><input type="number" id="feAbono" value="0" max="10"></div>
+          <div class="fld"><label><input type="checkbox" id="feAdiantamento13" style="width:auto;margin-right:6px"> Adiantar 1ª parcela do 13º</label></div>
+        </div>
+        <button class="btn btn-sm btn-ghost" style="margin-top:10px" onclick="calcularFerias()">🧮 Calcular</button>
+        <div id="resultadoCalculoFerias" style="display:none;margin-top:14px" class="aviso-integracao"></div>
+        <button class="btn btn-sm" id="btnConfirmarFerias" style="margin-top:10px;display:none" onclick="confirmarFerias()">✓ Programar Férias</button>
+      </div>
+      <div class="card"><h2>Férias programadas</h2><div id="listaFerias"><div class="vazio">Carregando...</div></div></div>
+    </div>
+
+    <!-- ═══════════ FOLHA & ADIANTAMENTO ═══════════ -->
+    <div id="viewFolha" class="hidden">
+      <div class="pg-head"><div><h1>Folha de Pagamento & Adiantamento</h1><p>Adiantamento quinzenal, e fechamento mensal com integração de horas do Ponto.</p></div></div>
+
+      <div class="card">
+        <h2>Adiantamento Quinzenal</h2>
+        <div class="form-grid">
+          <div class="fld"><label>Colaborador</label><select id="adColaborador"></select></div>
+          <div class="fld"><label>Competência</label><input type="month" id="adCompetencia"></div>
+          <div class="fld"><label>Valor (R$)</label><input type="number" id="adValor" step="0.01"></div>
+        </div>
+        <button class="btn btn-sm" style="margin-top:10px" onclick="salvarAdiantamento()">💾 Lançar Adiantamento</button>
+      </div>
+
+      <div class="card">
+        <h2>Fechamento Mensal</h2>
+        <p class="sub">Calcula proventos (salário + HE do Ponto) e descontos (INSS, IRRF, adiantamento já pago) de todos os colaboradores ativos, de uma vez.</p>
+        <div class="form-grid">
+          <div class="fld"><label>Competência</label><input type="month" id="foCompetencia"></div>
+        </div>
+        <button class="btn btn-sm" style="margin-top:10px" onclick="processarFechamentoFolha()">⚙️ Processar Folha do Mês</button>
+        <div id="resumoFolha" style="margin-top:14px"></div>
+      </div>
+      <div class="card"><h2>Folhas fechadas</h2><div id="listaFolhas"><div class="vazio">Carregando...</div></div></div>
+    </div>
+
+    <!-- ═══════════ RESCISÃO ═══════════ -->
+    <div id="viewRescisao" class="hidden">
+      <div class="pg-head"><div><h1>Rescisão Contratual</h1><p>Simulação completa — aviso prévio, FGTS, saldo, férias proporcionais.</p></div></div>
+      <div class="card">
+        <div class="form-grid">
+          <div class="fld"><label>Colaborador</label><select id="rsColaborador"></select></div>
+          <div class="fld"><label>Data do Desligamento</label><input type="date" id="rsDataDesligamento"></div>
+          <div class="fld"><label>Tipo</label><select id="rsTipo">
+            <option value="sem_justa_causa">Sem Justa Causa (empresa)</option>
+            <option value="pedido_demissao">Pedido de Demissão</option>
+            <option value="acordo">Acordo (Art. 484-A)</option>
+            <option value="justa_causa">Justa Causa</option>
+            <option value="termino_contrato">Término de Contrato</option>
+          </select></div>
+          <div class="fld"><label>Saldo de FGTS (base p/ multa)</label><input type="number" id="rsSaldoFgts" step="0.01" placeholder="Consultar extrato FGTS"></div>
+        </div>
+        <button class="btn btn-sm btn-ghost" style="margin-top:10px" onclick="calcularRescisao()">🧮 Simular</button>
+        <pre id="resultadoRescisao" style="display:none;margin-top:14px;background:#0d1830;padding:14px;border-radius:8px;font-size:12px;white-space:pre-wrap"></pre>
+        <button class="btn btn-sm" id="btnConfirmarRescisao" style="margin-top:10px;display:none" onclick="confirmarRescisao()">✓ Confirmar Rescisão</button>
+      </div>
+    </div>
+
+    <!-- ═══════════ TABELAS FISCAIS ═══════════ -->
+    <div id="viewTabelasFiscais" class="hidden">
+      <div class="pg-head"><div><h1>Tabelas Fiscais (INSS / IRRF)</h1><p>Editável — confirma com o contador antes de usar em folha real. As fontes públicas de 2026 divergem entre si.</p></div></div>
+      <div class="aviso-integracao">⚠️ Pesquisei essas tabelas em fontes públicas, mas encontrei valores divergentes entre sites diferentes pra 2026. Os valores abaixo são o consenso mais citado — <b>confirma com seu contador antes de rodar folha de verdade.</b></div>
+      <div class="card"><h2>INSS</h2><div id="tabelaInss"></div></div>
+      <div class="card"><h2>IRRF</h2><div id="tabelaIrrf"></div></div>
     </div>
 
     <!-- ═══════════ ESOCIAL ═══════════ -->
@@ -524,6 +634,296 @@ let COLABORADORES = [];
 let DEPENDENTES_ATUAL = [];
 let colaboradorEditandoId = null;
 
+/* ── TURNOS (lidos do módulo de Ponto — não duplica, só consulta) ── */
+let TURNOS_DISPONIVEIS = [];
+async function carregarTurnosDisponiveis(){
+  try{
+    const{data,error} = await supabaseClient.from('rh_turnos_trabalho').select('id,nome').eq('ativo',true).order('nome');
+    if(error) throw error;
+    TURNOS_DISPONIVEIS = data||[];
+    const el = document.getElementById('cTurno');
+    if(el) el.innerHTML = '<option value="">— Sem turno atribuído —</option>' + TURNOS_DISPONIVEIS.map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
+  }catch(e){ console.error(e); }
+}
+async function carregarTurnoAtualDoColaborador(funcId){
+  try{
+    const{data} = await supabaseClient.from('rh_troca_turno').select('turno_id,data_inicio').eq('funcionario_id',funcId).order('data_inicio',{ascending:false}).limit(1);
+    const el = document.getElementById('cTurno');
+    if(el) el.value = (data && data.length) ? data[0].turno_id : '';
+  }catch(e){ console.error(e); }
+}
+
+/* ── MOTOR DE CÁLCULO FISCAL — tabela progressiva por faixa ── */
+let TABELA_INSS = [], TABELA_IRRF = [], PARAMETROS_FISCAIS = {};
+async function carregarTabelasFiscais(){
+  try{
+    const{data:inss} = await supabaseClient.from('rh_tabela_fiscal').select('*').eq('tipo','inss').eq('vigencia_ano',2026).order('faixa_ordem');
+    const{data:irrf} = await supabaseClient.from('rh_tabela_fiscal').select('*').eq('tipo','irrf').eq('vigencia_ano',2026).order('faixa_ordem');
+    const{data:params} = await supabaseClient.from('rh_parametros_fiscais').select('*').eq('vigencia_ano',2026).limit(1);
+    TABELA_INSS = inss||[]; TABELA_IRRF = irrf||[]; PARAMETROS_FISCAIS = (params&&params[0]) || {deducao_por_dependente_irrf:189.59, desconto_simplificado_irrf:607.20};
+  }catch(e){ console.error(e); }
+}
+/* INSS: progressivo puro por faixa (soma o que cai em cada faixa) */
+function calcularInss(salario){
+  let total = 0, faixaAnterior = 0;
+  for(const faixa of TABELA_INSS){
+    const teto = faixa.valor_ate ?? salario;
+    if(salario > faixaAnterior){
+      const baseFaixa = Math.min(salario, teto) - faixaAnterior;
+      total += baseFaixa * (faixa.aliquota_pct/100);
+    }
+    faixaAnterior = teto;
+    if(salario <= teto) break;
+  }
+  return round2(total);
+}
+/* IRRF: base × alíquota da faixa - parcela a deduzir (fórmula oficial) */
+function calcularIrrf(baseCalculo){
+  if(baseCalculo<=0) return 0;
+  const faixa = TABELA_IRRF.find(f => f.valor_ate===null || baseCalculo <= f.valor_ate) || TABELA_IRRF[TABELA_IRRF.length-1];
+  const valor = baseCalculo*(faixa.aliquota_pct/100) - faixa.parcela_deduzir;
+  return round2(Math.max(0,valor));
+}
+function round2(v){ return Math.round(v*100)/100; }
+function renderizarTabelasFiscais(){
+  document.getElementById('tabelaInss').innerHTML = `<table class="tabela-ponto"><thead><tr><th>Faixa</th><th>Até</th><th>Alíquota</th></tr></thead><tbody>
+    ${TABELA_INSS.map((f,i)=>`<tr><td>${i+1}ª</td><td>${f.valor_ate?fmtMoeda(f.valor_ate):'Teto'}</td><td>${f.aliquota_pct}%</td></tr>`).join('')}
+  </tbody></table>`;
+  document.getElementById('tabelaIrrf').innerHTML = `<table class="tabela-ponto"><thead><tr><th>Faixa</th><th>Até</th><th>Alíquota</th><th>Parcela a Deduzir</th></tr></thead><tbody>
+    ${TABELA_IRRF.map((f,i)=>`<tr><td>${i+1}ª</td><td>${f.valor_ate?fmtMoeda(f.valor_ate):'Sem teto'}</td><td>${f.aliquota_pct}%</td><td>${fmtMoeda(f.parcela_deduzir)}</td></tr>`).join('')}
+  </tbody></table><p class="sub" style="margin-top:8px">Dedução por dependente: ${fmtMoeda(PARAMETROS_FISCAIS.deducao_por_dependente_irrf)}/mês</p>`;
+}
+
+/* ── AFASTAMENTOS ────────────────────────────────────────── */
+async function salvarAfastamento(){
+  const funcId = document.getElementById('afColaborador').value;
+  const dataInicio = document.getElementById('afDataInicio').value;
+  if(!funcId||!dataInicio){ toast('Escolhe colaborador e data de início.','#dc2626'); return; }
+  try{
+    const{error} = await supabaseClient.from('rh_afastamentos').insert({
+      funcionario_id:funcId, tipo:document.getElementById('afTipo').value, data_inicio:dataInicio,
+      data_fim:document.getElementById('afDataFim').value||null, cid:document.getElementById('afCid').value||null,
+      numero_cat:document.getElementById('afNumeroCat').value||null, observacao:document.getElementById('afObservacao').value||null,
+    });
+    if(error) throw error;
+    toast('✓ Afastamento registrado — situação do colaborador e Ponto já atualizados sozinhos.','#16a34a');
+    await carregarColaboradores(); carregarAfastamentos();
+  }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
+}
+async function carregarAfastamentos(){
+  try{
+    const{data,error} = await supabaseClient.from('rh_afastamentos').select('*, funcionarios(nome)').order('data_inicio',{ascending:false});
+    if(error) throw error;
+    document.getElementById('listaAfastamentos').innerHTML = (data&&data.length) ? data.map(a=>`
+      <div class="item-linha"><div><div class="principal">${a.funcionarios?.nome||'—'} — ${a.tipo.replace(/_/g,' ')}</div><div class="sec">${fmtData(a.data_inicio)} até ${a.data_fim?fmtData(a.data_fim):'em aberto'} ${a.cid?'· CID '+a.cid:''}</div></div></div>`).join('') : '<div class="vazio">Nenhum afastamento registrado.</div>';
+  }catch(e){ console.error(e); }
+}
+
+/* ── FÉRIAS ──────────────────────────────────────────────── */
+let calculoFeriasAtual = null;
+async function carregarPeriodosAquisitivos(){
+  const funcId = document.getElementById('feColaborador').value;
+  const sel = document.getElementById('fePeriodo');
+  if(!funcId){ sel.innerHTML=''; return; }
+  try{
+    const{data} = await supabaseClient.from('rh_periodo_aquisitivo').select('*').eq('funcionario_id',funcId).order('data_inicio',{ascending:false});
+    sel.innerHTML = (data||[]).map(p=>`<option value="${p.id}" data-dias-direito="${p.dias_direito}" data-dias-gozados="${p.dias_gozados}">${fmtData(p.data_inicio)} a ${fmtData(p.data_fim)} — ${p.dias_direito-p.dias_gozados} dias disponíveis (${p.situacao})</option>`).join('') || '<option value="">Sem período aquisitivo — confere se o colaborador tem data de admissão cadastrada</option>';
+  }catch(e){ console.error(e); }
+}
+function calcularFerias(){
+  const funcId = document.getElementById('feColaborador').value;
+  const c = COLABORADORES.find(x=>x.id===funcId);
+  if(!c){ toast('Escolhe o colaborador.','#dc2626'); return; }
+  const salario = parseFloat(c.salario_base)||0;
+  const dias = parseFloat(document.getElementById('feDias').value)||30;
+  const abonoDias = parseFloat(document.getElementById('feAbono').value)||0;
+  const adiant13 = document.getElementById('feAdiantamento13').checked;
+
+  const valorFerias = round2((salario/30)*dias);
+  const valorTerco = round2(valorFerias/3);
+  const valorAbono = abonoDias>0 ? round2((salario/30)*abonoDias * (4/3)) : 0; // abono + 1/3 do abono
+  const valorAdiantamento13 = adiant13 ? round2(salario/2) : 0;
+  const total = round2(valorFerias + valorTerco + valorAbono + valorAdiantamento13);
+
+  calculoFeriasAtual = {periodoId:document.getElementById('fePeriodo').value, funcId, dataInicio:document.getElementById('feDataInicio').value, dias, abonoDias, adiant13, valorFerias, valorTerco, valorAbono, valorAdiantamento13, total};
+
+  document.getElementById('resultadoCalculoFerias').innerHTML = `
+    <b>${c.nome}</b> — salário base ${fmtMoeda(salario)}<br>
+    Férias (${dias} dias): ${fmtMoeda(valorFerias)}<br>
+    1/3 constitucional: ${fmtMoeda(valorTerco)}<br>
+    ${abonoDias>0?`Abono pecuniário (${abonoDias} dias + 1/3): ${fmtMoeda(valorAbono)}<br>`:''}
+    ${adiant13?`Adiantamento 1ª parcela 13º: ${fmtMoeda(valorAdiantamento13)}<br>`:''}
+    <b>Total: ${fmtMoeda(total)}</b>`;
+  document.getElementById('resultadoCalculoFerias').style.display='block';
+  document.getElementById('btnConfirmarFerias').style.display='inline-flex';
+}
+async function confirmarFerias(){
+  if(!calculoFeriasAtual || !calculoFeriasAtual.periodoId){ toast('Calcula primeiro, e escolhe um período aquisitivo válido.','#dc2626'); return; }
+  const f = calculoFeriasAtual;
+  try{
+    const{error} = await supabaseClient.from('rh_ferias').insert({
+      periodo_aquisitivo_id:f.periodoId, funcionario_id:f.funcId, data_inicio_gozo:f.dataInicio, dias_gozados:f.dias,
+      abono_pecuniario_dias:f.abonoDias, adiantamento_13:f.adiant13, valor_ferias:f.valorFerias, valor_terco:f.valorTerco,
+      valor_abono:f.valorAbono, valor_adiantamento_13:f.valorAdiantamento13, valor_total:f.total,
+    });
+    if(error) throw error;
+    toast('✓ Férias programadas — Ponto e situação do colaborador já atualizados sozinhos.','#16a34a');
+    document.getElementById('resultadoCalculoFerias').style.display='none';
+    document.getElementById('btnConfirmarFerias').style.display='none';
+    await carregarColaboradores(); renderizarFerias();
+  }catch(e){ console.error(e); toast('Não foi possível confirmar.','#dc2626'); }
+}
+async function renderizarFerias(){
+  try{
+    const{data} = await supabaseClient.from('rh_ferias').select('*, funcionarios(nome)').order('data_inicio_gozo',{ascending:false});
+    document.getElementById('listaFerias').innerHTML = (data&&data.length) ? data.map(f=>`
+      <div class="item-linha"><div><div class="principal">${f.funcionarios?.nome||'—'}</div><div class="sec">${fmtData(f.data_inicio_gozo)} · ${f.dias_gozados} dias · Total ${fmtMoeda(f.valor_total)}</div></div></div>`).join('') : '<div class="vazio">Nenhuma férias programada.</div>';
+  }catch(e){ console.error(e); }
+}
+
+/* ── ADIANTAMENTO E FOLHA ────────────────────────────────── */
+async function salvarAdiantamento(){
+  const funcId = document.getElementById('adColaborador').value, competencia = document.getElementById('adCompetencia').value;
+  const valor = parseFloat(document.getElementById('adValor').value);
+  if(!funcId||!competencia||!valor){ toast('Preenche todos os campos.','#dc2626'); return; }
+  try{
+    const{error} = await supabaseClient.from('rh_adiantamentos').insert({funcionario_id:funcId, competencia, valor, status:'previsto'});
+    if(error) throw error;
+    toast('✓ Adiantamento lançado.','#16a34a');
+    document.getElementById('adValor').value='';
+  }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
+}
+async function processarFechamentoFolha(){
+  const competencia = document.getElementById('foCompetencia').value;
+  if(!competencia){ toast('Escolhe a competência.','#dc2626'); return; }
+  const wrap = document.getElementById('resumoFolha');
+  wrap.innerHTML = 'Processando todos os colaboradores ativos...';
+  try{
+    const{data:folha,error:errFolha} = await supabaseClient.from('rh_folha_pagamento').upsert({competencia}, {onConflict:'competencia'}).select().single();
+    if(errFolha) throw errFolha;
+
+    let totalProventos=0, totalDescontos=0, processados=0;
+    const ativos = COLABORADORES.filter(c=>(c.situacao_folha||'ativo')!=='demitido');
+    for(const c of ativos){
+      const salario = parseFloat(c.salario_base)||0;
+      if(salario<=0) continue;
+
+      const inss = calcularInss(salario);
+      const{data:deps} = await supabaseClient.from('rh_dependentes').select('id').eq('funcionario_id',c.id).eq('irrf',true);
+      const baseIrrf = salario - inss - ((deps?.length||0) * (PARAMETROS_FISCAIS.deducao_por_dependente_irrf||189.59));
+      const irrf = calcularIrrf(baseIrrf);
+      const{data:adiantamentos} = await supabaseClient.from('rh_adiantamentos').select('valor').eq('funcionario_id',c.id).eq('competencia',competencia);
+      const totalAdiantado = (adiantamentos||[]).reduce((s,a)=>s+a.valor,0);
+
+      const itens = [
+        {folha_id:folha.id, funcionario_id:c.id, tipo:'provento', codigo:'salario_base', descricao:'Salário Base', valor:salario},
+        {folha_id:folha.id, funcionario_id:c.id, tipo:'desconto', codigo:'inss', descricao:'INSS', valor:inss},
+        {folha_id:folha.id, funcionario_id:c.id, tipo:'desconto', codigo:'irrf', descricao:'IRRF', valor:irrf},
+      ];
+      if(totalAdiantado>0) itens.push({folha_id:folha.id, funcionario_id:c.id, tipo:'desconto', codigo:'adiantamento', descricao:'Adiantamento Quinzenal', valor:totalAdiantado});
+
+      await supabaseClient.from('rh_folha_itens').delete().eq('folha_id',folha.id).eq('funcionario_id',c.id);
+      await supabaseClient.from('rh_folha_itens').insert(itens);
+
+      totalProventos += salario;
+      totalDescontos += inss+irrf+totalAdiantado;
+      processados++;
+    }
+
+    await supabaseClient.from('rh_folha_pagamento').update({total_proventos:totalProventos, total_descontos:totalDescontos, total_liquido:totalProventos-totalDescontos}).eq('id',folha.id);
+
+    wrap.innerHTML = `<div class="aviso-integracao">✓ ${processados} colaborador(es) processados. Proventos: ${fmtMoeda(totalProventos)} · Descontos: ${fmtMoeda(totalDescontos)} · Líquido: ${fmtMoeda(totalProventos-totalDescontos)}<br><br>
+      <button class="btn btn-sm" onclick="fecharFolhaEEnviarFinanceiro('${folha.id}')">🔒 Fechar Folha e Enviar pro Financeiro</button></div>`;
+    renderizarFolhas();
+  }catch(e){ console.error(e); wrap.innerHTML='<div class="vazio">Não foi possível processar.</div>'; }
+}
+async function fecharFolhaEEnviarFinanceiro(folhaId){
+  if(!confirm('Fechar a folha envia um título a pagar pro Financeiro, pra cada colaborador. Confirma?')) return;
+  try{
+    const{error} = await supabaseClient.from('rh_folha_pagamento').update({status:'fechada', data_fechamento:new Date().toISOString().slice(0,10)}).eq('id',folhaId);
+    if(error) throw error;
+    toast('✓ Folha fechada — títulos enviados pro Financeiro.','#16a34a');
+    renderizarFolhas();
+  }catch(e){ console.error(e); toast('Não foi possível fechar.','#dc2626'); }
+}
+async function renderizarFolhas(){
+  try{
+    const{data} = await supabaseClient.from('rh_folha_pagamento').select('*').order('competencia',{ascending:false});
+    document.getElementById('listaFolhas').innerHTML = (data&&data.length) ? data.map(f=>`
+      <div class="item-linha"><div><div class="principal">${f.competencia}</div><div class="sec">Líquido ${fmtMoeda(f.total_liquido)}</div></div><span class="status-pill ${f.status==='fechada'?'status-ativo':'status-pendente'}">${f.status}</span></div>`).join('') : '<div class="vazio">Nenhuma folha processada.</div>';
+  }catch(e){ console.error(e); }
+}
+
+/* ── RESCISÃO ────────────────────────────────────────────── */
+let calculoRescisaoAtual = null;
+function calcularRescisao(){
+  const funcId = document.getElementById('rsColaborador').value;
+  const c = COLABORADORES.find(x=>x.id===funcId);
+  if(!c || !c.admissao){ toast('Escolhe um colaborador com data de admissão cadastrada.','#dc2626'); return; }
+  const salario = parseFloat(c.salario_base)||0;
+  const dataDeslig = document.getElementById('rsDataDesligamento').value;
+  const tipo = document.getElementById('rsTipo').value;
+  const saldoFgts = parseFloat(document.getElementById('rsSaldoFgts').value)||0;
+
+  const admissao = new Date(c.admissao), desligamento = new Date(dataDeslig);
+  const diasMes = desligamento.getDate();
+  const mesesTrabalhadosNoAno = desligamento.getMonth()+1 - new Date(desligamento.getFullYear(),0,1).getMonth();
+  const anosCompletos = Math.floor((desligamento-admissao)/(365.25*24*3600*1000));
+
+  const saldoSalario = round2((salario/30)*diasMes);
+  // Aviso prévio: 30 dias + 3 dias por ano completo, até 90 (Lei 12.506/2011)
+  const avisoPrevioDias = Math.min(30 + anosCompletos*3, 90);
+  const indenizado = tipo==='sem_justa_causa';
+  const valorAvisoPrevio = indenizado ? round2((salario/30)*avisoPrevioDias) : 0;
+  const feriasProporcionais = round2((salario/12)*mesesTrabalhadosNoAno * (4/3)); // + 1/3
+  const decimoTerceiroProp = round2((salario/12)*(desligamento.getMonth()+1));
+  const multaFgtsPct = tipo==='sem_justa_causa' ? 40 : (tipo==='acordo' ? 20 : 0);
+  const valorMultaFgts = round2(saldoFgts * (multaFgtsPct/100));
+
+  let total = saldoSalario;
+  if(tipo!=='justa_causa'){
+    total += feriasProporcionais + decimoTerceiroProp;
+    if(indenizado) total += valorAvisoPrevio;
+    total += valorMultaFgts;
+  }
+  total = round2(total);
+
+  calculoRescisaoAtual = {funcId, dataDeslig, tipo, saldoSalario, avisoPrevioDias, indenizado, valorAvisoPrevio, feriasProporcionais, decimoTerceiroProp, multaFgtsPct, saldoFgts, valorMultaFgts, total};
+
+  document.getElementById('resultadoRescisao').textContent =
+`Colaborador: ${c.nome}
+Tipo: ${tipo.replace(/_/g,' ')}
+
+Saldo de salário (${diasMes} dias): ${fmtMoeda(saldoSalario)}
+${tipo==='justa_causa' ? '(Justa causa -- sem demais verbas rescisórias)' : `Aviso prévio (${avisoPrevioDias} dias${indenizado?', indenizado':', trabalhado, sem indenização'}): ${fmtMoeda(valorAvisoPrevio)}
+Férias proporcionais + 1/3: ${fmtMoeda(feriasProporcionais)}
+13º proporcional: ${fmtMoeda(decimoTerceiroProp)}
+Multa FGTS (${multaFgtsPct}% sobre ${fmtMoeda(saldoFgts)}): ${fmtMoeda(valorMultaFgts)}`}
+
+TOTAL A PAGAR: ${fmtMoeda(total)}
+
+⚠️ Simulação -- confere com o contábil antes de confirmar, principalmente o saldo de FGTS (consultar extrato oficial da Caixa) e regras específicas do sindicato.`;
+  document.getElementById('resultadoRescisao').style.display='block';
+  document.getElementById('btnConfirmarRescisao').style.display='inline-flex';
+}
+async function confirmarRescisao(){
+  if(!calculoRescisaoAtual){ toast('Calcula primeiro.','#dc2626'); return; }
+  const r = calculoRescisaoAtual;
+  try{
+    const{error} = await supabaseClient.from('rh_rescisoes').insert({
+      funcionario_id:r.funcId, data_desligamento:r.dataDeslig, tipo_desligamento:r.tipo, saldo_salario:r.saldoSalario,
+      aviso_previo_dias:r.avisoPrevioDias, aviso_previo_indenizado:r.indenizado, valor_aviso_previo:r.valorAvisoPrevio,
+      ferias_proporcionais_valor:r.feriasProporcionais, decimo_terceiro_proporcional_valor:r.decimoTerceiroProp,
+      multa_fgts_pct:r.multaFgtsPct, saldo_fgts_base:r.saldoFgts, valor_multa_fgts:r.valorMultaFgts, valor_total:r.total, status:'confirmada',
+    });
+    if(error) throw error;
+    toast('✓ Rescisão confirmada — colaborador desligado, título enviado pro Financeiro.','#16a34a');
+    document.getElementById('resultadoRescisao').style.display='none';
+    document.getElementById('btnConfirmarRescisao').style.display='none';
+    await carregarColaboradores();
+  }catch(e){ console.error(e); toast('Não foi possível confirmar.','#dc2626'); }
+}
+
 /* ── UTILITÁRIOS ─────────────────────────────────────────── */
 function toast(msg,cor){ const t=document.getElementById('toast'); t.textContent=msg; t.style.borderColor=cor||'#fd8a14'; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3200); }
 function fmtMoeda(v){ if(v===null||v===undefined||isNaN(v)) return 'R$ 0,00'; return 'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
@@ -533,12 +933,17 @@ function iniciais(nome){ return (nome||'?').trim().split(' ').filter(Boolean).sl
 
 /* ── NAVEGAÇÃO ───────────────────────────────────────────── */
 function mudarView(nome){
-  const views=['dashboard','lista','formColaborador','importar','esocial'];
+  const views=['dashboard','lista','formColaborador','importar','esocial','afastamentos','ferias','folha','rescisao','tabelasFiscais'];
   views.forEach(v=>{ const el=document.getElementById('view'+v.charAt(0).toUpperCase()+v.slice(1)); if(el) el.classList.toggle('hidden', v!==nome); });
   document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.classList.toggle('active', b.dataset.view===nome));
   if(nome==='dashboard') renderizarDashboard();
   if(nome==='lista') renderizarLista();
-  if(nome==='esocial') popularSelectEsocial();
+  if(nome==='esocial') popularTodosSelectsColaborador();
+  if(nome==='afastamentos'){ popularTodosSelectsColaborador(); carregarAfastamentos(); }
+  if(nome==='ferias'){ popularTodosSelectsColaborador(); renderizarFerias(); }
+  if(nome==='folha'){ popularTodosSelectsColaborador(); renderizarFolhas(); }
+  if(nome==='rescisao') popularTodosSelectsColaborador();
+  if(nome==='tabelasFiscais') renderizarTabelasFiscais();
 }
 document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.addEventListener('click',()=>mudarView(b.dataset.view)));
 
@@ -604,6 +1009,7 @@ function abrirNovoColaborador(){
   document.getElementById('cSituacaoFolha').value='ativo';
   document.getElementById('cTipoConta').value='corrente';
   document.getElementById('tituloFormColaborador').textContent = 'Novo Colaborador';
+  document.getElementById('btnExportarFicha').style.display = 'none';
   document.getElementById('listaHistoricoForm').innerHTML = '<div class="vazio">Salva o colaborador primeiro pra ver o histórico.</div>';
   renderizarDependentesForm();
   trocarAbaForm('pessoais');
@@ -616,6 +1022,7 @@ async function abrirEditarColaborador(id){
   colaboradorEditandoId = id;
 
   document.getElementById('tituloFormColaborador').textContent = c.nome;
+  document.getElementById('btnExportarFicha').style.display = '';
   const mapa = {
     cNome:c.nome, cNomeSocial:c.nome_social, cNomeMae:c.nome_mae, cDataNascimento:c.data_nascimento, cEstadoCivil:c.estado_civil,
     cNacionalidade:c.nacionalidade, cTelefone:c.telefone, cEmail:c.email,
@@ -632,6 +1039,7 @@ async function abrirEditarColaborador(id){
 
   await carregarDependentes(id);
   await carregarHistorico(id);
+  await carregarTurnoAtualDoColaborador(id);
   trocarAbaForm('pessoais');
   mudarView('formColaborador');
 }
@@ -679,6 +1087,18 @@ async function salvarColaborador(){
     if(DEPENDENTES_ATUAL.length){
       const linhas = DEPENDENTES_ATUAL.map(d=>({...d, funcionario_id:novoId}));
       await supabaseClient.from('rh_dependentes').insert(linhas);
+    }
+
+    // Se o turno selecionado é diferente do atual, registra uma NOVA
+    // troca de turno (nunca edita a antiga -- mesmo histórico que o
+    // Ponto já mantém)
+    const turnoSelecionado = document.getElementById('cTurno').value;
+    if(turnoSelecionado){
+      const{data:trocaAtual} = await supabaseClient.from('rh_troca_turno').select('turno_id').eq('funcionario_id',novoId).order('data_inicio',{ascending:false}).limit(1);
+      const turnoJaEra = trocaAtual && trocaAtual.length ? trocaAtual[0].turno_id : null;
+      if(turnoSelecionado !== turnoJaEra){
+        await supabaseClient.from('rh_troca_turno').insert({funcionario_id:novoId, turno_id:turnoSelecionado, data_inicio:new Date().toISOString().slice(0,10), motivo:'Definido pelo cadastro do colaborador (GPE)'});
+      }
     }
 
     toast(colaboradorEditandoId ? '✓ Colaborador atualizado.' : '✓ Colaborador cadastrado.','#16a34a');
@@ -740,6 +1160,30 @@ async function exportarBackupCompleto(){
     toast('✓ Backup exportado.','#16a34a');
   }catch(e){ console.error(e); toast('Não foi possível exportar.','#dc2626'); }
 }
+function baixarComoArquivo(conteudo, nomeArquivo, tipo){
+  const blob = new Blob([conteudo], {type:tipo});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = nomeArquivo;
+  a.click(); URL.revokeObjectURL(url);
+}
+function paraLinhaCsv(valores){ return valores.map(v=>`"${(v??'').toString().replace(/"/g,'""')}"`).join(','); }
+async function exportarBackupExcel(){
+  try{
+    const{data:colaboradores} = await supabaseClient.from('funcionarios').select('*');
+    const colunas = ['nome','cpf','pis','matricula','cargo','funcao','centro_custo','admissao','vinculo','situacao_folha','salario_base','telefone','email'];
+    const linhas = [paraLinhaCsv(colunas), ...(colaboradores||[]).map(c=>paraLinhaCsv(colunas.map(col=>c[col])))];
+    baixarComoArquivo('\uFEFF'+linhas.join('\r\n'), `colaboradores_${new Date().toISOString().slice(0,10)}.csv`, 'text/csv;charset=utf-8');
+    toast('✓ Exportado em CSV (abre direto no Excel).','#16a34a');
+  }catch(e){ console.error(e); toast('Não foi possível exportar.','#dc2626'); }
+}
+function exportarFichaIndividual(id){
+  const c = COLABORADORES.find(x=>x.id===id);
+  if(!c) return;
+  const dep = DEPENDENTES_ATUAL.filter(d=>true); // dependentes já carregados se estava editando
+  baixarComoArquivo(JSON.stringify({colaborador:c, dependentes:dep}, null, 2), `ficha_${normalizarBusca(c.nome).replace(/\s+/g,'_')}.json`, 'application/json');
+  toast('✓ Ficha exportada.','#16a34a');
+}
 
 /* ── IMPORTAR CSV ────────────────────────────────────────── */
 function parseCsvSimples(texto){
@@ -782,6 +1226,12 @@ async function processarImportacaoCsv(){
 function popularSelectEsocial(){
   document.getElementById('esColaborador').innerHTML = '<option value="">— Selecione —</option>' + COLABORADORES.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
 }
+function popularTodosSelectsColaborador(){
+  const opts = '<option value="">— Selecione —</option>' + COLABORADORES.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  ['esColaborador','afColaborador','feColaborador','adColaborador','rsColaborador'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.innerHTML = opts;
+  });
+}
 async function gerarPayloadEsocial(){
   const id = document.getElementById('esColaborador').value;
   const tipo = document.getElementById('esTipoEvento').value;
@@ -822,6 +1272,9 @@ async function gerarPayloadEsocial(){
 /* ── INICIALIZAÇÃO ───────────────────────────────────────── */
 (async function init(){
   await carregarColaboradores();
+  await carregarTurnosDisponiveis();
+  await carregarTabelasFiscais();
+  popularTodosSelectsColaborador();
   renderizarDashboard();
 })();
 </script>

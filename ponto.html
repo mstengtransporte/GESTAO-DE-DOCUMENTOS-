@@ -697,10 +697,18 @@ document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.addEventListener(
 /* ── CARREGAMENTO ────────────────────────────────────────── */
 async function carregarFuncionarios(){
   try{
-    const{data,error}=await supabaseClient.from('funcionarios').select('id,nome,valor_hora_padrao').order('nome');
+    // Consome a mesma fonte que o GPE mantém -- via view
+    // vw_colaboradores_ativos, sem duplicar cadastro nenhum. Já
+    // filtra quem foi desligado, e mostra a situação (férias/
+    // afastado) direto no seletor, pra não tentar processar ponto
+    // de quem não devia.
+    const{data,error}=await supabaseClient.from('vw_colaboradores_ativos').select('id,nome,valor_hora_padrao,situacao_folha').order('nome');
     if(error) throw error;
     FUNCIONARIOS=data||[];
-    const opts='<option value="">— Selecione —</option>'+FUNCIONARIOS.map(f=>`<option value="${f.id}">${f.nome}</option>`).join('');
+    const opts='<option value="">— Selecione —</option>'+FUNCIONARIOS.map(f=>{
+      const situacao = f.situacao_folha && f.situacao_folha!=='ativo' ? ` (${f.situacao_folha})` : '';
+      return `<option value="${f.id}">${f.nome}${situacao}</option>`;
+    }).join('');
     ['custoFuncionarioId','mFuncionarioId','espFuncionarioId','abFuncionarioId','ttFuncionario','faFuncionario','paFuncionario','exFuncionario','cpFuncionario'].forEach(id=>{
       const el=document.getElementById(id); if(el) el.innerHTML = opts;
     });
