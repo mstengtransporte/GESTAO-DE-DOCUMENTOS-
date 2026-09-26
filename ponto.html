@@ -773,7 +773,8 @@ async function importarArquivoPonto(){
 async function confirmarImportacaoAfd(cadastrarNovos){
   if(!dadosAfdProcessados) return;
   const { porPis, nomesDoArquivo, porPisSistema, porNomeSistema } = dadosAfdProcessados;
-  let totalImportado = 0, totalCadastrado = 0;
+  let totalImportado = 0, totalCadastrado = 0, avisoTravaDuplicidadeFaltando = false;
+  const errosImportacao = [];
 
   try{
     for(const pis of Object.keys(porPis)){
@@ -805,12 +806,27 @@ async function confirmarImportacaoAfd(cadastrarNovos){
       // upsert ignorando duplicata: se essa mesma pessoa+segundo exato já
       // tinha sido importada antes (arquivo se sobrepondo com outro já
       // trazido de outra obra/relógio), não conta de novo nem dá erro.
-      const{data:inseridas, error} = await supabaseClient.from('rh_batidas_ponto')
+      let{data:inseridas, error} = await supabaseClient.from('rh_batidas_ponto')
         .upsert(linhas, {onConflict:'funcionario_id,data_hora', ignoreDuplicates:true})
         .select();
-      if(!error) totalImportado += (inseridas?.length ?? linhas.length);
+
+      // Se a trava de duplicidade ainda não existe no banco (SQL não rodado
+      // ainda), o upsert falha por não achar o índice — cai pro insert comum
+      // nesse caso, pra não travar a importação inteira por causa disso.
+      if(error && (error.message?.includes('no unique or exclusion constraint') || error.code==='42P10')){
+        const resultado = await supabaseClient.from('rh_batidas_ponto').insert(linhas).select();
+        inseridas = resultado.data; error = resultado.error;
+        if(!error) avisoTravaDuplicidadeFaltando = true;
+      }
+
+      if(error){ errosImportacao.push(`${nomesDoArquivo.get(pis)||pis}: ${error.message}`); continue; }
+      totalImportado += (inseridas?.length ?? linhas.length);
     }
-    toast(`✓ ${totalImportado} marcações novas importadas${totalCadastrado?', '+totalCadastrado+' funcionário(s) novo(s) cadastrado(s)':''} (duplicatas com o que já existia foram ignoradas sozinhas).`,'#16a34a');
+
+    let msg = `✓ ${totalImportado} marcações novas importadas${totalCadastrado?', '+totalCadastrado+' funcionário(s) novo(s) cadastrado(s)':''}.`;
+    if(avisoTravaDuplicidadeFaltando) msg += ' (Aviso: roda o SQL "supabase_ponto_obra_dedup.sql" pra ativar a proteção contra reimportar duplicado.)';
+    if(errosImportacao.length) msg = `⚠️ ${totalImportado} importadas, mas ${errosImportacao.length} falharam: ${errosImportacao[0]}`;
+    toast(msg, errosImportacao.length ? '#dc2626' : '#16a34a');
     document.getElementById('resumoImportacaoAfd').innerHTML = '';
     document.getElementById('arquivoAfd').value = '';
     dadosAfdProcessados = null;
