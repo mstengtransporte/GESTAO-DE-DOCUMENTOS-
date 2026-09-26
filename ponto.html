@@ -353,7 +353,8 @@ a{color:inherit;}
       <div class="aviso-integracao">✅ O leitor lê o formato REP-C (Portaria 671/2021, datas em ISO 8601) — testado contra um arquivo real do seu relógio. Reconhece automaticamente todo mundo que já tem PIS cadastrado, e mostra quem é novo antes de importar. O arquivo original nunca é alterado.</div>
       <div class="card">
         <h2>Importar arquivo</h2>
-        <input type="file" id="arquivoAfd" accept=".txt,.afd" style="margin-bottom:10px">
+        <input type="file" id="arquivoAfd" accept=".txt,.afd" style="margin-bottom:10px"><br>
+        <div class="fld" style="max-width:280px;margin-bottom:10px"><label>De qual obra é esse arquivo? (opcional, mas recomendado)</label><select id="arquivoObraId"><option value="">— Não sei / várias —</option></select></div>
         <button class="btn btn-sm" onclick="importarArquivoPonto()">📥 Processar Arquivo</button>
         <div id="resumoImportacaoAfd"></div>
       </div>
@@ -501,6 +502,14 @@ async function carregarFuncionarios(){
     });
   }catch(e){ console.error(e); }
 }
+async function carregarProjetosPonto(){
+  try{
+    const{data,error}=await supabaseClient.from('projetos').select('id,nome,codigo').order('nome');
+    if(error) throw error;
+    const opts='<option value="">— Não sei / várias —</option>'+(data||[]).map(p=>`<option value="${p.id}">${p.codigo} — ${p.nome}</option>`).join('');
+    const el=document.getElementById('arquivoObraId'); if(el) el.innerHTML = opts;
+  }catch(e){ console.error(e); }
+}
 async function carregarFeriados(){
   try{ const{data,error}=await supabaseClient.from('rh_feriados').select('*'); if(error) throw error; FERIADOS=data||[]; }
   catch(e){ console.error(e); }
@@ -606,20 +615,17 @@ async function salvarFichaCusto(funcId){
   }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
 }
 
-/* ── PARSER DE ARQUIVO AFD (Portaria 671/2021) ──────────────
-   Formato padrão: linhas de tamanho fixo, registro tipo 3 é
-   marcação de ponto — posição 10 = tipo, posição 11-18 = data
-   (DDMMAAAA), posição 19-22 = hora (HHMM), 23-33 = PIS do
-   funcionário (11 dígitos). Se o arquivo do seu relógio for
-   diferente, os números das posições abaixo são o ponto certo
-   pra ajustar. */
 /* Leitor de AFD, reconstruído a partir de um arquivo real (Portaria 671,
    formato REP-C com datas em ISO 8601, não o formato antigo DDMMAAAA).
    Estrutura confirmada testando contra um arquivo de verdade:
    - Registro "I" (identificação, 118 caracteres): NSR(10) + data-hora
-     ISO(24) + "I"(1) + PIS(12) + NOME(36, com espaço no fim)
-   - Registro de marcação (50 caracteres): NSR(10) + data-hora ISO(24) +
-     PIS(12) + checksum(4)
+     ISO(24) + "I"(1) + PIS(12) + NOME(36, com espaço no fim) — ESSE
+     TAMBÉM é uma batida de verdade, não é só "aviso de quem é a
+     pessoa" (achado testando contra dados reais: tem gente cuja
+     entrada do dia só existe registrada nesse formato, nenhuma vez
+     no formato de 50 caracteres).
+   - Registro de marcação simples (50 caracteres): NSR(10) + data-hora
+     ISO(24) + PIS(12) + checksum(4)
    - Registros de 36 caracteres são eventos do sistema (relógio ligando
      etc.), sem pessoa vinculada — ignorados. */
 function parseArquivoAfd(texto){
@@ -629,10 +635,14 @@ function parseArquivoAfd(texto){
 
   for(const linha of linhas){
     if(linha.length===118 && linha.substring(34,35)==='I'){
+      const dataHoraIso = linha.substring(10,34);
       const pis = linha.substring(35,47).trim();
       const nome = linha.substring(47,83).trim();
       if(pis && nome && !/^\d+$/.test(nome)){
         nomesDoArquivo.set(pis, nome); // a última ocorrência de cada PIS "vence" (nome mais recente)
+      }
+      if(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(dataHoraIso) && pis){
+        batidas.push({ pis, data_hora: dataHoraIso }); // também conta como batida de ponto
       }
     }
     if(linha.length===50){
@@ -790,11 +800,17 @@ async function confirmarImportacaoAfd(cadastrarNovos){
       }
       if(!funcId) continue; // sem cadastro e sem nome no arquivo — não dá pra importar essa pessoa
 
-      const linhas = porPis[pis].map(b=>({funcionario_id:funcId, data_hora:b.data_hora, origem:'importado_afd'}));
-      const{error} = await supabaseClient.from('rh_batidas_ponto').insert(linhas);
-      if(!error) totalImportado += linhas.length;
+      const projetoId = document.getElementById('arquivoObraId').value || null;
+      const linhas = porPis[pis].map(b=>({funcionario_id:funcId, data_hora:b.data_hora, origem:'importado_afd', projeto_id:projetoId}));
+      // upsert ignorando duplicata: se essa mesma pessoa+segundo exato já
+      // tinha sido importada antes (arquivo se sobrepondo com outro já
+      // trazido de outra obra/relógio), não conta de novo nem dá erro.
+      const{data:inseridas, error} = await supabaseClient.from('rh_batidas_ponto')
+        .upsert(linhas, {onConflict:'funcionario_id,data_hora', ignoreDuplicates:true})
+        .select();
+      if(!error) totalImportado += (inseridas?.length ?? linhas.length);
     }
-    toast(`✓ ${totalImportado} marcações importadas${totalCadastrado?', '+totalCadastrado+' funcionário(s) novo(s) cadastrado(s)':''}.`,'#16a34a');
+    toast(`✓ ${totalImportado} marcações novas importadas${totalCadastrado?', '+totalCadastrado+' funcionário(s) novo(s) cadastrado(s)':''} (duplicatas com o que já existia foram ignoradas sozinhas).`,'#16a34a');
     document.getElementById('resumoImportacaoAfd').innerHTML = '';
     document.getElementById('arquivoAfd').value = '';
     dadosAfdProcessados = null;
@@ -809,7 +825,10 @@ async function lancarBatidaManual(){
   if(!funcId||!data||!hora){ toast('Preenche funcionário, data e hora.','#dc2626'); return; }
   try{
     const{error}=await supabaseClient.from('rh_batidas_ponto').insert({funcionario_id:funcId, data_hora:`${data}T${hora}:00`, origem:'manual'});
-    if(error) throw error;
+    if(error){
+      if(error.message?.includes('duplicate')||error.code==='23505'){ toast('Já existe uma batida pra essa pessoa nesse exato horário.','#e8a33d'); return; }
+      throw error;
+    }
     toast('✓ Batida lançada.','#16a34a');
   }catch(e){ console.error(e); toast('Não foi possível lançar.','#dc2626'); }
 }
@@ -1092,7 +1111,7 @@ async function renderizarBanco(){
 /* ── INICIALIZAÇÃO ───────────────────────────────────────── */
 (async function init(){
   document.getElementById('espCompetencia').value = new Date().toISOString().slice(0,7);
-  await Promise.all([carregarFuncionarios(), carregarFeriados(), carregarAbonos()]);
+  await Promise.all([carregarFuncionarios(), carregarFeriados(), carregarAbonos(), carregarProjetosPonto()]);
   renderizarDashboard();
 })();
 </script>
