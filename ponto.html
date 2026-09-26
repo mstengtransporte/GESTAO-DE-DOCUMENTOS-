@@ -420,8 +420,24 @@ a{color:inherit;}
 
     <!-- ═══════════ BANCO DE HORAS ═══════════ -->
     <div id="viewBanco" class="hidden">
-      <div class="pg-head"><div><h1>Banco de Horas</h1><p>Saldo acumulado por funcionário, mês a mês.</p></div></div>
-      <div class="card"><div id="listaBanco"><div class="vazio">Carregando...</div></div></div>
+      <div class="pg-head"><div><h1>Banco de Horas</h1><p>Saldo acumulado por funcionário — os lançamentos nascem sozinhos ao processar o Espelho de Ponto.</p></div></div>
+      <div class="card">
+        <h2>Saldo atual (não fechado)</h2>
+        <div id="listaBanco"><div class="vazio">Carregando...</div></div>
+      </div>
+      <div class="card">
+        <h2>Fechamento de Banco de Horas</h2>
+        <p class="sub">Dá baixa no saldo acumulado — mesma lógica do Protheus: escolhe quem entra (credor/devedor/todo mundo), e se tiver limite, só o que passar dele vai virar título a pagar; o resto continua no banco.</p>
+        <div class="form-grid">
+          <div class="fld"><label>Resultado</label><select id="bfCriterio"><option value="saldo">Todo mundo (Saldo)</option><option value="credor">Só quem está credor (positivo)</option><option value="devedor">Só quem está devedor (negativo)</option></select></div>
+          <div class="fld"><label>Limite de horas que fica no banco (opcional)</label><input type="number" id="bfLimite" step="0.5" placeholder="Vazio = fecha tudo"></div>
+        </div>
+        <button class="btn btn-sm" style="margin-top:10px" onclick="executarFechamentoBancoHoras()">🔒 Executar Fechamento</button>
+      </div>
+      <div class="card">
+        <h2>Fechamentos anteriores</h2>
+        <div id="listaFechamentosBH"><div class="vazio">Nenhum fechamento executado ainda.</div></div>
+      </div>
     </div>
 
     <!-- ═══════════ TURNOS E ESCALAS ═══════════ -->
@@ -1336,6 +1352,29 @@ async function processarEspelho(){
       }
       espelhoAtual.push(linha);
     }
+
+    // Gera os lançamentos de Banco de Horas automaticamente -- só se
+    // a Regra de Apontamento mandar extra pro banco (não pra folha),
+    // e só quando ainda não tinha lançamento pra esse dia (evita
+    // duplicar se o mês for processado de novo).
+    if(REGRA_APONTAMENTO.destino_horas_extras==='banco_horas'){
+      const prazoMeses = REGRA_APONTAMENTO.prazo_vencimento_bh_meses||6;
+      const lancamentos = [];
+      espelhoAtual.forEach(l=>{
+        const extraTotal = round2((l.he50||0)+(l.he100||0));
+        if(extraTotal>0){
+          const venc = new Date(l.data); venc.setMonth(venc.getMonth()+prazoMeses);
+          lancamentos.push({funcionario_id:funcId, data:l.data, tipo:'credito', horas:extraTotal, data_vencimento:venc.toISOString().slice(0,10), origem:'espelho_ponto'});
+        }
+        if(l.horasNaoRealizadas>0){
+          lancamentos.push({funcionario_id:funcId, data:l.data, tipo:'debito', horas:l.horasNaoRealizadas, origem:'espelho_ponto'});
+        }
+      });
+      if(lancamentos.length){
+        await supabaseClient.from('rh_banco_horas_lancamentos').upsert(lancamentos, {onConflict:'funcionario_id,data,tipo', ignoreDuplicates:true});
+      }
+    }
+
     renderizarTabelaEspelho();
     renderizarFolhaA4(funcId, competencia);
     toast('✓ Mês processado.','#16a34a');
@@ -1586,12 +1625,82 @@ async function carregarFaixasHe(){
 /* ── BANCO DE HORAS ──────────────────────────────────────── */
 async function renderizarBanco(){
   try{
-    const{data,error}=await supabaseClient.from('rh_banco_horas').select('*, funcionarios(nome)').order('competencia',{ascending:false});
+    const{data,error}=await supabaseClient.from('rh_banco_horas_lancamentos').select('*, funcionarios(nome)').eq('fechado',false);
     if(error) throw error;
-    document.getElementById('listaBanco').innerHTML = (data&&data.length) ? data.map(b=>`
-      <div class="item-linha"><div><div class="principal">${b.funcionarios?.nome||'—'}</div><div class="sec">Competência ${b.competencia} · Creditado ${fmtHoras(b.horas_creditadas)} · Debitado ${fmtHoras(b.horas_debitadas)}</div></div>
-      <span class="banco-horas-badge ${b.saldo_atual>=0?'pos':'neg'}">${fmtHoras(b.saldo_atual)}</span></div>`).join('') : '<div class="vazio">Nenhum banco de horas calculado ainda.</div>';
+    const porFuncionario = {};
+    (data||[]).forEach(l=>{
+      const chave = l.funcionario_id;
+      if(!porFuncionario[chave]) porFuncionario[chave] = {nome:l.funcionarios?.nome||'—', saldo:0, creditado:0, debitado:0};
+      const valor = l.tipo==='credito' ? l.horas : -l.horas;
+      porFuncionario[chave].saldo += valor;
+      if(l.tipo==='credito') porFuncionario[chave].creditado += l.horas; else porFuncionario[chave].debitado += l.horas;
+    });
+    const linhas = Object.values(porFuncionario);
+    document.getElementById('listaBanco').innerHTML = linhas.length ? linhas.map(f=>`
+      <div class="item-linha"><div><div class="principal">${f.nome}</div><div class="sec">Creditado ${fmtHoras(f.creditado)} · Debitado ${fmtHoras(f.debitado)}</div></div>
+      <span class="banco-horas-badge ${f.saldo>=0?'pos':'neg'}">${fmtHoras(f.saldo)}</span></div>`).join('') : '<div class="vazio">Nenhum saldo em aberto — processa o Espelho de algum funcionário primeiro.</div>';
+
+    const{data:fechamentos} = await supabaseClient.from('rh_banco_horas_fechamentos').select('*').order('created_at',{ascending:false}).limit(10);
+    document.getElementById('listaFechamentosBH').innerHTML = (fechamentos&&fechamentos.length) ? fechamentos.map(f=>`
+      <div class="item-linha"><div><div class="principal">${fmtData(f.data_fechamento)} — ${f.criterio_resultado}</div><div class="sec">${f.funcionarios_afetados} funcionário(s) ${f.limite_horas?'· limite '+f.limite_horas+'h':''} ${f.valor_total_excedente>0?'· '+fmtHoras(f.valor_total_excedente)+' excedente enviado pro Financeiro':''}</div></div></div>`).join('') : '<div class="vazio">Nenhum fechamento executado ainda.</div>';
   }catch(e){ console.error(e); }
+}
+
+/* Fechamento -- mesma lógica confirmada no Protheus: escolhe quem
+   entra (credor/devedor/saldo), dá baixa no lançamento (marca como
+   fechado), e se tiver limite, só o que passar dele vira título a
+   pagar; o resto continua guardado no banco, sem gerar custo agora. */
+async function executarFechamentoBancoHoras(){
+  const criterio = document.getElementById('bfCriterio').value;
+  const limite = parseFloat(document.getElementById('bfLimite').value) || null;
+
+  try{
+    const{data:todosLancamentos,error} = await supabaseClient.from('rh_banco_horas_lancamentos').select('*, funcionarios(nome)').eq('fechado',false);
+    if(error) throw error;
+
+    const porFuncionario = {};
+    (todosLancamentos||[]).forEach(l=>{
+      if(!porFuncionario[l.funcionario_id]) porFuncionario[l.funcionario_id] = {nome:l.funcionarios?.nome, saldo:0, lancamentos:[]};
+      porFuncionario[l.funcionario_id].saldo += (l.tipo==='credito'?l.horas:-l.horas);
+      porFuncionario[l.funcionario_id].lancamentos.push(l);
+    });
+
+    let funcionariosAfetados = 0, excedenteTotal = 0;
+    const{data:fechamentoRegistro} = await supabaseClient.from('rh_banco_horas_fechamentos').insert({
+      criterio_resultado:criterio, limite_horas:limite,
+    }).select().single();
+
+    for(const funcId of Object.keys(porFuncionario)){
+      const f = porFuncionario[funcId];
+      const entraNoFechamento = criterio==='saldo' || (criterio==='credor' && f.saldo>0) || (criterio==='devedor' && f.saldo<0);
+      if(!entraNoFechamento) continue;
+
+      let excedente = 0;
+      if(limite!==null && f.saldo>limite){
+        excedente = round2(f.saldo - limite);
+        excedenteTotal += excedente;
+        // Excedente vira título a pagar no Financeiro -- mesmo padrão do
+        // Reembolso: fornecedor é o nome da pessoa, não uma empresa
+        const valorHora = FUNCIONARIOS.find(fn=>fn.id===funcId)?.valor_hora_padrao || 0;
+        await supabaseClient.from('fin_titulos_pagar').insert({
+          fornecedor: f.nome||'Funcionário', origem_tipo:'rdo_mao_obra',
+          descricao: `Excedente de Banco de Horas além do limite (${excedente}h × ${fmtMoeda(valorHora)})`,
+          valor: round2(excedente*valorHora), data_vencimento: new Date().toISOString().slice(0,10),
+        });
+      }
+
+      // Marca os lançamentos desse funcionário como fechados
+      for(const l of f.lancamentos){
+        await supabaseClient.from('rh_banco_horas_lancamentos').update({fechado:true, fechamento_id:fechamentoRegistro?.id}).eq('id',l.id);
+      }
+      funcionariosAfetados++;
+    }
+
+    await supabaseClient.from('rh_banco_horas_fechamentos').update({funcionarios_afetados:funcionariosAfetados, valor_total_excedente:excedenteTotal}).eq('id', fechamentoRegistro?.id);
+
+    toast(`✓ Fechamento executado — ${funcionariosAfetados} funcionário(s)${excedenteTotal>0?', '+fmtHoras(excedenteTotal)+' de excedente enviado pro Financeiro':''}.`,'#16a34a');
+    renderizarBanco();
+  }catch(e){ console.error(e); toast('Não foi possível executar o fechamento.','#dc2626'); }
 }
 
 /* ── INICIALIZAÇÃO ───────────────────────────────────────── */
