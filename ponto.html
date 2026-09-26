@@ -375,12 +375,13 @@ a{color:inherit;}
       </div>
       <div class="card">
         <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
-          <div class="fld" style="max-width:260px"><label>Funcionário</label><select id="espFuncionarioId"></select></div>
+          <div class="fld" style="max-width:260px"><label>Funcionário</label><select id="espFuncionarioId" onchange="mostrarMesesComDados()"></select></div>
           <div class="fld" style="max-width:160px"><label>Competência</label><input type="month" id="espCompetencia"></div>
           <button class="btn btn-sm" onclick="processarEspelho()">⚙️ Processar Mês</button>
           <button class="btn btn-sm btn-ghost" onclick="tratarInconsistenciasLote()">🔧 Tratar Inconsistências em Lote</button>
           <button class="btn btn-sm btn-ghost" onclick="window.print()">🖨️ Imprimir Espelho A4</button>
         </div>
+        <div id="mesesComDados" style="margin-top:10px;font-size:12px;color:var(--mu)"></div>
       </div>
       <div class="card">
         <h2>Tabela do mês (tela)</h2>
@@ -453,6 +454,7 @@ function toast(msg,cor){ const t=document.getElementById('toast'); t.textContent
 function fmtMoeda(v){ if(v===null||v===undefined||isNaN(v)) return 'R$ 0,00'; return 'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function fmtData(d){ if(!d) return '—'; const p=d.split('T')[0].split('-'); return `${p[2]}/${p[1]}/${p[0]}`; }
 function fmtHoras(h){ if(!h) return '0h00'; const sinal=h<0?'-':''; h=Math.abs(h); const hh=Math.floor(h), mm=Math.round((h-hh)*60); return `${sinal}${hh}h${String(mm).padStart(2,'0')}`; }
+function normalizarNome(s){ return (s||'').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim(); }
 function abrirModal(id){ document.getElementById(id).classList.remove('hidden'); }
 function fecharModal(id){ document.getElementById(id).classList.add('hidden'); }
 const DIAS_SEMANA = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
@@ -618,7 +620,7 @@ function parseArquivoAfd(texto){
       const dataHoraIso = linha.substring(10,34); // AAAA-MM-DDTHH:MM:SS-0300
       const pis = linha.substring(34,46).trim();
       if(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(dataHoraIso) && pis){
-        batidas.push({ pis, data_hora: dataHoraIso.slice(0,19) });
+        batidas.push({ pis, data_hora: dataHoraIso });
       }
     }
   }
@@ -646,13 +648,19 @@ async function importarArquivoPonto(){
 
   const{data: funcsAtuais} = await supabaseClient.from('funcionarios').select('id,nome,pis');
   const porPisSistema = {};
-  (funcsAtuais||[]).forEach(f=>{ if(f.pis) porPisSistema[f.pis.trim()] = f; });
+  const porNomeSistema = {};
+  (funcsAtuais||[]).forEach(f=>{
+    if(f.pis) porPisSistema[f.pis.trim()] = f;
+    if(f.nome) porNomeSistema[normalizarNome(f.nome)] = f;
+  });
 
-  dadosAfdProcessados = { porPis, nomesDoArquivo, porPisSistema };
+  dadosAfdProcessados = { porPis, nomesDoArquivo, porPisSistema, porNomeSistema };
 
   const linhasResumo = Object.keys(porPis).map(pis=>{
     const nome = nomesDoArquivo.get(pis) || '(nome não veio no arquivo — só o PIS)';
-    const jaExiste = porPisSistema[pis];
+    // Tenta achar por PIS primeiro; se não bater, tenta pelo nome (cobre quem
+    // já foi cadastrado manualmente antes de ter campo de PIS no formulário)
+    const jaExiste = porPisSistema[pis] || (nome ? porNomeSistema[normalizarNome(nome)] : null);
     return {pis, nome, qtdBatidas: porPis[pis].length, jaExiste: !!jaExiste, funcionarioId: jaExiste?.id};
   }).sort((a,b)=>a.nome.localeCompare(b.nome));
 
@@ -675,19 +683,24 @@ async function importarArquivoPonto(){
 
 async function confirmarImportacaoAfd(cadastrarNovos){
   if(!dadosAfdProcessados) return;
-  const { porPis, nomesDoArquivo, porPisSistema } = dadosAfdProcessados;
+  const { porPis, nomesDoArquivo, porPisSistema, porNomeSistema } = dadosAfdProcessados;
   let totalImportado = 0, totalCadastrado = 0;
 
   try{
     for(const pis of Object.keys(porPis)){
-      let funcId = porPisSistema[pis]?.id;
+      const nome = nomesDoArquivo.get(pis);
+      let funcExistente = porPisSistema[pis] || (nome ? porNomeSistema[normalizarNome(nome)] : null);
+      let funcId = funcExistente?.id;
 
-      if(!funcId && cadastrarNovos){
-        const nome = nomesDoArquivo.get(pis);
-        if(nome){
-          const{data: novo, error: errNovo} = await supabaseClient.from('funcionarios').insert({nome, pis}).select().single();
-          if(!errNovo && novo){ funcId = novo.id; totalCadastrado++; }
-        }
+      // Achou por nome mas ainda não tinha PIS salvo -> aproveita e completa,
+      // assim da próxima importação já reconhece direto pelo PIS
+      if(funcExistente && !funcExistente.pis && pis){
+        await supabaseClient.from('funcionarios').update({pis}).eq('id', funcExistente.id);
+      }
+
+      if(!funcId && cadastrarNovos && nome){
+        const{data: novo, error: errNovo} = await supabaseClient.from('funcionarios').insert({nome, pis}).select().single();
+        if(!errNovo && novo){ funcId = novo.id; totalCadastrado++; }
       }
       if(!funcId) continue; // sem cadastro e sem nome no arquivo — não dá pra importar essa pessoa
 
@@ -742,6 +755,24 @@ function calcularHoraNoturna(entrada, saida){
   return Math.max(0, round2(horasNoturnas * 1.1428));
 }
 function round2(v){ return Math.round(v*100)/100; }
+
+/* Mostra pra qual(is) mês(es) esse funcionário tem marcação salva —
+   evita ficar testando mês por mês na mão. */
+async function mostrarMesesComDados(){
+  const funcId = document.getElementById('espFuncionarioId').value;
+  const wrap = document.getElementById('mesesComDados');
+  if(!funcId){ wrap.textContent=''; return; }
+  wrap.textContent = 'Verificando meses com dados...';
+  try{
+    const{data,error} = await supabaseClient.from('rh_batidas_ponto').select('data_hora').eq('funcionario_id',funcId).order('data_hora');
+    if(error) throw error;
+    if(!data || !data.length){ wrap.innerHTML = '⚠️ Nenhuma marcação encontrada pra esse funcionário ainda.'; return; }
+    const meses = [...new Set(data.map(d=>d.data_hora.slice(0,7)))];
+    wrap.innerHTML = `📅 Meses com marcação salva pra essa pessoa: <b>${meses.map(m=>{
+      const[a,mm]=m.split('-'); return `${mm}/${a}`;
+    }).join(', ')}</b> — clica num mês acima pra ver.`;
+  }catch(e){ console.error(e); wrap.textContent=''; }
+}
 
 async function processarEspelho(){
   const funcId = document.getElementById('espFuncionarioId').value;
