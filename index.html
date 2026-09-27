@@ -409,7 +409,8 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
       <button class="nav-item btn-ghost" id="tabAsoBtn"><span data-icone-marca="aso-medico" data-icone-tamanho="30" style="display:inline-flex"></span>ASOs</button>
       <button class="nav-item btn-ghost" id="tabEpiBtn"><span data-icone-marca="ficha-epis" data-icone-tamanho="30" style="display:inline-flex"></span>EPIs</button>
       <button class="nav-item btn-ghost" id="tabIntegBtn"><span data-icone-marca="integracao" data-icone-tamanho="30" style="display:inline-flex"></span>Integração de Cliente</button>
-      <button class="nav-item btn-ghost" id="tabFeriasBtn"><svg data-lucide="palmtree"></svg>Férias</button>
+      <a class="nav-item btn-ghost" href="gpe.html" target="_blank" rel="noopener"><svg data-lucide="palmtree"></svg>Férias (agora no GPE) <svg data-lucide="external-link" style="width:12px;height:12px;margin-left:auto;opacity:.6"></svg></a>
+      <button class="nav-item btn-ghost" id="tabFichaMedicaBtn"><svg data-lucide="heart-pulse"></svg>Ficha Médica</button>
       <button class="nav-item btn-ghost" id="tabPontoBtn"><span data-icone-marca="folha-pagamento" data-icone-tamanho="30" style="display:inline-flex"></span>Folha de Ponto</button>
 
       <div class="nav-group-label">Operacional</div>
@@ -913,6 +914,18 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
     </div>
 
     <!-- ============ ABA: FÉRIAS ============ -->
+    <!-- ============ ABA: FICHA MÉDICA (SIGAMDT) ============ -->
+    <div id="tabFichaMedica" class="hidden">
+      <div class="card">
+        <h1 style="font-size:15px">🩺 Ficha Médica</h1>
+        <div class="small" style="margin-bottom:10px">Criada automaticamente ao admitir o funcionário no GPE, ligada pelo CPF — igual o Protheus faz entre SIGAGPE e SIGAMDT. Os ASOs de cada pessoa (aba ASOs) ficam vinculados aqui.</div>
+        <table>
+          <thead><tr><th>Funcionário</th><th>CPF</th><th>Origem</th><th>Status</th><th>Criada em</th></tr></thead>
+          <tbody id="fichaMedicaTableBody"><tr><td colspan="5" class="small">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
     <div id="tabFerias" class="hidden">
       <div class="card">
         <h1 style="font-size:15px">Novo período de férias</h1>
@@ -958,24 +971,30 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
       <div class="card">
         <div class="topbar" style="margin-bottom:2px">
           <h1 style="font-size:15px">🗺️ Mapa completo do ESF ERP</h1>
-          <span class="small">14 de 18 módulos ativos · v2026-09-25</span>
+          <span class="small">14 de 18 módulos ativos · ordem por ciclo de vida · v2026-09-26</span>
         </div>
         <div class="small" style="margin-bottom:14px">Todos os processos da empresa, pensados pra um sistema só — o que já está pronto é clicável, o resto entra conforme for sendo construído.</div>
         <div class="grade-modulos-erp">
+          <!-- 1. MÓDULO PAI — nasce a pessoa, fonte única -->
+          <a class="modulo-erp-tile ativo" href="gpe.html" target="_blank" rel="noopener"><img src="mod-documental_sst.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Gestão de Pessoal (GPE)</span></a>
+          <!-- 2-3. COMPLIANCE — pessoa fica apta antes de ir a campo -->
           <div class="modulo-erp-tile ativo" data-tab="func"><img src="mod-documental_sst.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Documental / SST</span></div>
-          <a class="modulo-erp-tile ativo" href="rdo.html" target="_blank" rel="noopener"><img src="mod-rdo.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>RDO</span></a>
+          <a class="modulo-erp-tile ativo" href="epi.html" target="_blank" rel="noopener"><img src="mod-epi.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Controle de EPIs</span></a>
+          <!-- 4-5. NEGÓCIO — vendas sempre gera o projeto, nunca o contrário -->
+          <a class="modulo-erp-tile ativo" href="vendas.html" target="_blank" rel="noopener"><img src="mod-vendas_crm.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Vendas / CRM</span></a>
+          <a class="modulo-erp-tile ativo" href="projetos.html" target="_blank" rel="noopener"><img src="mod-projetos.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Projetos</span></a>
+          <!-- 6-8. AS DUAS TRILHAS SE ENCONTRAM — agora dá pra escalar e ir a campo -->
+          <a class="modulo-erp-tile ativo" href="ponto.html" target="_blank" rel="noopener"><img src="mod-escala_rh.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Ponto / Custo RH</span></a>
           <a class="modulo-erp-tile ativo" href="escala.html" target="_blank" rel="noopener"><img src="mod-escala_rh.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Planejamento para Obra</span></a>
+          <a class="modulo-erp-tile ativo" href="rdo.html" target="_blank" rel="noopener"><img src="mod-rdo.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>RDO</span></a>
+          <!-- 9-12. SUPORTE À EXECUÇÃO -->
           <a class="modulo-erp-tile ativo" href="frota-admin.html" target="_blank" rel="noopener"><img src="mod-frota_km.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Frota / KM</span></a>
           <a class="modulo-erp-tile ativo" href="requisicao.html" target="_blank" rel="noopener"><img src="mod-documentos_ged.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Requisição</span></a>
-          <a class="modulo-erp-tile ativo" href="epi.html" target="_blank" rel="noopener"><img src="mod-epi.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Controle de EPIs</span></a>
-          <a class="modulo-erp-tile ativo" href="projetos.html" target="_blank" rel="noopener"><img src="mod-projetos.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Projetos</span></a>
-          <a class="modulo-erp-tile ativo" href="vendas.html" target="_blank" rel="noopener"><img src="mod-vendas_crm.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Vendas / CRM</span></a>
+          <a class="modulo-erp-tile ativo" href="contratos.html" target="_blank" rel="noopener"><img src="mod-manutencao.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Contratos de Mão de Obra</span></a>
+          <a class="modulo-erp-tile ativo" href="compras.html" target="_blank" rel="noopener"><img src="mod-compras.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Compras</span></a>
+          <!-- 13-14. FECHA O CICLO FINANCEIRO -->
           <a class="modulo-erp-tile ativo" href="financeiro.html" target="_blank" rel="noopener"><img src="mod-financeiro.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Financeiro</span></a>
           <a class="modulo-erp-tile ativo" href="fiscal.html" target="_blank" rel="noopener"><img src="mod-fiscal.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Fiscal</span></a>
-          <a class="modulo-erp-tile ativo" href="ponto.html" target="_blank" rel="noopener"><img src="mod-escala_rh.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Ponto / Custo RH</span></a>
-          <a class="modulo-erp-tile ativo" href="compras.html" target="_blank" rel="noopener"><img src="mod-compras.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Compras</span></a>
-          <a class="modulo-erp-tile ativo" href="contratos.html" target="_blank" rel="noopener"><img src="mod-manutencao.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Contratos de Mão de Obra</span></a>
-          <a class="modulo-erp-tile ativo" href="gpe.html" target="_blank" rel="noopener"><img src="mod-documental_sst.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Gestão de Pessoal</span></a>
           <div class="modulo-erp-tile"><img src="mod-documentos_ged.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Documentos (GED)</span><em>em breve</em></div>
           <div class="modulo-erp-tile"><img src="mod-patrimonio.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Patrimônio</span><em>em breve</em></div>
           <div class="modulo-erp-tile"><img src="mod-usuarios_seguranca.png" alt="" style="width:34px;height:34px;object-fit:contain"><span>Usuários / Segurança</span><em>em breve</em></div>
@@ -1326,7 +1345,8 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
     document.getElementById('buscaBtn').addEventListener('click', buscarFichaCompleta);
     document.getElementById('buscaTermo').addEventListener('keydown', (e) => { if (e.key === 'Enter') buscarFichaCompleta(); });
     document.getElementById('tabIntegBtn').addEventListener('click', () => switchTab('integ'));
-    document.getElementById('tabFeriasBtn').addEventListener('click', () => switchTab('ferias'));
+    document.getElementById('tabFichaMedicaBtn').addEventListener('click', () => switchTab('fichaMedica'));
+    // Férias virou link direto pro GPE (removida a duplicação local)
     document.getElementById('tabDashBtn').addEventListener('click', () => switchTab('dash'));
     document.getElementById('dashBuscaBtn').addEventListener('click', () => {
       switchTab('busca');
@@ -1620,9 +1640,9 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
     });
   });
 
-  const TABS = ['dash', 'busca', 'func', 'treino', 'aso', 'epi', 'ponto', 'integ', 'ferias'];
-  const TAB_DIV = { dash: 'tabDash', busca: 'tabBusca', func: 'tabFuncionarios', treino: 'tabTreinamentos', aso: 'tabAsos', epi: 'tabEpis', ponto: 'tabPonto', integ: 'tabInteg', ferias: 'tabFerias' };
-  const TAB_BTN = { dash: 'tabDashBtn', busca: 'tabBuscaBtn', func: 'tabFuncBtn', treino: 'tabTreinoBtn', aso: 'tabAsoBtn', epi: 'tabEpiBtn', ponto: 'tabPontoBtn', integ: 'tabIntegBtn', ferias: 'tabFeriasBtn' };
+  const TABS = ['dash', 'busca', 'func', 'treino', 'aso', 'epi', 'ponto', 'integ', 'fichaMedica'];
+  const TAB_DIV = { dash: 'tabDash', busca: 'tabBusca', func: 'tabFuncionarios', treino: 'tabTreinamentos', aso: 'tabAsos', epi: 'tabEpis', ponto: 'tabPonto', integ: 'tabInteg', fichaMedica: 'tabFichaMedica' };
+  const TAB_BTN = { dash: 'tabDashBtn', busca: 'tabBuscaBtn', func: 'tabFuncBtn', treino: 'tabTreinoBtn', aso: 'tabAsoBtn', epi: 'tabEpiBtn', ponto: 'tabPontoBtn', integ: 'tabIntegBtn', fichaMedica: 'tabFichaMedicaBtn' };
   let tabAtual = null;
   let historicoTabs = [];
   const TAB_TITULOS = {
@@ -1634,7 +1654,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
     epi: ['EPIs', 'Equipamentos de Proteção Individual entregues'],
     ponto: ['Folha de Ponto', 'Controle de entrega mensal por competência'],
     integ: ['Integração de Cliente', 'Integrações de segurança por empresa/obra'],
-    ferias: ['Férias', 'Períodos aquisitivos e controle de gozo'],
+    fichaMedica: ['Ficha Médica', 'Criada automaticamente na admissão, ligada por CPF — igual SIGAMDT'],
   };
   function switchTab(tab, viaVoltar) {
     // Guarda de onde a pessoa veio, pra o botão "Voltar" saber pra onde ir —
@@ -1664,6 +1684,7 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
       carregarPainelPonto();
     }
     if (tab === 'integ') { loadFuncionariosEm('iFuncionarioId'); loadIntegracoes(); }
+    if (tab === 'fichaMedica') loadFichaMedica();
     if (tab === 'ferias') { loadFuncionariosEm('vFuncionarioId'); loadFerias(); }
     if (tab === 'busca' && !funcionariosCache.length) loadFuncionariosEm('tFuncionarioId'); // só pra ter o cache pronto
     if (tab === 'dash') carregarDashboard();
@@ -3328,6 +3349,21 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
   }
 
   // ================= CRUD: Integração de Cliente =================
+  async function loadFichaMedica() {
+    const tbody = document.getElementById('fichaMedicaTableBody');
+    tbody.innerHTML = '<tr><td colspan="5" class="small">Carregando…</td></tr>';
+    const { data, error } = await sb.from('sst_ficha_medica').select('*, funcionarios(nome)').order('created_at', { ascending: false });
+    if (error) { tbody.innerHTML = `<tr><td colspan="5" class="small" style="color:var(--danger)">Erro: ${error.message}</td></tr>`; return; }
+    if (!data.length) { tbody.innerHTML = '<tr><td colspan="5" class="small">Nenhuma ficha médica ainda — é criada sozinha quando alguém é admitido no GPE.</td></tr>'; return; }
+    tbody.innerHTML = data.map(f => `<tr>
+        <td>${linkNome(f.funcionarios ? f.funcionarios.nome : null)}</td>
+        <td>${f.cpf || '—'}</td>
+        <td>${f.origem === 'admissao_automatica' ? 'Automática (admissão)' : 'Manual'}</td>
+        <td><span class="pill ${f.status==='ativa'?'apto':'pendente'}">${f.status}</span></td>
+        <td>${formatarDataBr(f.created_at?.slice(0,10))}</td>
+      </tr>`).join('');
+  }
+
   async function loadIntegracoes() {
     const tbody = document.getElementById('integTableBody');
     tbody.innerHTML = '<tr><td colspan="7" class="small">Carregando…</td></tr>';
@@ -3582,7 +3618,6 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
       { nome: 'EPIs', dados: epis.data || [], icone: 'shield', tab: 'epi', campoValidade: 'troca', cor: '#fd8a14' },
       { nome: 'Integrações', dados: integs.data || [], icone: 'building-2', tab: 'integ', campoValidade: 'validade_data', cor: '#1fa97a' },
       { nome: 'Folha de Ponto', dados: pontos.data || [], icone: 'clock', tab: 'ponto', semVencimento: true, cor: '#a78bfa' },
-      { nome: 'Férias', dados: ferias.data || [], icone: 'palmtree', tab: 'ferias', campoValidade: 'limite_gozo', cor: '#f472b6' },
     ];
 
     // Cartões clicáveis, cada um leva direto pra aba correspondente
