@@ -574,12 +574,42 @@ function renderizarSaidas(){
   document.getElementById('listaSaidas').innerHTML = lista.length?lista.map(renderizarLinhaNota).join(''):'<div class="vazio">Nenhuma nota encontrada.</div>';
 }
 
+let editandoNotaId = null;
 function abrirNovaNota(){
+  editandoNotaId = null;
   ['nDescricao','nValor'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('nTipo').value='nfse'; document.getElementById('nCliente').value='';
   document.getElementById('nPedido').value=''; document.getElementById('nProjeto').value=''; document.getElementById('nRegra').value='';
   atualizarPreviaImpostos();
   mudarView('novaNota');
+}
+async function abrirEditarRascunho(id){
+  let n = NOTAS_SAIDA.find(x=>x.id===id);
+  if(!n){ const r=await supabaseClient.from('fiscal_notas_saida').select('*').eq('id',id).single(); n=r.data; }
+  if(!n) return;
+  editandoNotaId = id;
+  document.getElementById('nDescricao').value = n.descricao_servico||'';
+  document.getElementById('nValor').value = n.valor_bruto||'';
+  document.getElementById('nTipo').value = n.tipo||'nfse';
+  document.getElementById('nCliente').value = n.cliente_id||'';
+  document.getElementById('nPedido').value = n.pedido_origem_id||'';
+  document.getElementById('nProjeto').value = n.projeto_id||'';
+  document.getElementById('nRegra').value = n.regra_tributacao_id||'';
+  atualizarPreviaImpostos();
+  mudarView('novaNota');
+}
+function confirmarExcluirRascunho(id, numero){
+  if(!confirm(`Deseja realmente excluir o rascunho "${numero}"? Só é possível excluir enquanto não foi emitido.`)) return;
+  excluirRascunho(id);
+}
+async function excluirRascunho(id){
+  try{
+    const{error} = await supabaseClient.from('fiscal_notas_saida').delete().eq('id',id).eq('status','rascunho');
+    if(error) throw error;
+    toast('✓ Rascunho excluído.','#16a34a');
+    await carregarSaidas();
+    mudarView('saidas');
+  }catch(e){ console.error(e); toast('Não foi possível excluir.','#dc2626'); }
 }
 
 // Mesma fórmula do gatilho SQL — calcula localmente pra mostrar prévia
@@ -635,7 +665,14 @@ async function salvarNota(statusDesejado){
     data_emissao: statusDesejado==='emitida' ? new Date().toISOString() : null,
   };
   try{
-    const{data,error} = await supabaseClient.from('fiscal_notas_saida').insert(linha).select().single();
+    let data, error;
+    if(editandoNotaId){
+      const r = await supabaseClient.from('fiscal_notas_saida').update(linha).eq('id',editandoNotaId).eq('status','rascunho').select().single();
+      data = r.data; error = r.error;
+    }else{
+      const r = await supabaseClient.from('fiscal_notas_saida').insert(linha).select().single();
+      data = r.data; error = r.error;
+    }
     if(error) throw error;
 
     // Emitida de verdade -> gera automaticamente o título a receber no Financeiro
@@ -680,7 +717,7 @@ async function abrirDetalheNota(id){
 
   const botoes = document.getElementById('dnBotoes');
   let html = '';
-  if(n.status==='rascunho') html += `<button class="btn btn-sm" onclick="emitirRascunho()">📤 Emitir Agora</button>`;
+  if(n.status==='rascunho') html += `<button class="btn btn-sm" onclick="emitirRascunho()">📤 Emitir Agora</button> <button class="btn btn-sm btn-ghost" onclick="abrirEditarRascunho('${n.id}')">✏️ Alterar Rascunho</button> <button class="btn btn-sm btn-danger" onclick="confirmarExcluirRascunho('${n.id}','${(n.numero||'rascunho').replace(/'/g,"\\'")}')">🗑️ Excluir Rascunho</button>`;
   if(n.status==='emitida') html += `<button class="btn btn-sm btn-danger" onclick="abrirCancelamento()">✕ Cancelar Nota</button>`;
   botoes.innerHTML = html || '<span style="color:var(--mu);font-size:12.5px">Nenhuma ação disponível.</span>';
 

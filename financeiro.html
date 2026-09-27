@@ -533,10 +533,14 @@ function renderizarDashboard(){
 
 /* ── CONTAS A RECEBER ────────────────────────────────────── */
 function renderizarTituloReceber(t){
-  return `<div class="titulo-linha" onclick="abrirBaixaReceber('${t.id}')">
-    <div style="flex:1"><div class="num">${t.numero}</div><div class="desc">${t.descricao}</div><div class="meta">${t.crm_clientes?.nome||'Sem cliente'} · ${t.projetos?.codigo||'Sem projeto'} · Vence: ${fmtData(t.data_vencimento)}</div></div>
+  return `<div class="titulo-linha">
+    <div style="flex:1;cursor:pointer" onclick="abrirBaixaReceber('${t.id}')"><div class="num">${t.numero}</div><div class="desc">${t.descricao}</div><div class="meta">${t.crm_clientes?.nome||'Sem cliente'} · ${t.projetos?.codigo||'Sem projeto'} · Vence: ${fmtData(t.data_vencimento)}</div></div>
     <div class="val">${fmtMoeda(t.valor)}</div>
     <span class="status-pill status-${t.status}">${STATUS_LABEL[t.status]}</span>
+    <div style="display:flex;gap:4px;margin-left:8px" onclick="event.stopPropagation()">
+      <button class="btn btn-sm btn-ghost" title="Alterar" onclick="abrirEditarReceber('${t.id}')">✏️</button>
+      <button class="btn btn-sm btn-danger" title="Excluir" onclick="confirmarExcluirReceber('${t.id}','${(t.numero||'').replace(/'/g,"\\'")}')">🗑️</button>
+    </div>
   </div>`;
 }
 function renderizarReceber(){
@@ -544,24 +548,55 @@ function renderizarReceber(){
   const lista=filtro?TITULOS_RECEBER.filter(t=>t.status===filtro):TITULOS_RECEBER;
   document.getElementById('listaReceber').innerHTML = lista.length?lista.map(renderizarTituloReceber).join(''):'<div class="vazio">Nenhum título encontrado.</div>';
 }
+let editandoReceberId = null;
 function abrirNovoReceber(){
+  editandoReceberId = null;
   ['rDescricao','rValor','rVencimento'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('rCliente').value=''; document.getElementById('rProjeto').value='';
+  document.querySelector('#modalReceber .modal-head h3').textContent = '➕ Novo Título a Receber';
   abrirModal('modalReceber');
+}
+function abrirEditarReceber(id){
+  const t = TITULOS_RECEBER.find(x=>x.id===id);
+  if(!t) return;
+  editandoReceberId = id;
+  document.getElementById('rDescricao').value = t.descricao||'';
+  document.getElementById('rValor').value = t.valor||'';
+  document.getElementById('rVencimento').value = t.data_vencimento||'';
+  document.getElementById('rCliente').value = t.cliente_id||'';
+  document.getElementById('rProjeto').value = t.projeto_id||'';
+  if(document.getElementById('rForma')) document.getElementById('rForma').value = t.forma_recebimento||'';
+  document.querySelector('#modalReceber .modal-head h3').textContent = `✏️ Alterar: ${t.numero}`;
+  abrirModal('modalReceber');
+}
+function confirmarExcluirReceber(id, numero){
+  if(!confirm(`Deseja realmente excluir o título "${numero}"?`)) return;
+  excluirReceber(id);
+}
+async function excluirReceber(id){
+  try{
+    const{error} = await supabaseClient.from('fin_titulos_receber').delete().eq('id',id);
+    if(error) throw error;
+    toast('✓ Título excluído.','#16a34a');
+    await carregarReceber(); renderizarReceber(); renderizarDashboard();
+  }catch(e){ console.error(e); toast('Não foi possível excluir — provavelmente já tem baixa lançada.','#dc2626'); }
 }
 async function salvarReceber(){
   const descricao=document.getElementById('rDescricao').value.trim();
   const valor=parseFloat(document.getElementById('rValor').value);
   if(!descricao||isNaN(valor)){ toast('Preenche descrição e valor.','#dc2626'); return; }
+  const payload = {
+    descricao, valor, cliente_id:document.getElementById('rCliente').value||null,
+    projeto_id:document.getElementById('rProjeto').value||null,
+    data_vencimento:document.getElementById('rVencimento').value||null,
+    forma_recebimento:document.getElementById('rForma').value,
+  };
   try{
-    const{error}=await supabaseClient.from('fin_titulos_receber').insert({
-      descricao, valor, cliente_id:document.getElementById('rCliente').value||null,
-      projeto_id:document.getElementById('rProjeto').value||null,
-      data_vencimento:document.getElementById('rVencimento').value||null,
-      forma_recebimento:document.getElementById('rForma').value,
-    });
+    const{error} = editandoReceberId
+      ? await supabaseClient.from('fin_titulos_receber').update(payload).eq('id',editandoReceberId)
+      : await supabaseClient.from('fin_titulos_receber').insert(payload);
     if(error) throw error;
-    toast('✓ Título incluído.','#16a34a');
+    toast(editandoReceberId?'✓ Título atualizado.':'✓ Título incluído.','#16a34a');
     fecharModal('modalReceber');
     await carregarReceber(); renderizarReceber(); renderizarDashboard();
   }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
@@ -580,10 +615,14 @@ function abrirBaixaReceber(id){
 
 /* ── CONTAS A PAGAR ──────────────────────────────────────── */
 function renderizarTituloPagar(t){
-  return `<div class="titulo-linha" onclick="abrirBaixaPagar('${t.id}')">
-    <div style="flex:1"><div class="num">${t.numero} ${t.origem_tipo&&t.origem_tipo!=='outro'?'· '+t.origem_tipo:''}</div><div class="desc">${t.descricao}</div><div class="meta">${t.fornecedor} · ${t.projetos?.codigo||'Sem projeto'} · Vence: ${fmtData(t.data_vencimento)}</div></div>
+  return `<div class="titulo-linha">
+    <div style="flex:1;cursor:pointer" onclick="abrirBaixaPagar('${t.id}')"><div class="num">${t.numero} ${t.origem_tipo&&t.origem_tipo!=='outro'?'· '+t.origem_tipo:''}</div><div class="desc">${t.descricao}</div><div class="meta">${t.fornecedor} · ${t.projetos?.codigo||'Sem projeto'} · Vence: ${fmtData(t.data_vencimento)}</div></div>
     <div class="val">${fmtMoeda(t.valor)}</div>
     <span class="status-pill status-${t.status}">${STATUS_LABEL[t.status]}</span>
+    <div style="display:flex;gap:4px;margin-left:8px" onclick="event.stopPropagation()">
+      <button class="btn btn-sm btn-ghost" title="Alterar" onclick="abrirEditarPagar('${t.id}')">✏️</button>
+      <button class="btn btn-sm btn-danger" title="Excluir" onclick="confirmarExcluirPagar('${t.id}','${(t.numero||'').replace(/'/g,"\\'")}')">🗑️</button>
+    </div>
   </div>`;
 }
 function renderizarPagar(){
@@ -591,25 +630,57 @@ function renderizarPagar(){
   const lista=filtro?TITULOS_PAGAR.filter(t=>t.status===filtro):TITULOS_PAGAR;
   document.getElementById('listaPagar').innerHTML = lista.length?lista.map(renderizarTituloPagar).join(''):'<div class="vazio">Nenhum título encontrado.</div>';
 }
+let editandoPagarId = null;
 function abrirNovoPagar(){
+  editandoPagarId = null;
   ['pgDescricao','pgFornecedor','pgValor','pgVencimento'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('pgProjeto').value=''; document.getElementById('pgOrigem').value='outro'; document.getElementById('pgAlcada').value='0';
+  document.querySelector('#modalPagar .modal-head h3').textContent = '➕ Novo Título a Pagar';
   abrirModal('modalPagar');
+}
+function abrirEditarPagar(id){
+  const t = TITULOS_PAGAR.find(x=>x.id===id);
+  if(!t) return;
+  editandoPagarId = id;
+  document.getElementById('pgDescricao').value = t.descricao||'';
+  document.getElementById('pgFornecedor').value = t.fornecedor||'';
+  document.getElementById('pgValor').value = t.valor||'';
+  document.getElementById('pgVencimento').value = t.data_vencimento||'';
+  document.getElementById('pgProjeto').value = t.projeto_id||'';
+  document.getElementById('pgOrigem').value = t.origem_tipo||'outro';
+  document.getElementById('pgAlcada').value = t.alcada_necessaria||0;
+  document.querySelector('#modalPagar .modal-head h3').textContent = `✏️ Alterar: ${t.numero}`;
+  abrirModal('modalPagar');
+}
+function confirmarExcluirPagar(id, numero){
+  if(!confirm(`Deseja realmente excluir o título "${numero}"?`)) return;
+  excluirPagar(id);
+}
+async function excluirPagar(id){
+  try{
+    const{error} = await supabaseClient.from('fin_titulos_pagar').delete().eq('id',id);
+    if(error) throw error;
+    toast('✓ Título excluído.','#16a34a');
+    await carregarPagar(); renderizarPagar(); renderizarDashboard();
+  }catch(e){ console.error(e); toast('Não foi possível excluir — provavelmente já tem baixa lançada.','#dc2626'); }
 }
 async function salvarPagar(){
   const descricao=document.getElementById('pgDescricao').value.trim();
   const fornecedor=document.getElementById('pgFornecedor').value.trim();
   const valor=parseFloat(document.getElementById('pgValor').value);
   if(!descricao||!fornecedor||isNaN(valor)){ toast('Preenche descrição, fornecedor e valor.','#dc2626'); return; }
+  const payload = {
+    descricao, fornecedor, valor, origem_tipo:document.getElementById('pgOrigem').value,
+    projeto_id:document.getElementById('pgProjeto').value||null,
+    data_vencimento:document.getElementById('pgVencimento').value||null,
+    alcada_necessaria:parseFloat(document.getElementById('pgAlcada').value)||0,
+  };
   try{
-    const{error}=await supabaseClient.from('fin_titulos_pagar').insert({
-      descricao, fornecedor, valor, origem_tipo:document.getElementById('pgOrigem').value,
-      projeto_id:document.getElementById('pgProjeto').value||null,
-      data_vencimento:document.getElementById('pgVencimento').value||null,
-      alcada_necessaria:parseFloat(document.getElementById('pgAlcada').value)||0,
-    });
+    const{error} = editandoPagarId
+      ? await supabaseClient.from('fin_titulos_pagar').update(payload).eq('id',editandoPagarId)
+      : await supabaseClient.from('fin_titulos_pagar').insert(payload);
     if(error) throw error;
-    toast('✓ Título incluído.','#16a34a');
+    toast(editandoPagarId?'✓ Título atualizado.':'✓ Título incluído.','#16a34a');
     fecharModal('modalPagar');
     await carregarPagar(); renderizarPagar(); renderizarDashboard();
   }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }

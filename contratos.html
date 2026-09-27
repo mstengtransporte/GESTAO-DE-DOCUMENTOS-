@@ -670,10 +670,15 @@ async function abrirDetalheContrato(id){
   let html = '';
   if(c.status==='ativo'){
     html += `<button class="btn btn-sm" onclick="prorrogarContrato()">📅 Prorrogar/Alterar Data</button>`;
+    html += `<button class="btn btn-sm btn-ghost" onclick="abrirAlterarValoresContrato()">💰 Alterar Valores</button>`;
     html += `<button class="btn btn-sm btn-ghost" onclick="suspenderContrato()">⏸️ Suspender</button>`;
     html += `<button class="btn btn-sm btn-danger" onclick="encerrarContrato()">✕ Encerrar</button>`;
   }else if(c.status==='suspenso'){
     html += `<button class="btn btn-sm" onclick="reativarContrato()">▶️ Reativar</button>`;
+  }
+  const{count:qtdFaturas} = await supabaseClient.from('contratos_faturas').select('id',{count:'exact',head:true}).eq('contrato_id',id);
+  if(!qtdFaturas){
+    html += `<button class="btn btn-sm btn-danger" onclick="confirmarExcluirContrato('${id}','${(c.numero||'').replace(/'/g,"\\'")}')">🗑️ Excluir Contrato</button>`;
   }
   botoes.innerHTML = html || '<span style="color:var(--mu);font-size:12.5px">Contrato encerrado.</span>';
 
@@ -684,6 +689,46 @@ async function abrirDetalheContrato(id){
   carregarFaturasContrato(id);
   carregarHistoricoContrato(id);
   mudarView('detalheContrato');
+}
+
+async function abrirAlterarValoresContrato(){
+  const c = CONTRATOS.find(x=>x.id===contratoAtualId);
+  if(!c) return;
+  const novoValorVenda = prompt('Novo Valor/Hora de VENDA (R$):', c.valor_hora_venda||0);
+  if(novoValorVenda===null) return;
+  const novoValorCusto = prompt('Novo Valor/Hora de CUSTO (R$):', c.valor_hora_custo||0);
+  if(novoValorCusto===null) return;
+  const novoAlmoco = prompt('Novo Custo de Almoço/dia (R$):', c.custo_almoco_dia||0);
+  if(novoAlmoco===null) return;
+
+  const payload = {
+    valor_hora_venda: parseFloat(novoValorVenda)||0,
+    valor_hora_custo: parseFloat(novoValorCusto)||0,
+    custo_almoco_dia: parseFloat(novoAlmoco)||0,
+  };
+  try{
+    await supabaseClient.from('contratos_mao_obra').update(payload).eq('id', contratoAtualId);
+    await supabaseClient.from('contratos_mao_obra_historico').insert({
+      contrato_id: contratoAtualId, tipo_alteracao: 'alteracao_valores',
+      valor_anterior: `venda:${c.valor_hora_venda} custo:${c.valor_hora_custo} almoco:${c.custo_almoco_dia}`,
+      valor_novo: `venda:${payload.valor_hora_venda} custo:${payload.valor_hora_custo} almoco:${payload.custo_almoco_dia}`,
+    });
+    toast('✓ Valores atualizados.','#16a34a');
+    await carregarContratos(); abrirDetalheContrato(contratoAtualId);
+  }catch(e){ console.error(e); toast('Não foi possível atualizar.','#dc2626'); }
+}
+function confirmarExcluirContrato(id, numero){
+  if(!confirm(`Deseja realmente excluir o contrato "${numero}"? Só é possível excluir enquanto não tiver nenhuma fatura lançada.`)) return;
+  excluirContrato(id);
+}
+async function excluirContrato(id){
+  try{
+    const{error} = await supabaseClient.from('contratos_mao_obra').delete().eq('id',id);
+    if(error) throw error;
+    toast('✓ Contrato excluído.','#16a34a');
+    await carregarContratos();
+    mudarView('lista');
+  }catch(e){ console.error(e); toast('Não foi possível excluir.','#dc2626'); }
 }
 
 async function prorrogarContrato(){
