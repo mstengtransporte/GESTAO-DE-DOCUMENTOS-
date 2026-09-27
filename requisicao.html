@@ -3560,6 +3560,9 @@ function cpClearSelection(){
 }
 
 function openCompraModal(prefill){
+  editandoCompraId = null;
+  document.querySelector('#modCompra .modal-title').textContent = 'Solicitação de Compra';
+  document.querySelector('#modCompra .mbtn-ok').textContent = '✔ Criar Solicitação';
   cpClearSelection();
   el('cpQtd').value = 1; el('cpUrg').value = 'Normal'; el('cpObra').value = ''; el('cpSolic').value = ''; el('cpObs').value = '';
   if(prefill){
@@ -3570,9 +3573,45 @@ function openCompraModal(prefill){
   }
   openModal('modCompra');
 }
-function saveCompraFromModal(){
+var editandoCompraId = null;
+function abrirEditarCompra(id){
+  var c = COMPRAS.find(function(x){ return x.id === id; });
+  if(!c) return;
+  editandoCompraId = id;
+  _cpSelected = {mod:c.mod, cod:c.cod, desc:c.desc, un:c.un, qty:c.qtd};
+  el('cpBusca').value = c.cod + ' — ' + c.desc;
+  el('cpSelectedBox').style.display = 'flex';
+  el('cpSelectedInfo').textContent = (c.mod === 'tub' ? '🔩 Tubulação/Elétrica' : '🪛 Consumíveis/Ferramentas');
+  el('cpQtd').value = c.qtd;
+  el('cpUrg').value = c.urgencia;
+  el('cpObra').value = c.obra || '';
+  el('cpSolic').value = c.solic || '';
+  el('cpObs').value = c.obs || '';
+  document.querySelector('#modCompra .modal-title').textContent = 'Alterar Solicitação ' + c.num;
+  document.querySelector('#modCompra .mbtn-ok').textContent = '✔ Salvar Alteração';
+  openModal('modCompra');
+}
+async function saveCompraFromModal(){
   if(!_cpSelected){ toast('Busque e selecione um item.', 'err'); return; }
   var qtd = parseInt(el('cpQtd').value) || 1;
+
+  if(editandoCompraId){
+    var existente = COMPRAS.find(function(x){ return x.id === editandoCompraId; });
+    if(!existente){ editandoCompraId=null; return; }
+    existente.mod = _cpSelected.mod; existente.cod = _cpSelected.cod; existente.desc = _cpSelected.desc; existente.un = _cpSelected.un;
+    existente.qtd = qtd; existente.urgencia = el('cpUrg').value; existente.obra = el('cpObra').value.trim();
+    existente.solic = el('cpSolic').value.trim(); existente.obs = el('cpObs').value.trim();
+    existente._sincronizado = false; // força reenviar essa linha específica pro banco
+    await sincronizarComprasComBanco();
+    renderComprasTable(); renderDashboard();
+    closeModal('modCompra');
+    toast('✅ Solicitação ' + existente.num + ' atualizada.');
+    editandoCompraId = null;
+    document.querySelector('#modCompra .modal-title').textContent = 'Solicitação de Compra';
+    document.querySelector('#modCompra .mbtn-ok').textContent = '✔ Criar Solicitação';
+    return;
+  }
+
   var compra = {
     id: _nextCompraId++, num: nextCompraNum(), ts: Date.now(),
     mod: _cpSelected.mod, cod: _cpSelected.cod, desc: _cpSelected.desc, un: _cpSelected.un,
@@ -3618,6 +3657,7 @@ function renderComprasTable(){
       acoes += '<button class="tbtn" data-action="compra-pdf" data-id="' + c.id + '" title="Ver ou compartilhar o PDF">📤 PDF</button>';
       acoes += '<button class="tbtn" data-action="compra-wpp" data-id="' + c.id + '">💬</button>';
     }
+    if(c.status !== 'Recebido') acoes += '<button class="tbtn" data-action="compra-edit" data-id="' + c.id + '">✏️</button>';
     acoes += '<button class="tbtn" data-action="compra-del" data-id="' + c.id + '">🗑</button>';
     return '<tr><td>' + new Date(c.ts).toLocaleDateString('pt-BR') + '</td><td>' + esc(c.num) + '</td>' +
       '<td>' + (c.mod === 'tub' ? 'Tubulação' : 'Consumíveis') + '</td><td>' + esc(c.cod) + '</td><td>' + esc(c.desc) + '</td>' +
@@ -3641,9 +3681,17 @@ function receberCompra(id){
   saveCompras(); renderComprasTable(); renderDashboard();
   toast('✅ Entrada registrada e solicitação ' + c.num + ' marcada como Recebida.');
 }
-function deleteCompra(id){
+async function deleteCompra(id){
+  var c = COMPRAS.find(function(x){ return x.id === id; });
+  // Apaga do Supabase primeiro (é a fonte de verdade) -- sem isso, o
+  // registro "removido" na tela voltava sozinho na próxima vez que a
+  // página carregasse os dados do banco de novo.
+  if(c && c._idBanco){
+    try{ await supabaseClient.from('requisicoes').delete().eq('id', c._idBanco); }
+    catch(e){ console.error('Falha ao excluir do banco:', e); toast('Não foi possível excluir no servidor — tenta de novo.'); return; }
+  }
   COMPRAS = COMPRAS.filter(function(c){ return c.id !== id; });
-  saveCompras(); renderComprasTable(); renderDashboard();
+  renderComprasTable(); renderDashboard();
   toast('🗑 Solicitação removida.');
 }
 
@@ -4042,6 +4090,7 @@ document.addEventListener('click', function(e){
     case 'compra-receber': confirmAction('Confirmar recebimento? Isso registra uma Entrada e atualiza o estoque.', function(){ receberCompra(parseInt(id)); }); break;
     case 'compra-pdf': compraPDF(parseInt(id)); break;
     case 'compra-wpp': compraWhatsApp(parseInt(id)); break;
+    case 'compra-edit': abrirEditarCompra(parseInt(id)); break;
     case 'compra-del': confirmAction('Excluir esta solicitação de compra?', function(){ deleteCompra(parseInt(id)); }); break;
     case 'hist-detail': openHistDetail(t.getAttribute('data-mod'), t.getAttribute('data-num')); break;
     case 'hist-reprint': reprintHistPDF(); break;

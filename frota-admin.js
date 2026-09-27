@@ -959,6 +959,10 @@ function renderReembolsosPendentes(data) {
       <div class="flex gap-2 mt-3">
         <button onclick="aprovarReembolso('${r.id}')" class="flex-1 bg-green font-display font-700 uppercase tracking-wide text-xs py-2 rounded-lg">Aprovar</button>
         <button onclick="recusarReembolso('${r.id}')" class="flex-1 bg-red font-display font-700 uppercase tracking-wide text-xs py-2 rounded-lg">Recusar</button>
+        <button onclick="editarAbastecimento('${r.id}',${r.litros},${r.valor_total})" title="Corrigir litros/valor"
+          class="w-9 h-9 shrink-0 rounded-lg bg-surface2 border border-line flex items-center justify-center hover:border-brand hover:text-brand transition">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+        </button>
         <button onclick="pedirExclusao('fuel_supplies','${r.id}','este registro de abastecimento', carregarAbastecimentos)" title="Excluir"
           class="w-9 h-9 shrink-0 rounded-lg bg-surface2 border border-line flex items-center justify-center hover:border-red hover:text-red transition">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z"/></svg>
@@ -966,6 +970,20 @@ function renderReembolsosPendentes(data) {
       </div>
     </div>
   `).join('') || '<p class="text-muted text-sm md:col-span-2">Nenhum reembolso pendente no momento.</p>';
+}
+
+async function editarAbastecimento(id, litrosAtual, valorAtual) {
+  const novosLitros = prompt('Litros:', litrosAtual);
+  if (novosLitros === null) return;
+  const novoValor = prompt('Valor Total (R$):', valorAtual);
+  if (novoValor === null) return;
+  const { error } = await supabaseClient.from('fuel_supplies').update({
+    litros: parseFloat(novosLitros) || litrosAtual,
+    valor_total: parseFloat(novoValor) || valorAtual,
+  }).eq('id', id);
+  if (error) { alert('Erro ao corrigir: ' + error.message); return; }
+  toastAdmin('Abastecimento corrigido!');
+  carregarAbastecimentos();
 }
 
 function capitalizarTexto(s) {
