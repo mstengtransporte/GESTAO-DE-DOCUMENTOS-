@@ -335,6 +335,7 @@ a{color:inherit;}
     <button class="nav-item" data-view="esocial"><span class="ic">📡</span>eSocial</button>
     <button class="nav-item" data-view="tabelasFiscais"><span class="ic">⚙️</span>Tabelas Fiscais</button>
     <button class="nav-item" data-view="verbas"><span class="ic">📑</span>Verbas (SRV)</button>
+    <button class="nav-item" data-view="sindicatos"><span class="ic">⚠️</span>Sindicatos / Periculosidade</button>
     <button class="nav-item" data-view="movimentoMensal"><span class="ic">📈</span>Movimento Mensal (SRC)</button>
 
     <div class="sidebar-foot">
@@ -453,7 +454,10 @@ a{color:inherit;}
             <div class="fld"><label>Obra</label><select id="cIdObra"><option value="">— Sem obra vinculada —</option></select></div>
             <div class="fld"><label>Tipo de Centro de Custo</label><select id="cCentroCustoTipo"><option value="Matriz_Fixo">Matriz Fixo (não onera DRE de obra)</option><option value="Obra_Certa">Obra Certa (100% do custo vai pra obra)</option></select></div>
             <div class="fld"><label>Diária de Refeição (R$)</label><input type="number" id="cValorDiariaRefeicao" step="0.01"></div>
-            <div class="fld"><label>Sindicato</label><input type="text" id="cSindicato"></div>
+            <div class="fld"><label>Sindicato</label><select id="cSindicatoId"></select></div>
+            <div class="fld"><label><input type="checkbox" id="cRecebePericulosidade" style="width:auto;margin-right:6px"> Recebe Periculosidade</label></div>
+            <div class="fld"><label><input type="checkbox" id="cRecebeInsalubridade" style="width:auto;margin-right:6px"> Recebe Insalubridade</label></div>
+            <div class="fld"><label>Grau de Insalubridade</label><select id="cGrauInsalubridade"><option value="0">— Não aplicável —</option><option value="10">10% (mínimo)</option><option value="20">20% (médio)</option><option value="40">40% (máximo)</option></select></div>
             <div class="fld"><label>Turno de Trabalho</label><select id="cTurno"><option value="">— Sem turno atribuído —</option></select></div>
             <div class="fld"><label>Salário Base (R$)</label><input type="number" id="cSalarioBase" step="0.01"></div>
             <div class="fld"><label>Data de Desligamento</label><input type="date" id="cDataDesligamento"></div>
@@ -625,6 +629,28 @@ a{color:inherit;}
       <div class="card"><div id="listaMovimentoMensal"><div class="vazio">Carregando...</div></div></div>
     </div>
 
+    <!-- ═══════════ SINDICATOS / PERICULOSIDADE ═══════════ -->
+    <div id="viewSindicatos" class="hidden">
+      <div class="pg-head"><div><h1>Sindicatos — Base de Periculosidade</h1><p>Define quanto e sobre o quê calcular — mesma lógica do cadastro de Sindicato no Protheus.</p></div></div>
+      <div class="card">
+        <div class="form-grid">
+          <div class="fld"><label>Nome</label><input type="text" id="siNome"></div>
+          <div class="fld"><label>Base da Periculosidade</label><select id="siBase">
+            <option value="salario">Salário</option>
+            <option value="salario_verbas">Salário + Verbas</option>
+            <option value="piso_sindicato">Piso do Sindicato</option>
+            <option value="piso_sindicato_verbas">Piso do Sindicato + Verbas</option>
+            <option value="salario_minimo">Salário Mínimo</option>
+            <option value="salario_minimo_verbas">Salário Mínimo + Verbas</option>
+          </select></div>
+          <div class="fld"><label>Percentual (%)</label><input type="number" id="siPercentual" value="30" step="0.1"></div>
+          <div class="fld"><label>Piso do Sindicato (R$, se usado na base)</label><input type="number" id="siPiso" step="0.01"></div>
+        </div>
+        <button class="btn btn-sm" style="margin-top:10px" onclick="salvarSindicato()">💾 Salvar Sindicato</button>
+      </div>
+      <div class="card"><h2>Sindicatos cadastrados</h2><div id="listaSindicatos"><div class="vazio">Carregando...</div></div></div>
+    </div>
+
     <!-- ═══════════ ESOCIAL ═══════════ -->
     <div id="viewEsocial" class="hidden">
       <div class="pg-head"><div><h1>eSocial — Eventos Iniciais</h1><p>Gera o payload dos eventos S-2200 (Admissão) e S-2206 (Alteração Contratual).</p></div></div>
@@ -675,6 +701,16 @@ let DEPENDENTES_ATUAL = [];
 let colaboradorEditandoId = null;
 
 /* ── TURNOS (lidos do módulo de Ponto — não duplica, só consulta) ── */
+let SINDICATOS = [];
+async function carregarSindicatos(){
+  try{
+    const{data,error} = await supabaseClient.from('rh_sindicatos').select('*').eq('ativo',true).order('nome');
+    if(error) throw error;
+    SINDICATOS = data||[];
+    const el = document.getElementById('cSindicatoId');
+    if(el) el.innerHTML = '<option value="">— Sem sindicato —</option>' + SINDICATOS.map(s=>`<option value="${s.id}">${s.nome} (${s.percentual_periculosidade}% periculosidade)</option>`).join('');
+  }catch(e){ console.error(e); }
+}
 async function carregarObras(){
   try{
     const{data,error} = await supabaseClient.from('projetos').select('id,nome,codigo').order('nome');
@@ -861,6 +897,45 @@ async function salvarAdiantamento(){
     document.getElementById('adValor').value='';
   }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
 }
+/* PERICULOSIDADE — segue exatamente a estrutura de 3 camadas do
+   Protheus: Sindicato define a base e o percentual; Verba diz quais
+   itens entram na conta quando a base é "Salário+Verbas"; Funcionário
+   diz se essa pessoa específica tem direito. */
+const SALARIO_MINIMO_2026 = 1621.00; // mesma ressalva das tabelas de INSS/IRRF -- confirma com contador
+function calcularPericulosidadeEInsalubridade(colaborador, salario, itensProventoJaCalculados){
+  let periculosidade = 0, insalubridade = 0;
+  const sindicato = SINDICATOS.find(s=>s.id===colaborador.sindicato_id);
+
+  if(colaborador.recebe_periculosidade){
+    const percentual = sindicato?.percentual_periculosidade ?? 30;
+    let base = salario;
+    if(sindicato?.base_periculosidade==='salario_verbas'){
+      const somaVerbasIncidentes = itensProventoJaCalculados.filter(i=>VERBAS.find(v=>v.codigo===i.codigo)?.incide_periculosidade).reduce((s,i)=>s+i.valor,0);
+      base = salario + somaVerbasIncidentes;
+    }else if(sindicato?.base_periculosidade?.startsWith('piso_sindicato')){
+      base = sindicato.piso_sindicato || salario;
+      if(sindicato.base_periculosidade==='piso_sindicato_verbas'){
+        base += itensProventoJaCalculados.filter(i=>VERBAS.find(v=>v.codigo===i.codigo)?.incide_periculosidade).reduce((s,i)=>s+i.valor,0);
+      }
+    }else if(sindicato?.base_periculosidade?.startsWith('salario_minimo')){
+      base = SALARIO_MINIMO_2026;
+      if(sindicato.base_periculosidade==='salario_minimo_verbas'){
+        base += itensProventoJaCalculados.filter(i=>VERBAS.find(v=>v.codigo===i.codigo)?.incide_periculosidade).reduce((s,i)=>s+i.valor,0);
+      }
+    }
+    periculosidade = round2(base * (percentual/100));
+  }
+
+  if(colaborador.recebe_insalubridade && colaborador.grau_insalubridade>0){
+    // Insalubridade, por padrão legal, incide sobre o salário mínimo
+    // (Súmula 228 TST) -- ao contrário da periculosidade, que é
+    // sobre o salário contratual
+    insalubridade = round2(SALARIO_MINIMO_2026 * (colaborador.grau_insalubridade/100));
+  }
+
+  return {periculosidade, insalubridade};
+}
+
 async function processarFechamentoFolha(){
   const competencia = document.getElementById('foCompetencia').value;
   if(!competencia){ toast('Escolhe a competência.','#dc2626'); return; }
@@ -876,23 +951,32 @@ async function processarFechamentoFolha(){
       const salario = parseFloat(c.salario_base)||0;
       if(salario<=0) continue;
 
-      const inss = calcularInss(salario);
+      const itens = [
+        {folha_id:folha.id, funcionario_id:c.id, tipo:'provento', codigo:'001', descricao:'Salário Base', valor:salario},
+      ];
+
+      const{periculosidade, insalubridade} = calcularPericulosidadeEInsalubridade(c, salario, itens.filter(i=>i.tipo==='provento'));
+      if(periculosidade>0) itens.push({folha_id:folha.id, funcionario_id:c.id, tipo:'provento', codigo:'020', descricao:'Adicional de Periculosidade', valor:periculosidade});
+      if(insalubridade>0) itens.push({folha_id:folha.id, funcionario_id:c.id, tipo:'provento', codigo:'021', descricao:'Adicional de Insalubridade', valor:insalubridade});
+
+      // Periculosidade/insalubridade entram na base do INSS/IRRF --
+      // são proventos habituais, compõem a remuneração pra fins
+      // previdenciários mesmo sendo indenizatórias pra outros fins
+      const baseInss = salario + periculosidade + insalubridade;
+      const inss = calcularInss(baseInss);
       const{data:deps} = await supabaseClient.from('rh_dependentes').select('id').eq('funcionario_id',c.id).eq('irrf',true);
-      const irrf = calcularIrrf(salario, inss, deps?.length||0);
+      const irrf = calcularIrrf(baseInss, inss, deps?.length||0);
       const{data:adiantamentos} = await supabaseClient.from('rh_adiantamentos').select('valor').eq('funcionario_id',c.id).eq('competencia',competencia);
       const totalAdiantado = (adiantamentos||[]).reduce((s,a)=>s+a.valor,0);
 
-      const itens = [
-        {folha_id:folha.id, funcionario_id:c.id, tipo:'provento', codigo:'salario_base', descricao:'Salário Base', valor:salario},
-        {folha_id:folha.id, funcionario_id:c.id, tipo:'desconto', codigo:'inss', descricao:'INSS', valor:inss},
-        {folha_id:folha.id, funcionario_id:c.id, tipo:'desconto', codigo:'irrf', descricao:'IRRF', valor:irrf},
-      ];
-      if(totalAdiantado>0) itens.push({folha_id:folha.id, funcionario_id:c.id, tipo:'desconto', codigo:'adiantamento', descricao:'Adiantamento Quinzenal', valor:totalAdiantado});
+      itens.push({folha_id:folha.id, funcionario_id:c.id, tipo:'desconto', codigo:'900', descricao:'INSS', valor:inss});
+      itens.push({folha_id:folha.id, funcionario_id:c.id, tipo:'desconto', codigo:'901', descricao:'IRRF', valor:irrf});
+      if(totalAdiantado>0) itens.push({folha_id:folha.id, funcionario_id:c.id, tipo:'desconto', codigo:'904', descricao:'Adiantamento Quinzenal', valor:totalAdiantado});
 
       await supabaseClient.from('rh_folha_itens').delete().eq('folha_id',folha.id).eq('funcionario_id',c.id);
       await supabaseClient.from('rh_folha_itens').insert(itens);
 
-      totalProventos += salario;
+      totalProventos += salario + periculosidade + insalubridade;
       totalDescontos += inss+irrf+totalAdiantado;
       processados++;
     }
@@ -996,6 +1080,25 @@ function abrirModal(id){ document.getElementById(id).classList.remove('hidden');
 function fecharModal(id){ document.getElementById(id).classList.add('hidden'); }
 
 /* ── VERBAS (SRV) — CRUD completo, padrão EnchoiceBar ───────── */
+function renderizarSindicatos(){
+  document.getElementById('listaSindicatos').innerHTML = SINDICATOS.length ? SINDICATOS.map(s=>`
+    <div class="item-linha"><div><div class="principal">${s.nome}</div><div class="sec">Base: ${s.base_periculosidade.replace(/_/g,' ')} · ${s.percentual_periculosidade}%${s.piso_sindicato?' · Piso R$'+s.piso_sindicato:''}</div></div></div>`).join('') : '<div class="vazio">Nenhum sindicato cadastrado.</div>';
+}
+async function salvarSindicato(){
+  const nome = document.getElementById('siNome').value.trim();
+  if(!nome){ toast('Preenche o nome do sindicato.','#dc2626'); return; }
+  try{
+    const{error} = await supabaseClient.from('rh_sindicatos').insert({
+      nome, base_periculosidade:document.getElementById('siBase').value, percentual_periculosidade:parseFloat(document.getElementById('siPercentual').value)||30,
+      piso_sindicato:parseFloat(document.getElementById('siPiso').value)||0,
+    });
+    if(error) throw error;
+    toast('✓ Sindicato cadastrado.','#16a34a');
+    document.getElementById('siNome').value=''; document.getElementById('siPiso').value='';
+    await carregarSindicatos(); renderizarSindicatos();
+  }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
+}
+
 let VERBAS = [], verbaEditandoId = null;
 async function carregarVerbas(){
   try{
@@ -1094,7 +1197,7 @@ function iniciais(nome){ return (nome||'?').trim().split(' ').filter(Boolean).sl
 
 /* ── NAVEGAÇÃO ───────────────────────────────────────────── */
 function mudarView(nome){
-  const views=['dashboard','lista','formColaborador','importar','esocial','afastamentos','ferias','folha','rescisao','tabelasFiscais','verbas','movimentoMensal'];
+  const views=['dashboard','lista','formColaborador','importar','esocial','afastamentos','ferias','folha','rescisao','tabelasFiscais','verbas','movimentoMensal','sindicatos'];
   views.forEach(v=>{ const el=document.getElementById('view'+v.charAt(0).toUpperCase()+v.slice(1)); if(el) el.classList.toggle('hidden', v!==nome); });
   document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.classList.toggle('active', b.dataset.view===nome));
   if(nome==='dashboard') renderizarDashboard();
@@ -1107,6 +1210,7 @@ function mudarView(nome){
   if(nome==='tabelasFiscais') renderizarTabelasFiscais();
   if(nome==='verbas') carregarVerbas();
   if(nome==='movimentoMensal') carregarMovimentoMensal();
+  if(nome==='sindicatos') renderizarSindicatos();
 }
 document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.addEventListener('click',()=>mudarView(b.dataset.view)));
 
@@ -1165,7 +1269,7 @@ function renderizarLista(){
 const CAMPOS_COLABORADOR = ['cNome','cNomeSocial','cNomeMae','cDataNascimento','cEstadoCivil','cNacionalidade','cTelefone','cEmail',
   'cLogradouro','cNumero','cBairro','cCidade','cUf','cCep','cEmergenciaNome','cEmergenciaTelefone',
   'cCpf','cPis','cRgNumero','cRgOrgao','cRgUf','cRgData','cCtpsNumero','cCtpsSerie','cCtpsUf','cTituloEleitor','cReservista','cCnhNumero','cCnhCategoria','cCnhValidade',
-  'cMatricula','cAdmissao','cVinculo','cSituacaoFolha','cCargo','cFuncao','cCentroCusto','cIdObra','cCentroCustoTipo','cValorDiariaRefeicao','cSindicato','cSalarioBase','cDataDesligamento',
+  'cMatricula','cAdmissao','cVinculo','cSituacaoFolha','cCargo','cFuncao','cCentroCusto','cIdObra','cCentroCustoTipo','cValorDiariaRefeicao','cSindicatoId','cRecebePericulosidade','cRecebeInsalubridade','cGrauInsalubridade','cSalarioBase','cDataDesligamento',
   'cBanco','cAgencia','cConta','cTipoConta','cChavePix'];
 
 function abrirNovoColaborador(){
@@ -1177,6 +1281,9 @@ function abrirNovoColaborador(){
   document.getElementById('cSituacaoFolha').value='ativo';
   document.getElementById('cTipoConta').value='corrente';
   document.getElementById('cCentroCustoTipo').value='Matriz_Fixo';
+  document.getElementById('cRecebePericulosidade').checked=false;
+  document.getElementById('cRecebeInsalubridade').checked=false;
+  document.getElementById('cGrauInsalubridade').value='0';
   aplicarModoSomenteLeitura(false);
   document.getElementById('tituloFormColaborador').textContent = 'Novo Colaborador';
   document.getElementById('btnExportarFicha').style.display = 'none';
@@ -1203,10 +1310,13 @@ async function abrirEditarColaborador(id, somenteLeitura){
     cCnhNumero:c.cnh_numero, cCnhCategoria:c.cnh_categoria, cCnhValidade:c.cnh_validade,
     cMatricula:c.matricula, cAdmissao:c.admissao, cVinculo:c.vinculo||'clt', cSituacaoFolha:c.situacao_folha||'ativo', cCargo:c.cargo, cFuncao:c.funcao,
     cCentroCusto:c.centro_custo, cIdObra:c.id_obra, cCentroCustoTipo:c.centro_custo_tipo||'Matriz_Fixo', cValorDiariaRefeicao:c.valor_diaria_refeicao,
-    cSindicato:c.sindicato, cSalarioBase:c.salario_base, cDataDesligamento:c.data_desligamento,
+    cSindicatoId:c.sindicato_id, cSalarioBase:c.salario_base, cDataDesligamento:c.data_desligamento,
     cBanco:c.banco, cAgencia:c.agencia, cConta:c.conta, cTipoConta:c.tipo_conta||'corrente', cChavePix:c.chave_pix,
   };
   Object.entries(mapa).forEach(([id,valor])=>{ const el=document.getElementById(id); if(el) el.value = valor ?? ''; });
+  document.getElementById('cRecebePericulosidade').checked = !!c.recebe_periculosidade;
+  document.getElementById('cRecebeInsalubridade').checked = !!c.recebe_insalubridade;
+  document.getElementById('cGrauInsalubridade').value = c.grau_insalubridade ?? 0;
 
   await carregarDependentes(id);
   await carregarHistorico(id);
@@ -1257,7 +1367,10 @@ async function salvarColaborador(){
     cargo:document.getElementById('cCargo').value||null, funcao:document.getElementById('cFuncao').value||null,
     centro_custo:document.getElementById('cCentroCusto').value||null, id_obra:document.getElementById('cIdObra').value||null,
     centro_custo_tipo:document.getElementById('cCentroCustoTipo').value, valor_diaria_refeicao:parseFloat(document.getElementById('cValorDiariaRefeicao').value)||0,
-    sindicato:document.getElementById('cSindicato').value||null,
+    sindicato_id:document.getElementById('cSindicatoId').value||null,
+    recebe_periculosidade:document.getElementById('cRecebePericulosidade').checked,
+    recebe_insalubridade:document.getElementById('cRecebeInsalubridade').checked,
+    grau_insalubridade:parseInt(document.getElementById('cGrauInsalubridade').value)||0,
     salario_base:parseFloat(document.getElementById('cSalarioBase').value)||0, data_desligamento:document.getElementById('cDataDesligamento').value||null,
     banco:document.getElementById('cBanco').value||null, agencia:document.getElementById('cAgencia').value||null, conta:document.getElementById('cConta').value||null,
     tipo_conta:document.getElementById('cTipoConta').value, chave_pix:document.getElementById('cChavePix').value||null,
@@ -1466,6 +1579,8 @@ async function gerarPayloadEsocial(){
   await carregarColaboradores();
   await carregarTurnosDisponiveis();
   await carregarObras();
+  await carregarSindicatos();
+  await carregarVerbas();
   await carregarTabelasFiscais();
   popularTodosSelectsColaborador();
   renderizarDashboard();
