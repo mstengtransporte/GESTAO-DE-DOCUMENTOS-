@@ -329,10 +329,22 @@ a{color:inherit;}
       </div>
 
       <div class="card hidden" id="painelCustos">
-        <h2>Custos — previsto x realizado</h2>
-        <p class="sub">Lançamentos de custo, por categoria.</p>
+        <h2>Orçamento por Categoria</h2>
+        <p class="sub">Distribui o valor <b>vendido no CRM</b> entre as categorias de custo — o total não é digitado aqui, só a divisão interna.</p>
+        <div id="avisoOrigemOrcamento" style="background:rgba(0,181,254,.1);border:1px solid rgba(0,181,254,.3);border-radius:8px;padding:10px 14px;font-size:12.5px;margin-bottom:14px">Carregando origem do orçamento…</div>
+        <div class="form-grid">
+          <div class="fld"><label>Mão de Obra (R$)</label><input type="number" id="orcMaoObra" step="0.01"></div>
+          <div class="fld"><label>Material (R$)</label><input type="number" id="orcMaterial" step="0.01"></div>
+          <div class="fld"><label>Frota (R$)</label><input type="number" id="orcFrota" step="0.01"></div>
+          <div class="fld"><label>Terceiros (R$)</label><input type="number" id="orcTerceiros" step="0.01"></div>
+        </div>
+        <button class="btn btn-sm" onclick="salvarOrcamentoCategorias()">💾 Salvar Orçamento</button>
+        <div id="resumoOrcamentoCategorias" style="margin-top:16px"></div>
+
+        <h2 style="margin-top:24px">Lançamentos — previsto x realizado</h2>
+        <p class="sub">Histórico detalhado, por categoria.</p>
         <div id="listaCustos"></div>
-        <button class="btn btn-sm" onclick="abrirNovoCusto()">➕ Lançar Custo</button>
+        <button class="btn btn-sm" onclick="abrirNovoCusto()">➕ Lançar Custo Avulso</button>
       </div>
 
       <div class="card hidden" id="painelHoras">
@@ -587,6 +599,7 @@ async function abrirDetalhe(id){
   carregarMarcos(id);
   carregarEquipe(id);
   carregarCustos(id);
+  carregarOrcamentoCategorias(id);
   carregarHorasRdo(p.nome);
 }
 
@@ -710,16 +723,86 @@ async function abrirNovoMembro(){
     toast('✓ Pessoa adicionada.', '#16a34a');
   }catch(e){ toast('Não foi possível adicionar.', '#dc2626'); }
 }
+/* ── ORÇAMENTO POR CATEGORIA ─────────────────────────────── */
+const CATEGORIAS_ORCAMENTO = [
+  {chave:'mao_obra', campo:'orcMaoObra', label:'Mão de Obra'},
+  {chave:'material', campo:'orcMaterial', label:'Material'},
+  {chave:'frota', campo:'orcFrota', label:'Frota'},
+  {chave:'terceiros', campo:'orcTerceiros', label:'Terceiros'},
+];
+async function carregarOrcamentoCategorias(projetoId){
+  try{
+    const p = PROJETOS.find(x=>x.id===projetoId);
+    const totalVendidoCrm = p?.orcamento_previsto || 0;
+
+    const{data,error} = await supabaseClient.from('vw_orcamento_projeto').select('*').eq('projeto_id',projetoId);
+    if(error) throw error;
+    CATEGORIAS_ORCAMENTO.forEach(c=>{
+      const linha = (data||[]).find(d=>d.categoria===c.chave);
+      document.getElementById(c.campo).value = linha?.orcado || '';
+    });
+
+    const somaDistribuida = CATEGORIAS_ORCAMENTO.reduce((s,c)=>{
+      const linha = (data||[]).find(d=>d.categoria===c.chave);
+      return s + (linha?.orcado || 0);
+    }, 0);
+    const faltaDistribuir = totalVendidoCrm - somaDistribuida;
+
+    document.getElementById('avisoOrigemOrcamento').innerHTML =
+      `💼 Total vendido no CRM (origem, não editável aqui): <b>${fmtMoeda(totalVendidoCrm)}</b> — `+
+      (faltaDistribuir>0.01 ? `ainda faltam <b>${fmtMoeda(faltaDistribuir)}</b> distribuir entre as categorias.`
+        : faltaDistribuir<-0.01 ? `<span style="color:#dc2626">⚠️ distribuído ${fmtMoeda(-faltaDistribuir)} A MAIS que o vendido — corrige antes de salvar.</span>`
+        : `✓ totalmente distribuído.`);
+
+    document.getElementById('resumoOrcamentoCategorias').innerHTML = CATEGORIAS_ORCAMENTO.map(c=>{
+      const linha = (data||[]).find(d=>d.categoria===c.chave) || {orcado:0, realizado:0, saldo_disponivel:0};
+      const pct = linha.orcado>0 ? Math.round((linha.realizado/linha.orcado)*100) : 0;
+      const cor = pct>=100 ? '#dc2626' : pct>=80 ? '#e8a33d' : '#16a34a';
+      return `<div class="item-linha"><div><div class="principal">${c.label}</div><div class="sec">Orçado ${fmtMoeda(linha.orcado)} · Realizado ${fmtMoeda(linha.realizado)} · Saldo ${fmtMoeda(linha.saldo_disponivel)}</div></div><span class="status-pill" style="background:${cor}22;color:${cor}">${pct}%</span></div>`;
+    }).join('');
+  }catch(e){ console.error(e); }
+}
+async function salvarOrcamentoCategorias(){
+  const p = PROJETOS.find(x=>x.id===projetoAtualId);
+  const totalVendidoCrm = p?.orcamento_previsto || 0;
+  const somaNova = CATEGORIAS_ORCAMENTO.reduce((s,c)=>{
+    const v = parseFloat(document.getElementById(c.campo).value);
+    return s + (isNaN(v)?0:v);
+  }, 0);
+  if(totalVendidoCrm>0 && somaNova > totalVendidoCrm + 0.01){
+    toast(`Não é possível distribuir ${fmtMoeda(somaNova)} — o total vendido no CRM pra esse projeto é só ${fmtMoeda(totalVendidoCrm)}. Ajusta as categorias, ou corrige o valor lá no Pedido de Venda primeiro.`,'#dc2626');
+    return;
+  }
+  try{
+    for(const c of CATEGORIAS_ORCAMENTO){
+      const valor = parseFloat(document.getElementById(c.campo).value);
+      if(isNaN(valor)) continue;
+      // Cada categoria só pode ter UM lançamento "previsto" ativo -- apaga
+      // o anterior antes de gravar o novo, pra não somar orçamento em dobro
+      await supabaseClient.from('projeto_custos').delete().eq('projeto_id',projetoAtualId).eq('categoria',c.chave).eq('tipo','previsto').eq('descricao','Orçamento definido');
+      await supabaseClient.from('projeto_custos').insert({projeto_id:projetoAtualId, descricao:'Orçamento definido', categoria:c.chave, tipo:'previsto', valor});
+    }
+    toast('✓ Orçamento distribuído — Compras, Escala e Frota já vão consultar esse valor.','#16a34a');
+    await carregarOrcamentoCategorias(projetoAtualId);
+    carregarCustos(projetoAtualId);
+  }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
+}
+
 async function abrirNovoCusto(){
   const descricao = prompt('Descrição do custo:');
   if(!descricao) return;
   const valor = parseFloat(prompt('Valor (R$):'));
   if(isNaN(valor)) return;
+  const categoriasTexto = CATEGORIAS_ORCAMENTO.map((c,i)=>(i+1)+') '+c.label).join('\n');
+  const escolha = parseInt(prompt('Categoria:\n'+categoriasTexto));
+  const categoria = CATEGORIAS_ORCAMENTO[escolha-1]?.chave;
+  if(!categoria){ toast('Categoria inválida — lançamento cancelado.','#dc2626'); return; }
   const tipo = confirm('Já foi realizado (OK) ou é só previsto (Cancelar)?') ? 'realizado' : 'previsto';
   try{
-    const{error} = await supabaseClient.from('projeto_custos').insert({projeto_id:projetoAtualId, descricao, valor, tipo});
+    const{error} = await supabaseClient.from('projeto_custos').insert({projeto_id:projetoAtualId, descricao, valor, tipo, categoria});
     if(error) throw error;
     carregarCustos(projetoAtualId);
+    carregarOrcamentoCategorias(projetoAtualId);
     toast('✓ Custo lançado.', '#16a34a');
   }catch(e){ toast('Não foi possível lançar.', '#dc2626'); }
 }
