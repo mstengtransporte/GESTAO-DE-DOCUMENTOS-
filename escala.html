@@ -3882,22 +3882,22 @@ function separarNomeEFuncao(linha){
 
 function adicionarFuncionariosEmLote(texto){
   const linhas = (texto||"").split("\n").map(l=>l.trim()).filter(l=>l.length>0);
-  let adicionados = 0, duplicados = 0;
-  pushUndo();
-  cadastroPrecisaSincronizar = true;
+  let reconhecidos = 0, naoEncontrados = [];
   linhas.forEach(linha=>{
     const { nome, funcao } = separarNomeEFuncao(linha);
     if(!nome) return;
-    if(state.funcionarios.some(x=>norm(x)===norm(nome))){ duplicados++; return; }
-    state.funcionarios.push(nome);
+    // GPE é o módulo mãe -- Escala só reconhece quem já existe lá, nunca
+    // cria gente nova por aqui (evita cadastro "raso", sem CPF/matrícula/
+    // salário, furando o cadastro completo do GPE).
+    const jaExisteNoCadastro = state.funcionarios.some(x=>norm(x)===norm(nome));
+    if(!jaExisteNoCadastro){ naoEncontrados.push(nome); return; }
     if(funcao) state.funcoes[nome] = funcao;
-    adicionados++;
+    reconhecidos++;
   });
-  if(adicionados>0){ saveState(); } else { undoStack.pop(); atualizarBotaoDesfazer(); }
-  let msg = adicionados + " funcionário(s) adicionado(s).";
-  if(duplicados>0) msg += " (" + duplicados + " já existia(m) e foi(ram) ignorado(s))";
+  let msg = reconhecidos + " funcionário(s) reconhecido(s) do cadastro.";
+  if(naoEncontrados.length>0) msg += " ⚠️ " + naoEncontrados.length + " nome(s) não encontrado(s) — cadastre primeiro no módulo Gestão de Pessoal (GPE): " + naoEncontrados.join(", ");
   toast(msg);
-  return adicionados;
+  return reconhecidos;
 }
 
 function adicionarEmLote(lista, texto, rotuloPlural){
