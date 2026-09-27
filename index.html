@@ -413,12 +413,11 @@ svg.icon-lg{width:22px;height:22px;stroke-width:1.8;}
       <button class="nav-item btn-ghost" id="tabFichaMedicaBtn"><svg data-lucide="heart-pulse"></svg>Ficha Médica</button>
       <button class="nav-item btn-ghost" id="tabPontoBtn"><span data-icone-marca="folha-pagamento" data-icone-tamanho="30" style="display:inline-flex"></span>Folha de Ponto</button>
 
-      <div class="nav-group-label">Operacional</div>
-      <a class="nav-item btn-ghost" href="rdo.html" target="_blank" rel="noopener"><svg data-lucide="clipboard-list"></svg>RDO <svg data-lucide="external-link" style="width:12px;height:12px;margin-left:auto;opacity:.6"></svg></a>
-      <a class="nav-item btn-ghost" href="escala.html" target="_blank" rel="noopener"><svg data-lucide="calendar-days"></svg>Escala de Funcionários <svg data-lucide="external-link" style="width:12px;height:12px;margin-left:auto;opacity:.6"></svg></a>
-      <a class="nav-item btn-ghost" href="frota-admin.html" target="_blank" rel="noopener"><svg data-lucide="truck"></svg>Frota / Controle de KM <svg data-lucide="external-link" style="width:12px;height:12px;margin-left:auto;opacity:.6"></svg></a>
-      <a class="nav-item btn-ghost" href="requisicao.html" target="_blank" rel="noopener"><svg data-lucide="shopping-cart"></svg>Requisição de Materiais <svg data-lucide="external-link" style="width:12px;height:12px;margin-left:auto;opacity:.6"></svg></a>
-      <a class="nav-item btn-ghost" href="epi.html" target="_blank" rel="noopener"><svg data-lucide="shield"></svg>Controle de Entrega de EPIs <svg data-lucide="external-link" style="width:12px;height:12px;margin-left:auto;opacity:.6"></svg></a>
+      <!-- "Operacional" removido daqui de propósito -- RDO, Escala, Frota,
+           Requisição e EPI já são módulos próprios, acessíveis pelo painel
+           principal (aba Dashboard). Ter atalho pra eles também aqui dentro
+           do SST duplicava a navegação, e não é assim que o Protheus separa
+           os módulos (cada um só tem no menu dele as próprias rotinas). -->
       </div>
 
       <div class="sidebar-foot">
