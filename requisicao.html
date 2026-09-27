@@ -409,7 +409,7 @@ tbody tr:hover{background:var(--s2);}
         <button class="sf-btn sf-btn-primary" data-action="filter-movim">🔍 Filtrar</button>
       </div>
       <div class="movim-table-wrap">
-        <div id="movimTable"><table><thead><tr><th>Data/Hora</th><th>Tipo</th><th>Módulo</th><th>Código</th><th>Descrição</th><th>Obra</th><th>Resp.</th><th>Qtd</th><th>Ações</th></tr></thead><tbody id="movimTbody"></tbody></table></div>
+        <div id="movimTable"><table><thead><tr><th>Data/Hora</th><th>Tipo</th><th>Módulo</th><th>Código</th><th>Descrição</th><th>Obra</th><th>Resp.</th><th>Qtd</th><th>Valor</th><th>Ações</th></tr></thead><tbody id="movimTbody"></tbody></table></div>
         <div id="movimEmpty" style="display:none" class="empty-state"><div class="ei">📦</div><div style="font-size:var(--fs-md);font-weight:700">Nenhuma movimentação encontrada</div></div>
       </div>
     </div>
@@ -513,7 +513,12 @@ tbody tr:hover{background:var(--s2);}
   <div class="modal" style="max-width:520px">
     <div class="modal-title">Registrar Movimentação</div>
     <div class="modal-sub">Busque em Tubulação/Elétrica <b>e</b> Consumíveis/Ferramentas ao mesmo tempo</div>
-    <div class="fg"><label>Tipo *</label><select id="mvTipo"></select></div>
+    <div class="fg"><label>Tipo *</label><select id="mvTipo" onchange="alternarCampoValorEntrada()"></select></div>
+    <div class="fg" id="mvValorEntradaBox" style="display:none">
+      <label>Valor Unitário desta Entrada (R$) *</label>
+      <input id="mvValorEntrada" type="number" step="0.01" min="0" placeholder="0,00">
+      <div class="small" id="mvPreviewCustoMedio" style="margin-top:4px;color:var(--muted)"></div>
+    </div>
     <div class="fg" style="position:relative">
       <label>Buscar item por código ou descrição *</label>
       <input id="mvBusca" placeholder="Ex: 3158644 ou conector rosqueado…" autocomplete="off">
@@ -733,7 +738,6 @@ var TIPO_MOVIM = ['ENTRADA','SAÍDA PARA OBRA','CONSUMO','EMPRÉSTIMO','DEVOLUÇ
 
 /* ── PERSISTÊNCIA (mesmas chaves do sistema anterior — dados do
       navegador do usuário continuam funcionando após a atualização) */
-var LS_MOVIM = 'esf_movims_v1';
 var LS_FUNC  = 'esf_funcionarios_v1';
 var LS_CADASTROS = 'esf_cadastros_v1';
 
@@ -2261,7 +2265,7 @@ function createCatalogModule(cfg){
   M.buildPDF = buildPDF;
 
   /* ── CONFIRMAR REQUISIÇÃO (gera a movimentação de saída de estoque) ── */
-  function confirmRequisicao(){
+  async function confirmRequisicao(){
     var ids = Object.keys(M.state.cart);
     if(ids.length === 0){ toast('Adicione itens à requisição antes de confirmar.', 'err'); return; }
     if(!M.state.header.solic){ toast('Informe o Solicitante antes de confirmar a requisição.', 'err'); el('reqmeta-' + M.key).classList.remove('collapsed'); return; }
@@ -2280,13 +2284,13 @@ function createCatalogModule(cfg){
     if(!M.state.header.num) M.state.header.num = nextNum();
     var h = M.state.header;
     var itemsParaHistorico = cartItemsArray();
-    ids.forEach(function(id){
+    for(const id of ids){
       var it = byId(id), c = M.state.cart[id];
-      registrarMovimentacao({
+      await registrarMovimentacao({
         tipo: 'SAÍDA PARA OBRA', modulo: M.key, cod: it.cod, qtd: c.qty,
         obra: h.obra || 'ALMOXARIFADO', resp: h.solic, obs: 'Requisição Nº ' + h.num + (c.obs ? ' — ' + c.obs : '')
       });
-    });
+    }
     saveToHistory(h, itemsParaHistorico);
     buildPDF('view');
     clearCart();
@@ -2867,41 +2871,101 @@ function populateItemGroupSelect(groups){
    MOVIMENTAÇÕES DO ALMOXARIFADO
    ═══════════════════════════════════════════════════════════════ */
 var MOVIMS = [];
-var _nextMovId = 1;
 
-function saveMovims(){
-  try{ localStorage.setItem(LS_MOVIM, JSON.stringify({v:1, movims:MOVIMS, nextId:_nextMovId})); }catch(e){}
+/* ESTOQUE — fonte única é o Supabase (estoque_itens/estoque_movimentacoes).
+   Não existe mais cópia local de quantidade nem de valor -- o que
+   está aqui é sempre um espelho recém-buscado do banco, nunca uma
+   cópia que se guarda sozinha (sem localStorage pra isso). */
+var MOVIMS = [];
+
+async function alternarCampoValorEntrada(){
+  var tipo = el('mvTipo').value;
+  var box = el('mvValorEntradaBox');
+  box.style.display = (tipo === 'ENTRADA') ? '' : 'none';
+  if(tipo === 'ENTRADA') await atualizarPreviewCustoMedio();
 }
-function loadMovims(){
+async function atualizarPreviewCustoMedio(){
+  if(!_mvSelected) return;
+  var preview = el('mvPreviewCustoMedio');
   try{
-    var raw = localStorage.getItem(LS_MOVIM); if(!raw) return;
-    var data = JSON.parse(raw);
-    if(Array.isArray(data.movims)) MOVIMS = data.movims;
-    if(typeof data.nextId === 'number') _nextMovId = data.nextId;
-  }catch(e){}
+    var{data} = await supabaseClient.from('estoque_itens').select('quantidade_atual,custo_medio').eq('codigo', _mvSelected.cod).limit(1);
+    var item = data && data[0];
+    var qtdAtual = item ? (item.quantidade_atual||0) : 0;
+    var custoAtual = item ? (item.custo_medio||0) : 0;
+    preview.textContent = 'Estoque atual: ' + qtdAtual + ' un. a custo médio ' + fmtValor(custoAtual) + '/un. — o custo médio será recalculado com essa entrada.';
+  }catch(e){ preview.textContent = ''; }
 }
+function fmtValor(v){ return 'R$ ' + (Number(v)||0).toFixed(2).replace('.',','); }
 
-function registrarMovimentacao(data){
+async function registrarMovimentacao(data){
   var mod = Modules[data.modulo];
   var it = mod ? mod.items.find(function(x){ return x.cod === data.cod; }) : null;
   if(!it){ toast('Código não encontrado no catálogo selecionado.', 'err'); return false; }
-  var mov = {
-    id: _nextMovId++, ts: Date.now(), tipo: data.tipo, modulo: data.modulo,
-    cod: it.cod, desc: it.desc, obra: data.obra || '', resp: data.resp || '',
-    qtd: data.qtd, obs: data.obs || ''
-  };
-  MOVIMS.unshift(mov);
-  // Atualiza estoque do item conforme o tipo de movimentação
-  if(data.tipo === 'ENTRADA') it.qty = (it.qty||0) + data.qtd;
-  else if(['SAÍDA PARA OBRA','CONSUMO','TRANSFERÊNCIA','DESCARTE','PERDA','AVARIA'].indexOf(data.tipo) >= 0) it.qty = Math.max(0, (it.qty||0) - data.qtd);
-  else if(data.tipo === 'AJUSTE DE ESTOQUE') it.qty = data.qtd;
-  if(mod) mod.scheduleSave();
-  saveMovims();
-  renderMovimTable();
-  renderDashboard();
-  toast('✅ Movimentação registrada.');
-  return true;
+
+  if(data.tipo === 'ENTRADA' && (!data.valorEntrada || data.valorEntrada <= 0)){
+    toast('Informa o valor unitário dessa entrada — é isso que calcula o custo médio.', 'err');
+    return false;
+  }
+
+  try{
+    // Garante que o item existe no catálogo REAL de estoque (Supabase) --
+    // cria na primeira vez que esse código é movimentado, sem duplicar
+    // se já existir.
+    var{data:itemBanco} = await supabaseClient.from('estoque_itens').select('id').eq('codigo', it.cod).limit(1);
+    var itemId = itemBanco && itemBanco[0] ? itemBanco[0].id : null;
+    if(!itemId){
+      var{data:novoItem, error:erroNovo} = await supabaseClient.from('estoque_itens')
+        .insert({codigo: it.cod, descricao: it.desc, categoria: data.modulo==='tub'?'tubulacao':'consumiveis'})
+        .select('id').single();
+      if(erroNovo) throw erroNovo;
+      itemId = novoItem.id;
+    }
+
+    var projeto_id = await buscarProjetoIdPorNome(data.obra);
+    var{error} = await supabaseClient.from('estoque_movimentacoes').insert({
+      item_id: itemId, tipo: data.tipo, quantidade: data.qtd,
+      valor_entrada: data.tipo==='ENTRADA' ? data.valorEntrada : null,
+      projeto_id: projeto_id, obra_texto: data.obra||'', responsavel: data.resp||'', observacao: data.obs||'',
+    });
+    if(error) throw error;
+
+    // Recarrega a quantidade/custo médio DIRETO do banco -- nunca calcula
+    // de novo aqui, pra não correr risco de divergir do que o gatilho
+    // do banco já processou.
+    var{data:itemAtualizado} = await supabaseClient.from('estoque_itens').select('quantidade_atual,custo_medio').eq('id', itemId).single();
+    if(itemAtualizado){ it.qty = itemAtualizado.quantidade_atual; it.custo = itemAtualizado.custo_medio; }
+
+    await carregarMovimentacoesDoBanco();
+    if(mod) mod.scheduleSave();
+    renderMovimTable();
+    renderDashboard();
+    toast('✅ Movimentação registrada' + (data.tipo==='ENTRADA' ? ' — custo médio atualizado para ' + fmtValor(itemAtualizado.custo_medio) + '/un.' : '') + '.');
+    return true;
+  }catch(e){
+    console.error('Falha ao registrar movimentação:', e);
+    toast('Não foi possível registrar — confere a conexão e tenta de novo.', 'err');
+    return false;
+  }
 }
+
+async function carregarMovimentacoesDoBanco(){
+  try{
+    var{data, error} = await supabaseClient.from('estoque_movimentacoes')
+      .select('*, estoque_itens(codigo,descricao,categoria,custo_medio)')
+      .order('created_at', {ascending:false}).limit(300);
+    if(error) throw error;
+    MOVIMS = (data||[]).map(function(m){
+      return {
+        id: m.id, ts: new Date(m.created_at).getTime(), tipo: m.tipo,
+        modulo: (m.estoque_itens && m.estoque_itens.categoria==='tubulacao') ? 'tub' : 'cons',
+        cod: m.estoque_itens ? m.estoque_itens.codigo : '—', desc: m.estoque_itens ? m.estoque_itens.descricao : '—',
+        obra: m.obra_texto || '', resp: m.responsavel || '', qtd: m.quantidade, obs: m.observacao || '',
+        valorEntrada: m.valor_entrada, valorTotal: m.valor_entrada ? round2ReqLocal(m.valor_entrada * m.quantidade) : null,
+      };
+    });
+  }catch(e){ console.error('Falha ao carregar movimentações:', e); }
+}
+function round2ReqLocal(v){ return Math.round(v*100)/100; }
 
 function statusBadgeClass(tipo){
   if(tipo === 'ENTRADA') return 'badge-entrada';
@@ -2929,18 +2993,24 @@ function renderMovimTable(){
   }
   empty.style.display = 'none';
   tbody.innerHTML = list.slice(0,300).map(function(m){
+    var colValor = m.valorEntrada ? (fmtValor(m.valorEntrada) + '/un. · ' + fmtValor(m.valorTotal) + ' total') : '—';
     return '<tr><td>' + new Date(m.ts).toLocaleString('pt-BR') + '</td>' +
       '<td><span class="badge ' + statusBadgeClass(m.tipo) + '">' + esc(m.tipo) + '</span></td>' +
       '<td>' + (m.modulo === 'tub' ? 'Tubulação' : 'Consumíveis') + '</td>' +
       '<td>' + esc(m.cod) + '</td><td>' + esc(m.desc) + '</td><td>' + esc(m.obra) + '</td><td>' + esc(m.resp) + '</td><td>' + m.qtd + '</td>' +
+      '<td>' + colValor + '</td>' +
       '<td><button class="tbtn" data-action="del-movim" data-id="' + m.id + '">🗑</button></td></tr>';
   }).join('');
 }
 
-function deleteMovim(id){
-  MOVIMS = MOVIMS.filter(function(m){ return m.id !== id; });
-  saveMovims(); renderMovimTable(); renderDashboard();
-  toast('🗑 Movimentação removida.');
+async function deleteMovim(id){
+  try{
+    var{error} = await supabaseClient.from('estoque_movimentacoes').delete().eq('id', id);
+    if(error) throw error;
+    await carregarMovimentacoesDoBanco();
+    renderMovimTable(); renderDashboard();
+    toast('🗑 Movimentação removida — atenção: isso NÃO desfaz o efeito no saldo/custo médio automaticamente, ajusta o estoque manualmente se precisar.');
+  }catch(e){ console.error(e); toast('Não foi possível excluir.', 'err'); }
 }
 
 function populateMovimSelects(){
@@ -2994,6 +3064,7 @@ function mvPickResult(idx){
   box.style.display = 'none';
   el('mvSelectedBox').style.display = 'flex';
   el('mvSelectedInfo').textContent = (r.mod === 'tub' ? '🔩 Tubulação/Elétrica' : '🪛 Consumíveis/Ferramentas') + ' · Estoque atual: ' + r.qty + ' ' + r.un;
+  if(el('mvTipo').value === 'ENTRADA') atualizarPreviewCustoMedio();
 }
 function mvClearSelection(){
   _mvSelected = null;
@@ -3704,9 +3775,11 @@ function avancarStatusCompra(id, novoStatus){
   saveCompras(); renderComprasTable(); renderDashboard();
   toast('Status atualizado: ' + novoStatus);
 }
-function receberCompra(id){
+async function receberCompra(id){
   var c = COMPRAS.find(function(x){ return x.id === id; }); if(!c) return;
-  var ok = registrarMovimentacao({tipo:'ENTRADA', modulo:c.mod, cod:c.cod, qtd:c.qtd, obra:c.obra||'ALMOXARIFADO', resp:c.solic, obs:'Recebimento da solicitação ' + c.num});
+  var valorPago = parseFloat(prompt('Valor unitário PAGO por "' + c.desc + '" (R$) — é isso que recalcula o custo médio do estoque:'));
+  if(isNaN(valorPago) || valorPago <= 0){ toast('Precisa informar o valor pago pra registrar a entrada.', 'err'); return; }
+  var ok = await registrarMovimentacao({tipo:'ENTRADA', modulo:c.mod, cod:c.cod, qtd:c.qtd, valorEntrada:valorPago, obra:c.obra||'ALMOXARIFADO', resp:c.solic, obs:'Recebimento da solicitação ' + c.num});
   if(!ok) return;
   c.status = 'Recebido';
   saveCompras(); renderComprasTable(); renderDashboard();
@@ -4232,16 +4305,17 @@ function openNewItemGlobal(){
   openModal('modItem');
 }
 
-function saveMovimFromModal(){
+async function saveMovimFromModal(){
   if(!_mvSelected){ toast('Busque e selecione um item da lista.', 'err'); return; }
   var data = {
     tipo: el('mvTipo').value, modulo: _mvSelected.mod, cod: _mvSelected.cod,
-    qtd: parseInt(el('mvQtd').value) || 1, obra: el('mvObra').value.trim(), resp: el('mvResp').value.trim(), obs: el('mvObs').value.trim()
+    qtd: parseInt(el('mvQtd').value) || 1, valorEntrada: parseFloat(el('mvValorEntrada').value) || 0,
+    obra: el('mvObra').value.trim(), resp: el('mvResp').value.trim(), obs: el('mvObs').value.trim()
   };
-  if(registrarMovimentacao(data)){
+  if(await registrarMovimentacao(data)){
     closeModal('modMovim');
     mvClearSelection();
-    el('mvQtd').value = 1; el('mvObra').value=''; el('mvResp').value=''; el('mvObs').value='';
+    el('mvQtd').value = 1; el('mvValorEntrada').value=''; el('mvValorEntradaBox').style.display='none'; el('mvObra').value=''; el('mvResp').value=''; el('mvObs').value='';
   }
 }
 function saveFuncFromModal(){
@@ -4257,7 +4331,7 @@ async function initApp(){
 
   loadCadastros();
   loadFuncionarios();
-  loadMovims();
+  await carregarMovimentacoesDoBanco();
   await loadCompras();
 
   createCatalogModule({key:'tub', label:'Tubulação / Elétrica', icon:'🔩', groups:GROUPS_TUB, gm:GM_TUB, items:CAT_TUB, lsKey:'esf_materiais_v1', reqPrefix:'REQT', hasTipo:false});
