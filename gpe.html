@@ -334,6 +334,8 @@ a{color:inherit;}
     <button class="nav-item" data-view="importar"><span class="ic">📥</span>Importar Planilha</button>
     <button class="nav-item" data-view="esocial"><span class="ic">📡</span>eSocial</button>
     <button class="nav-item" data-view="tabelasFiscais"><span class="ic">⚙️</span>Tabelas Fiscais</button>
+    <button class="nav-item" data-view="verbas"><span class="ic">📑</span>Verbas (SRV)</button>
+    <button class="nav-item" data-view="movimentoMensal"><span class="ic">📈</span>Movimento Mensal (SRC)</button>
 
     <div class="sidebar-foot">
       ESF · Gestão de Pessoal — v2026.09.26<br>
@@ -448,6 +450,9 @@ a{color:inherit;}
             <div class="fld"><label>Cargo</label><input type="text" id="cCargo"></div>
             <div class="fld"><label>Função</label><input type="text" id="cFuncao"></div>
             <div class="fld"><label>Centro de Custo</label><input type="text" id="cCentroCusto"></div>
+            <div class="fld"><label>Obra</label><select id="cIdObra"><option value="">— Sem obra vinculada —</option></select></div>
+            <div class="fld"><label>Tipo de Centro de Custo</label><select id="cCentroCustoTipo"><option value="Matriz_Fixo">Matriz Fixo (não onera DRE de obra)</option><option value="Obra_Certa">Obra Certa (100% do custo vai pra obra)</option></select></div>
+            <div class="fld"><label>Diária de Refeição (R$)</label><input type="number" id="cValorDiariaRefeicao" step="0.01"></div>
             <div class="fld"><label>Sindicato</label><input type="text" id="cSindicato"></div>
             <div class="fld"><label>Turno de Trabalho</label><select id="cTurno"><option value="">— Sem turno atribuído —</option></select></div>
             <div class="fld"><label>Salário Base (R$)</label><input type="number" id="cSalarioBase" step="0.01"></div>
@@ -487,8 +492,9 @@ a{color:inherit;}
           <div id="listaHistoricoForm"><div class="vazio">Salva o colaborador primeiro pra ver o histórico.</div></div>
         </div>
 
+        <div id="avisoSomenteLeitura" class="aviso-integracao" style="display:none">👁️ Modo somente leitura — clica em "Alterar" na lista pra editar.</div>
         <div style="margin-top:20px;display:flex;gap:8px">
-          <button class="btn" onclick="salvarColaborador()">💾 Salvar Colaborador</button>
+          <button class="btn" id="btnSalvarColaborador" onclick="salvarColaborador()">💾 Salvar Colaborador</button>
           <button class="btn btn-ghost" id="btnExportarFicha" style="display:none" onclick="exportarFichaIndividual(colaboradorEditandoId)">📄 Exportar Ficha</button>
           <button class="btn btn-ghost" onclick="mudarView('lista')">Cancelar</button>
         </div>
@@ -604,6 +610,21 @@ a{color:inherit;}
       <div class="card"><h2>IRRF</h2><div id="tabelaIrrf"></div></div>
     </div>
 
+    <!-- ═══════════ VERBAS (SRV) ═══════════ -->
+    <div id="viewVerbas" class="hidden">
+      <div class="pg-head">
+        <div><h1>Tabela de Verbas (SRV)</h1><p>Código, descrição, tipo e incidências — usado no cálculo da folha.</p></div>
+        <button class="btn" onclick="abrirNovaVerba()">➕ Incluir [F3]</button>
+      </div>
+      <div class="card"><div id="listaVerbas"><div class="vazio">Carregando...</div></div></div>
+    </div>
+
+    <!-- ═══════════ MOVIMENTO MENSAL (SRC) ═══════════ -->
+    <div id="viewMovimentoMensal" class="hidden">
+      <div class="pg-head"><div><h1>Movimento Mensal / Apontamento (SRC)</h1><p>Consumo do RDO fechado — custo de HH e refeição calculado sozinho, por obra.</p></div></div>
+      <div class="card"><div id="listaMovimentoMensal"><div class="vazio">Carregando...</div></div></div>
+    </div>
+
     <!-- ═══════════ ESOCIAL ═══════════ -->
     <div id="viewEsocial" class="hidden">
       <div class="pg-head"><div><h1>eSocial — Eventos Iniciais</h1><p>Gera o payload dos eventos S-2200 (Admissão) e S-2206 (Alteração Contratual).</p></div></div>
@@ -621,6 +642,25 @@ a{color:inherit;}
   </main>
 </div>
 
+<!-- ═══════════ MODAL: VERBA (SRV) ═══════════ -->
+<div class="modal-overlay hidden" id="modalVerba">
+  <div class="modal-box">
+    <div class="modal-head"><h3 id="tituloModalVerba">📑 Nova Verba</h3><button class="fechar" onclick="fecharModal('modalVerba')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="fld"><label>Código *</label><input type="text" id="vbCodigo" maxlength="10"></div>
+        <div class="fld" style="grid-column:span 2"><label>Descrição *</label><input type="text" id="vbDescricao"></div>
+        <div class="fld"><label>Tipo</label><select id="vbTipo"><option value="provento">Provento</option><option value="desconto">Desconto</option><option value="base">Base</option></select></div>
+        <div class="fld"><label>Tipo de Valor</label><select id="vbTipoValor"><option value="valor">Valor</option><option value="horas">Horas</option><option value="percentual">Percentual</option></select></div>
+        <div class="fld"><label><input type="checkbox" id="vbIncideInss" style="width:auto;margin-right:6px"> Incide INSS</label></div>
+        <div class="fld"><label><input type="checkbox" id="vbIncideIrrf" style="width:auto;margin-right:6px"> Incide IRRF</label></div>
+        <div class="fld"><label><input type="checkbox" id="vbIncideFgts" style="width:auto;margin-right:6px"> Incide FGTS</label></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost btn-sm" onclick="fecharModal('modalVerba')">Cancelar</button><button class="btn btn-sm" id="btnSalvarVerba" onclick="salvarVerba()">💾 Salvar</button></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -635,6 +675,14 @@ let DEPENDENTES_ATUAL = [];
 let colaboradorEditandoId = null;
 
 /* ── TURNOS (lidos do módulo de Ponto — não duplica, só consulta) ── */
+async function carregarObras(){
+  try{
+    const{data,error} = await supabaseClient.from('projetos').select('id,nome,codigo').order('nome');
+    if(error) throw error;
+    const el = document.getElementById('cIdObra');
+    if(el) el.innerHTML = '<option value="">— Sem obra vinculada —</option>' + (data||[]).map(p=>`<option value="${p.id}">${p.codigo} — ${p.nome}</option>`).join('');
+  }catch(e){ console.error(e); }
+}
 let TURNOS_DISPONIVEIS = [];
 async function carregarTurnosDisponiveis(){
   try{
@@ -677,12 +725,32 @@ function calcularInss(salario){
   }
   return round2(total);
 }
-/* IRRF: base × alíquota da faixa - parcela a deduzir (fórmula oficial) */
-function calcularIrrf(baseCalculo){
-  if(baseCalculo<=0) return 0;
+/* IRRF 2026 — tabela + redutor da Lei 15.270/2025 (isenção total até
+   R$5.000, redução progressiva de R$5.000,01 a R$7.350,00). A base de
+   cálculo usa a MENOR entre dedução legal (INSS+dependentes) e o
+   desconto simplificado — é assim que a Receita já manda calcular. */
+function calcularIrrf(salarioBruto, inssCalculado, numeroDependentes){
+  const deducaoDependente = PARAMETROS_FISCAIS.deducao_por_dependente_irrf ?? 189.59;
+  const descontoSimplificado = PARAMETROS_FISCAIS.desconto_simplificado_irrf ?? 607.20;
+
+  const baseLegal = salarioBruto - inssCalculado - (numeroDependentes*deducaoDependente);
+  const baseSimplificada = salarioBruto - descontoSimplificado;
+  const baseCalculo = Math.min(baseLegal, baseSimplificada);
+
+  if(baseCalculo <= 2428.80) return 0;
+
   const faixa = TABELA_IRRF.find(f => f.valor_ate===null || baseCalculo <= f.valor_ate) || TABELA_IRRF[TABELA_IRRF.length-1];
-  const valor = baseCalculo*(faixa.aliquota_pct/100) - faixa.parcela_deduzir;
-  return round2(Math.max(0,valor));
+  let irrfBruto = (baseCalculo*(faixa.aliquota_pct/100)) - faixa.parcela_deduzir;
+
+  // Redutor Lei 15.270/2025 -- calculado sobre o SALÁRIO BRUTO, não a base
+  let impostoFinal = irrfBruto;
+  if(salarioBruto <= 5000.00){
+    impostoFinal = 0;
+  }else if(salarioBruto <= 7350.00){
+    const valorReducao = 978.62 - (0.133145*salarioBruto);
+    impostoFinal = Math.max(0, irrfBruto - valorReducao);
+  }
+  return round2(impostoFinal);
 }
 function round2(v){ return Math.round(v*100)/100; }
 function renderizarTabelasFiscais(){
@@ -810,8 +878,7 @@ async function processarFechamentoFolha(){
 
       const inss = calcularInss(salario);
       const{data:deps} = await supabaseClient.from('rh_dependentes').select('id').eq('funcionario_id',c.id).eq('irrf',true);
-      const baseIrrf = salario - inss - ((deps?.length||0) * (PARAMETROS_FISCAIS.deducao_por_dependente_irrf||189.59));
-      const irrf = calcularIrrf(baseIrrf);
+      const irrf = calcularIrrf(salario, inss, deps?.length||0);
       const{data:adiantamentos} = await supabaseClient.from('rh_adiantamentos').select('valor').eq('funcionario_id',c.id).eq('competencia',competencia);
       const totalAdiantado = (adiantamentos||[]).reduce((s,a)=>s+a.valor,0);
 
@@ -924,6 +991,100 @@ async function confirmarRescisao(){
   }catch(e){ console.error(e); toast('Não foi possível confirmar.','#dc2626'); }
 }
 
+/* ── MODAIS ──────────────────────────────────────────────── */
+function abrirModal(id){ document.getElementById(id).classList.remove('hidden'); }
+function fecharModal(id){ document.getElementById(id).classList.add('hidden'); }
+
+/* ── VERBAS (SRV) — CRUD completo, padrão EnchoiceBar ───────── */
+let VERBAS = [], verbaEditandoId = null;
+async function carregarVerbas(){
+  try{
+    const{data,error} = await supabaseClient.from('rh_verbas').select('*').eq('ativo',true).order('codigo');
+    if(error) throw error;
+    VERBAS = data||[];
+    renderizarVerbas();
+  }catch(e){ console.error(e); }
+}
+function renderizarVerbas(){
+  document.getElementById('listaVerbas').innerHTML = VERBAS.length ? VERBAS.map(v=>`
+    <div class="item-linha">
+      <div><div class="principal">${v.codigo} — ${v.descricao}</div><div class="sec">${v.tipo} · ${v.tipo_valor} ${v.incide_inss?'· INSS':''}${v.incide_irrf?' · IRRF':''}${v.incide_fgts?' · FGTS':''}</div></div>
+      <div style="display:flex;gap:4px">
+        <button class="btn btn-sm btn-ghost" title="Visualizar" onclick="abrirVerba('${v.id}',true)">👁️</button>
+        <button class="btn btn-sm btn-ghost" title="Alterar" onclick="abrirVerba('${v.id}',false)">✏️</button>
+        <button class="btn btn-sm btn-danger" title="Excluir" onclick="confirmarExcluirVerba('${v.id}','${v.descricao.replace(/'/g,"\\'")}')">🗑️</button>
+      </div>
+    </div>`).join('') : '<div class="vazio">Nenhuma verba cadastrada.</div>';
+}
+function abrirNovaVerba(){
+  verbaEditandoId = null;
+  ['vbCodigo','vbDescricao'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('vbTipo').value='provento'; document.getElementById('vbTipoValor').value='valor';
+  ['vbIncideInss','vbIncideIrrf','vbIncideFgts'].forEach(id=>document.getElementById(id).checked=false);
+  document.getElementById('tituloModalVerba').textContent = '📑 Nova Verba';
+  document.querySelectorAll('#modalVerba input, #modalVerba select').forEach(el=>el.disabled=false);
+  document.getElementById('btnSalvarVerba').style.display='';
+  abrirModal('modalVerba');
+}
+function abrirVerba(id, somenteLeitura){
+  const v = VERBAS.find(x=>x.id===id);
+  if(!v) return;
+  verbaEditandoId = id;
+  document.getElementById('vbCodigo').value = v.codigo;
+  document.getElementById('vbDescricao').value = v.descricao;
+  document.getElementById('vbTipo').value = v.tipo;
+  document.getElementById('vbTipoValor').value = v.tipo_valor;
+  document.getElementById('vbIncideInss').checked = v.incide_inss;
+  document.getElementById('vbIncideIrrf').checked = v.incide_irrf;
+  document.getElementById('vbIncideFgts').checked = v.incide_fgts;
+  document.getElementById('tituloModalVerba').textContent = somenteLeitura ? `👁️ ${v.descricao} (somente leitura)` : `✏️ Alterar ${v.descricao}`;
+  document.querySelectorAll('#modalVerba input, #modalVerba select').forEach(el=>el.disabled=!!somenteLeitura);
+  document.getElementById('btnSalvarVerba').style.display = somenteLeitura ? 'none' : '';
+  abrirModal('modalVerba');
+}
+async function salvarVerba(){
+  const codigo = document.getElementById('vbCodigo').value.trim();
+  const descricao = document.getElementById('vbDescricao').value.trim();
+  if(!codigo||!descricao){ toast('Preenche código e descrição.','#dc2626'); return; }
+  const payload = {
+    codigo, descricao, tipo:document.getElementById('vbTipo').value, tipo_valor:document.getElementById('vbTipoValor').value,
+    incide_inss:document.getElementById('vbIncideInss').checked, incide_irrf:document.getElementById('vbIncideIrrf').checked, incide_fgts:document.getElementById('vbIncideFgts').checked,
+  };
+  try{
+    const{error} = verbaEditandoId
+      ? await supabaseClient.from('rh_verbas').update(payload).eq('id',verbaEditandoId)
+      : await supabaseClient.from('rh_verbas').insert(payload);
+    if(error) throw error;
+    toast(verbaEditandoId?'✓ Verba atualizada.':'✓ Verba criada.','#16a34a');
+    fecharModal('modalVerba');
+    carregarVerbas();
+  }catch(e){ console.error(e); toast('Não foi possível salvar — confere se o código já não existe.','#dc2626'); }
+}
+function confirmarExcluirVerba(id, descricao){
+  if(!confirm(`Deseja realmente excluir a verba "${descricao}"?`)) return;
+  excluirVerba(id);
+}
+async function excluirVerba(id){
+  try{
+    const{error} = await supabaseClient.from('rh_verbas').update({ativo:false}).eq('id',id);
+    if(error) throw error;
+    toast('✓ Verba excluída.','#16a34a');
+    carregarVerbas();
+  }catch(e){ console.error(e); toast('Não foi possível excluir.','#dc2626'); }
+}
+
+/* ── MOVIMENTO MENSAL (SRC) ──────────────────────────────── */
+async function carregarMovimentoMensal(){
+  try{
+    const{data,error} = await supabaseClient.from('rh_movimento_mensal').select('*, projetos(nome,codigo)').order('created_at',{ascending:false}).limit(30);
+    if(error) throw error;
+    document.getElementById('listaMovimentoMensal').innerHTML = (data&&data.length) ? data.map(m=>`
+      <div class="item-linha"><div><div class="principal">${m.projetos?.codigo||'—'} — ${m.competencia}</div>
+      <div class="sec">${m.qtd_pessoas_presentes} pessoas · ${m.qtd_horas_normais}h normais + ${m.qtd_horas_extras}h extras · ${m.qtd_refeicoes_consumidas} refeições · Custo HH: ${fmtMoeda(m.custo_hh_acumulado)} · Custo Refeição: ${fmtMoeda(m.custo_refeicao_acumulado)}</div></div>
+      <span class="status-pill ${m.processado?'status-ativo':'status-pendente'}">${m.origem}</span></div>`).join('') : '<div class="vazio">Nenhum apontamento recebido do RDO ainda.</div>';
+  }catch(e){ console.error(e); }
+}
+
 /* ── UTILITÁRIOS ─────────────────────────────────────────── */
 function toast(msg,cor){ const t=document.getElementById('toast'); t.textContent=msg; t.style.borderColor=cor||'#fd8a14'; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3200); }
 function fmtMoeda(v){ if(v===null||v===undefined||isNaN(v)) return 'R$ 0,00'; return 'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
@@ -933,7 +1094,7 @@ function iniciais(nome){ return (nome||'?').trim().split(' ').filter(Boolean).sl
 
 /* ── NAVEGAÇÃO ───────────────────────────────────────────── */
 function mudarView(nome){
-  const views=['dashboard','lista','formColaborador','importar','esocial','afastamentos','ferias','folha','rescisao','tabelasFiscais'];
+  const views=['dashboard','lista','formColaborador','importar','esocial','afastamentos','ferias','folha','rescisao','tabelasFiscais','verbas','movimentoMensal'];
   views.forEach(v=>{ const el=document.getElementById('view'+v.charAt(0).toUpperCase()+v.slice(1)); if(el) el.classList.toggle('hidden', v!==nome); });
   document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.classList.toggle('active', b.dataset.view===nome));
   if(nome==='dashboard') renderizarDashboard();
@@ -944,6 +1105,8 @@ function mudarView(nome){
   if(nome==='folha'){ popularTodosSelectsColaborador(); renderizarFolhas(); }
   if(nome==='rescisao') popularTodosSelectsColaborador();
   if(nome==='tabelasFiscais') renderizarTabelasFiscais();
+  if(nome==='verbas') carregarVerbas();
+  if(nome==='movimentoMensal') carregarMovimentoMensal();
 }
 document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.addEventListener('click',()=>mudarView(b.dataset.view)));
 
@@ -975,13 +1138,18 @@ function renderizarDashboard(){
 /* ── LISTA ───────────────────────────────────────────────── */
 function renderizarLinhaColaborador(c){
   const situacao = c.situacao_folha||'ativo';
-  return `<div class="colab-card" onclick="abrirEditarColaborador('${c.id}')">
+  return `<div class="colab-card">
     <div class="colab-avatar">${iniciais(c.nome)}</div>
-    <div style="flex:1">
+    <div style="flex:1;cursor:pointer" onclick="abrirEditarColaborador('${c.id}')">
       <div class="colab-nome">${c.nome}</div>
       <div class="colab-meta">${c.cargo||'Sem cargo'} · ${c.matricula||'Sem matrícula'} · Admissão: ${fmtData(c.admissao)}</div>
     </div>
     <span class="status-pill status-${situacao}">${situacao}</span>
+    <div style="display:flex;gap:4px;margin-left:10px" onclick="event.stopPropagation()">
+      <button class="btn btn-sm btn-ghost" title="Visualizar" onclick="abrirVisualizarColaborador('${c.id}')">👁️</button>
+      <button class="btn btn-sm btn-ghost" title="Alterar" onclick="abrirEditarColaborador('${c.id}')">✏️</button>
+      <button class="btn btn-sm btn-danger" title="Excluir" onclick="confirmarExcluirColaborador('${c.id}','${c.nome.replace(/'/g,"\\'")}')">🗑️</button>
+    </div>
   </div>`;
 }
 function renderizarLista(){
@@ -997,7 +1165,7 @@ function renderizarLista(){
 const CAMPOS_COLABORADOR = ['cNome','cNomeSocial','cNomeMae','cDataNascimento','cEstadoCivil','cNacionalidade','cTelefone','cEmail',
   'cLogradouro','cNumero','cBairro','cCidade','cUf','cCep','cEmergenciaNome','cEmergenciaTelefone',
   'cCpf','cPis','cRgNumero','cRgOrgao','cRgUf','cRgData','cCtpsNumero','cCtpsSerie','cCtpsUf','cTituloEleitor','cReservista','cCnhNumero','cCnhCategoria','cCnhValidade',
-  'cMatricula','cAdmissao','cVinculo','cSituacaoFolha','cCargo','cFuncao','cCentroCusto','cSindicato','cSalarioBase','cDataDesligamento',
+  'cMatricula','cAdmissao','cVinculo','cSituacaoFolha','cCargo','cFuncao','cCentroCusto','cIdObra','cCentroCustoTipo','cValorDiariaRefeicao','cSindicato','cSalarioBase','cDataDesligamento',
   'cBanco','cAgencia','cConta','cTipoConta','cChavePix'];
 
 function abrirNovoColaborador(){
@@ -1008,6 +1176,8 @@ function abrirNovoColaborador(){
   document.getElementById('cVinculo').value='clt';
   document.getElementById('cSituacaoFolha').value='ativo';
   document.getElementById('cTipoConta').value='corrente';
+  document.getElementById('cCentroCustoTipo').value='Matriz_Fixo';
+  aplicarModoSomenteLeitura(false);
   document.getElementById('tituloFormColaborador').textContent = 'Novo Colaborador';
   document.getElementById('btnExportarFicha').style.display = 'none';
   document.getElementById('listaHistoricoForm').innerHTML = '<div class="vazio">Salva o colaborador primeiro pra ver o histórico.</div>';
@@ -1016,12 +1186,12 @@ function abrirNovoColaborador(){
   mudarView('formColaborador');
 }
 
-async function abrirEditarColaborador(id){
+async function abrirEditarColaborador(id, somenteLeitura){
   const c = COLABORADORES.find(x=>x.id===id);
   if(!c) return;
   colaboradorEditandoId = id;
 
-  document.getElementById('tituloFormColaborador').textContent = c.nome;
+  document.getElementById('tituloFormColaborador').textContent = somenteLeitura ? `👁️ ${c.nome} (somente leitura)` : c.nome;
   document.getElementById('btnExportarFicha').style.display = '';
   const mapa = {
     cNome:c.nome, cNomeSocial:c.nome_social, cNomeMae:c.nome_mae, cDataNascimento:c.data_nascimento, cEstadoCivil:c.estado_civil,
@@ -1032,7 +1202,8 @@ async function abrirEditarColaborador(id){
     cCtpsNumero:c.ctps_numero, cCtpsSerie:c.ctps_serie, cCtpsUf:c.ctps_uf, cTituloEleitor:c.titulo_eleitor, cReservista:c.reservista,
     cCnhNumero:c.cnh_numero, cCnhCategoria:c.cnh_categoria, cCnhValidade:c.cnh_validade,
     cMatricula:c.matricula, cAdmissao:c.admissao, cVinculo:c.vinculo||'clt', cSituacaoFolha:c.situacao_folha||'ativo', cCargo:c.cargo, cFuncao:c.funcao,
-    cCentroCusto:c.centro_custo, cSindicato:c.sindicato, cSalarioBase:c.salario_base, cDataDesligamento:c.data_desligamento,
+    cCentroCusto:c.centro_custo, cIdObra:c.id_obra, cCentroCustoTipo:c.centro_custo_tipo||'Matriz_Fixo', cValorDiariaRefeicao:c.valor_diaria_refeicao,
+    cSindicato:c.sindicato, cSalarioBase:c.salario_base, cDataDesligamento:c.data_desligamento,
     cBanco:c.banco, cAgencia:c.agencia, cConta:c.conta, cTipoConta:c.tipo_conta||'corrente', cChavePix:c.chave_pix,
   };
   Object.entries(mapa).forEach(([id,valor])=>{ const el=document.getElementById(id); if(el) el.value = valor ?? ''; });
@@ -1040,8 +1211,27 @@ async function abrirEditarColaborador(id){
   await carregarDependentes(id);
   await carregarHistorico(id);
   await carregarTurnoAtualDoColaborador(id);
+  aplicarModoSomenteLeitura(somenteLeitura);
   trocarAbaForm('pessoais');
   mudarView('formColaborador');
+}
+function aplicarModoSomenteLeitura(somenteLeitura){
+  document.querySelectorAll('#viewFormColaborador input, #viewFormColaborador select, #viewFormColaborador textarea').forEach(el=>{ el.disabled = !!somenteLeitura; });
+  document.getElementById('btnSalvarColaborador').style.display = somenteLeitura ? 'none' : '';
+  document.getElementById('avisoSomenteLeitura').style.display = somenteLeitura ? '' : 'none';
+}
+async function abrirVisualizarColaborador(id){ await abrirEditarColaborador(id, true); }
+function confirmarExcluirColaborador(id, nome){
+  if(!confirm(`Deseja realmente excluir o registro "${nome}"? Isso não apaga o histórico (Ponto, Folha, Férias) já lançado, só o cadastro em si.`)) return;
+  excluirColaborador(id);
+}
+async function excluirColaborador(id){
+  try{
+    const{error} = await supabaseClient.from('funcionarios').delete().eq('id',id);
+    if(error) throw error;
+    toast('✓ Colaborador excluído.','#16a34a');
+    await carregarColaboradores(); renderizarLista(); renderizarDashboard();
+  }catch(e){ console.error(e); toast('Não foi possível excluir — provavelmente tem registros vinculados (Ponto, Folha) que impedem a exclusão física.','#dc2626'); }
 }
 
 async function salvarColaborador(){
@@ -1065,7 +1255,9 @@ async function salvarColaborador(){
     matricula:document.getElementById('cMatricula').value||null, admissao:document.getElementById('cAdmissao').value||null,
     vinculo:document.getElementById('cVinculo').value, situacao_folha:document.getElementById('cSituacaoFolha').value,
     cargo:document.getElementById('cCargo').value||null, funcao:document.getElementById('cFuncao').value||null,
-    centro_custo:document.getElementById('cCentroCusto').value||null, sindicato:document.getElementById('cSindicato').value||null,
+    centro_custo:document.getElementById('cCentroCusto').value||null, id_obra:document.getElementById('cIdObra').value||null,
+    centro_custo_tipo:document.getElementById('cCentroCustoTipo').value, valor_diaria_refeicao:parseFloat(document.getElementById('cValorDiariaRefeicao').value)||0,
+    sindicato:document.getElementById('cSindicato').value||null,
     salario_base:parseFloat(document.getElementById('cSalarioBase').value)||0, data_desligamento:document.getElementById('cDataDesligamento').value||null,
     banco:document.getElementById('cBanco').value||null, agencia:document.getElementById('cAgencia').value||null, conta:document.getElementById('cConta').value||null,
     tipo_conta:document.getElementById('cTipoConta').value, chave_pix:document.getElementById('cChavePix').value||null,
@@ -1273,6 +1465,7 @@ async function gerarPayloadEsocial(){
 (async function init(){
   await carregarColaboradores();
   await carregarTurnosDisponiveis();
+  await carregarObras();
   await carregarTabelasFiscais();
   popularTodosSelectsColaborador();
   renderizarDashboard();
