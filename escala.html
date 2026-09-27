@@ -2917,9 +2917,11 @@ async function loadState(){
     state.funcionarios = dadosCadastro.funcionarios.map(f=>f.nome);
     state.telefones = {};
     state.funcoes = {};
+    state.statusSst = {}; // status de compliance SST (apto/pendente/bloqueado), vindo direto do cadastro do GPE/SST
     dadosCadastro.funcionarios.forEach(f=>{
       if(f.telefone) state.telefones[f.nome] = f.telefone;
       if(f.funcao) state.funcoes[f.nome] = f.funcao;
+      state.statusSst[f.nome] = f.status || 'apto';
     });
     state.obras = dadosCadastro.obras;
     state.veiculos = dadosCadastro.veiculos;
@@ -3597,6 +3599,12 @@ function atualizarLinhaKm(obraId, idx, campo, valorBruto){
   } else if(campo==="passageiro-adicionar"){
     const nome = valorBruto;
     if(!nome) { agendarSalvamento(); atualizarVisaoObra(obraId); return; }
+    const statusPessoa = state.statusSst && state.statusSst[nome];
+    if(statusPessoa === 'bloqueado'){
+      alert("🚫 "+nome+" está com documento de SST vencido (ASO ou NR crítica) — não pode ser escalado(a) até regularizar no módulo Documental/SST.");
+      atualizarVisaoObra(obraId);
+      return;
+    }
     const cap = capacidadeVeiculo(linha.veiculo);
     if(vagasOcupadasBloco(linha) + 1 > cap){
       avisoCapacidade("O veículo \""+(linha.veiculo||"selecionado")+"\" já está completo ("+cap+" vaga(s), contando o motorista). Selecione outro veículo.");
