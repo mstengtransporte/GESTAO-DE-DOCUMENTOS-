@@ -3488,23 +3488,54 @@ function saveCompras(){
   // via unshift (nova) ou alteração de status de uma existente.
   sincronizarComprasComBanco();
 }
+async function buscarProjetoIdPorNome(nomeObra){
+  if(!nomeObra || !nomeObra.trim()) return null;
+  try{
+    const{data} = await supabaseClient.from('projetos').select('id,nome,codigo')
+      .or(`nome.ilike.%${nomeObra.trim()}%,codigo.ilike.%${nomeObra.trim()}%`).limit(1);
+    return (data && data[0]) ? data[0].id : null;
+  }catch(e){ return null; }
+}
+async function buscarEstoqueItemIdPorCodigo(codigo){
+  if(!codigo) return null;
+  try{
+    const{data} = await supabaseClient.from('estoque_itens').select('id').eq('codigo',codigo).limit(1);
+    return (data && data[0]) ? data[0].id : null;
+  }catch(e){ return null; }
+}
 async function sincronizarComprasComBanco(){
   try{
     for(const c of COMPRAS){
       if(c._sincronizado) continue;
+      const projeto_id = await buscarProjetoIdPorNome(c.obra);
+      const estoque_item_id = await buscarEstoqueItemIdPorCodigo(c.cod);
       const linha = {
         numero_legado: String(c.num), modulo: c.mod, codigo_material: c.cod,
         descricao_material: c.desc, unidade: c.un, quantidade: c.qtd,
         urgencia: c.urgencia, obra_texto: c.obra, solicitante_texto: c.solic,
-        observacoes: c.obs, status: c.status
+        observacoes: c.obs, status: c.status, projeto_id, estoque_item_id
       };
+      let idRequisicao = c._idBanco;
       if(c._idBanco){
         await supabaseClient.from('requisicoes').update(linha).eq('id', c._idBanco);
       }else{
         const{data, error} = await supabaseClient.from('requisicoes').insert(linha).select('id').single();
-        if(!error && data) c._idBanco = data.id;
+        if(!error && data){ c._idBanco = data.id; idRequisicao = data.id; }
       }
       c._sincronizado = true;
+      // Verifica o estoque e atende sozinho (total ou parcial), gerando
+      // compra só da diferença que faltar -- só na criação, não a cada
+      // edição, pra não tentar baixar estoque de novo toda hora.
+      if(idRequisicao && !c._estoqueVerificado && estoque_item_id){
+        try{
+          const{data:resultado} = await supabaseClient.rpc('verificar_e_atender_requisicao', {p_requisicao_id: idRequisicao});
+          if(resultado && resultado[0]){
+            c._estoqueVerificado = true;
+            c.status = resultado[0].gerado_compra > 0 ? 'Pendente' : 'Atendido pelo Estoque';
+            toast('📦 ' + resultado[0].mensagem);
+          }
+        }catch(e){ console.error('Falha ao verificar estoque:', e); }
+      }
     }
   }catch(e){ console.error('Falha ao sincronizar solicitações de compra:', e); }
 }
