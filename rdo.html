@@ -5362,7 +5362,20 @@ function onNameChange(sel,i){
           recalcAll();
           return;
         }
-        if(!namesList.some(x=>normalizarParaComparar(x)===normalizarParaComparar(n))){namesList.push(n);salvarListas();}
+        // GPE é o módulo mãe -- RDO só pode reconhecer quem já existe lá,
+        // nunca criar gente nova aqui (mesma correção já aplicada na Escala).
+        const jaExisteNoCadastro = namesList.some(x=>normalizarParaComparar(x)===normalizarParaComparar(n));
+        if(!jaExisteNoCadastro){
+          showToast(`⚠️ "${n}" não está cadastrado no Gestão de Pessoal (GPE) — cadastre lá primeiro, antes de lançar no RDO.`,'#dc2626');
+          const novaSel=document.createElement('select');
+          novaSel.className='cell-name';
+          novaSel.id=`name-${i}`;
+          novaSel.onchange=function(){onNameChange(this,i);};
+          novaSel.innerHTML=buildNameOptions('');
+          td.replaceChild(novaSel,inp);
+          recalcAll();
+          return;
+        }
         const novaSel=document.createElement('select');
         novaSel.className='cell-name';
         novaSel.id=`name-${i}`;
