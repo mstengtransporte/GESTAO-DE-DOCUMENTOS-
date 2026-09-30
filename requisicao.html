@@ -431,7 +431,7 @@ tbody tr:hover{background:var(--s2);}
         </select>
       </div>
       <div class="movim-table-wrap">
-        <div id="comprasTable"><table><thead><tr><th>Data</th><th>Nº</th><th>Módulo</th><th>Código</th><th>Descrição</th><th>Qtd</th><th>Urgência</th><th>Obra</th><th>Solicitante</th><th>Status</th><th>Ações</th></tr></thead><tbody id="comprasTbody"></tbody></table></div>
+        <div id="comprasTable"><table><thead><tr><th>Data</th><th>Nº</th><th>Módulo</th><th>Código</th><th>Descrição</th><th>Qtd</th><th>Valor Est.</th><th>Urgência</th><th>Obra</th><th>Solicitante</th><th>Status</th><th>Ações</th></tr></thead><tbody id="comprasTbody"></tbody></table></div>
         <div id="comprasEmpty" style="display:none" class="empty-state"><div class="ei">🛒</div><div style="font-size:var(--fs-md);font-weight:700">Nenhuma solicitação de compra</div><div style="font-size:var(--fs-sm)">Itens sem estoque podem ser solicitados direto pelo catálogo</div></div>
       </div>
     </div>
@@ -515,7 +515,7 @@ tbody tr:hover{background:var(--s2);}
     <div class="modal-sub">Busque em Tubulação/Elétrica <b>e</b> Consumíveis/Ferramentas ao mesmo tempo</div>
     <div class="fg"><label>Tipo *</label><select id="mvTipo" onchange="alternarCampoValorEntrada()"></select></div>
     <div class="fg" id="mvValorEntradaBox" style="display:none">
-      <label>Valor Unitário desta Entrada (R$) *</label>
+      <label id="mvValorEntradaLabel">Valor Unitário desta Entrada (R$) *</label>
       <input id="mvValorEntrada" type="number" step="0.01" min="0" placeholder="0,00">
       <div class="small" id="mvPreviewCustoMedio" style="margin-top:4px;color:var(--muted)"></div>
     </div>
@@ -2129,6 +2129,9 @@ function createCatalogModule(cfg){
       (semEstoque ? '<span class="c-st" title="Sem estoque">🚫</span>' : '') + '</div>' +
       '<div class="c-desc">' + esc(it.desc) + '</div>' +
       '<div class="c-cat">' + esc(it.cat) + ' · ' + esc(it.un) + '</div>' +
+      '<div class="c-preco" style="font-size:var(--fs-xs);margin:2px 0 6px;color:' + (it.custo>0 ? 'var(--ok,#16a34a)' : 'var(--mu)') + '">' +
+        (it.custo>0 ? ('💲 Custo médio: <b>' + fmtValor(it.custo) + '</b>/' + esc(it.un) + ' · Em estoque: ' + fmtValor(it.custo*(it.qty||0))) : '💲 Sem preço — dê entrada com valor em Movimentações') +
+      '</div>' +
       qtyStepper +
       '<div class="c-actions">' +
         '<button data-action="edit-item" data-mod="' + M.key + '" data-id="' + esc(it.id) + '">✎ Editar</button>' +
@@ -2881,7 +2884,10 @@ var MOVIMS = [];
 async function alternarCampoValorEntrada(){
   var tipo = el('mvTipo').value;
   var box = el('mvValorEntradaBox');
-  box.style.display = (tipo === 'ENTRADA') ? '' : 'none';
+  box.style.display = (tipo === 'ENTRADA' || tipo === 'AJUSTE DE ESTOQUE') ? '' : 'none';
+  el('mvValorEntradaLabel').textContent = (tipo === 'AJUSTE DE ESTOQUE')
+    ? 'Custo unitário do saldo (R$) — opcional, define o preço de itens que já estavam no estoque'
+    : 'Valor Unitário desta Entrada (R$) *';
   if(tipo === 'ENTRADA') await atualizarPreviewCustoMedio();
 }
 async function atualizarPreviewCustoMedio(){
@@ -2896,6 +2902,31 @@ async function atualizarPreviewCustoMedio(){
   }catch(e){ preview.textContent = ''; }
 }
 function fmtValor(v){ return 'R$ ' + (Number(v)||0).toFixed(2).replace('.',','); }
+function custoDoItem(modKey, cod){
+  var mod = Modules[modKey];
+  var it = mod ? mod.items.find(function(x){ return x.cod === cod; }) : null;
+  return it && it.custo > 0 ? it.custo : 0;
+}
+function valorEstimadoCompra(c){
+  var custo = custoDoItem(c.mod, c.cod);
+  return custo > 0 ? ('<b>' + fmtValor(custo * c.qtd) + '</b><div style="font-size:10px;color:var(--mu)">' + fmtValor(custo) + '/un.</div>') : '<span style="color:var(--mu)" title="Sem custo médio ainda — dê entrada com valor em Movimentações">—</span>';
+}
+async function sincronizarPrecosEQuantidadesDoBanco(){
+  // Banco (estoque_itens) é a fonte única de quantidade e custo médio --
+  // sobrescreve o que estiver guardado localmente, item por item, pelo código.
+  try{
+    var{data, error} = await supabaseClient.from('estoque_itens').select('codigo,quantidade_atual,custo_medio');
+    if(error) throw error;
+    var mapa = {};
+    (data||[]).forEach(function(r){ mapa[r.codigo] = r; });
+    ['tub','cons'].forEach(function(k){
+      Modules[k].items.forEach(function(it){
+        var r = mapa[it.cod];
+        if(r){ it.qty = Number(r.quantidade_atual)||0; it.custo = Number(r.custo_medio)||0; }
+      });
+    });
+  }catch(e){ console.error('Falha ao carregar preços do estoque:', e); }
+}
 
 async function registrarMovimentacao(data){
   var mod = Modules[data.modulo];
@@ -2924,7 +2955,7 @@ async function registrarMovimentacao(data){
     var projeto_id = await buscarProjetoIdPorNome(data.obra);
     var{error} = await supabaseClient.from('estoque_movimentacoes').insert({
       item_id: itemId, tipo: data.tipo, quantidade: data.qtd,
-      valor_entrada: data.tipo==='ENTRADA' ? data.valorEntrada : null,
+      valor_entrada: (data.tipo==='ENTRADA' || (data.tipo==='AJUSTE DE ESTOQUE' && data.valorEntrada>0)) ? data.valorEntrada : null,
       projeto_id: projeto_id, obra_texto: data.obra||'', responsavel: data.resp||'', observacao: data.obs||'',
     });
     if(error) throw error;
@@ -3763,7 +3794,7 @@ function renderComprasTable(){
     acoes += '<button class="tbtn" data-action="compra-del" data-id="' + c.id + '">🗑</button>';
     return '<tr><td>' + new Date(c.ts).toLocaleDateString('pt-BR') + '</td><td>' + esc(c.num) + '</td>' +
       '<td>' + (c.mod === 'tub' ? 'Tubulação' : 'Consumíveis') + '</td><td>' + esc(c.cod) + '</td><td>' + esc(c.desc) + '</td>' +
-      '<td>' + c.qtd + ' ' + esc(c.un) + '</td><td>' + (c.urgencia === 'Urgente' ? '🔴 Urgente' : 'Normal') + '</td>' +
+      '<td>' + c.qtd + ' ' + esc(c.un) + '</td><td>' + valorEstimadoCompra(c) + '</td><td>' + (c.urgencia === 'Urgente' ? '🔴 Urgente' : 'Normal') + '</td>' +
       '<td>' + esc(c.obra) + '</td><td>' + esc(c.solic) + '</td>' +
       '<td><span class="badge ' + statusBadgeClassCompra(c.status) + '">' + esc(c.status) + '</span></td>' +
       '<td style="white-space:nowrap">' + acoes + '</td></tr>';
@@ -4339,6 +4370,9 @@ async function initApp(){
 
   Modules.tub.init();
   Modules.cons.init();
+  await sincronizarPrecosEQuantidadesDoBanco();
+  Modules.tub.renderGrid();
+  Modules.cons.renderGrid();
 
   populateMovimSelects();
   renderMovimTable();
