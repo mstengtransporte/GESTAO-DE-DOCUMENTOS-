@@ -334,6 +334,7 @@ a{color:inherit;}
         <div id="avisoOrigemOrcamento" style="background:rgba(0,181,254,.1);border:1px solid rgba(0,181,254,.3);border-radius:8px;padding:10px 14px;font-size:12.5px;margin-bottom:14px">Carregando origem do orçamento…</div>
         <div class="form-grid">
           <div class="fld"><label>Mão de Obra (R$)</label><input type="number" id="orcMaoObra" step="0.01"></div>
+          <div class="fld"><label>Alimentação (R$)</label><input type="number" id="orcAlimentacao" step="0.01"></div>
           <div class="fld"><label>Material (R$)</label><input type="number" id="orcMaterial" step="0.01"></div>
           <div class="fld"><label>Frota (R$)</label><input type="number" id="orcFrota" step="0.01"></div>
           <div class="fld"><label>Terceiros (R$)</label><input type="number" id="orcTerceiros" step="0.01"></div>
@@ -726,6 +727,7 @@ async function abrirNovoMembro(){
 /* ── ORÇAMENTO POR CATEGORIA ─────────────────────────────── */
 const CATEGORIAS_ORCAMENTO = [
   {chave:'mao_obra', campo:'orcMaoObra', label:'Mão de Obra'},
+  {chave:'alimentacao', campo:'orcAlimentacao', label:'Alimentação'},
   {chave:'material', campo:'orcMaterial', label:'Material'},
   {chave:'frota', campo:'orcFrota', label:'Frota'},
   {chave:'terceiros', campo:'orcTerceiros', label:'Terceiros'},

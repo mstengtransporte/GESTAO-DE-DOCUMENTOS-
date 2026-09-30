@@ -211,6 +211,9 @@ a{color:inherit;}
     <button class="nav-item" data-view="pedidos"><span class="ic">📦</span>Pedidos de Venda</button>
     <button class="nav-item" data-view="aprovacoes"><span class="ic">✅</span>Aprovações</button>
 
+    <div class="nav-lbl">Resultado</div>
+    <button class="nav-item" data-view="cockpit"><span class="ic">📊</span>Cockpit de Margem</button>
+
     <div class="sidebar-foot">
       ESF · Vendas/CRM — v2026.09.22<br>
       <span id="statusConexao">🟢 Online</span>
@@ -413,6 +416,28 @@ a{color:inherit;}
     </div>
 
     <!-- ═══════════ APROVAÇÕES ═══════════ -->
+    <!-- ═══════════ COCKPIT DE MARGEM ═══════════ -->
+    <div id="viewCockpit" class="hidden">
+      <div class="pg-head">
+        <div><h1>Cockpit de Margem</h1><p>Vendido × Realizado por obra: mão de obra e alimentação (RDO), frota (Escala), material (Estoque). OS MATRIZ isolada.</p></div>
+        <button class="btn" onclick="carregarCockpit()">🔄 Recalcular Margem Realizada</button>
+      </div>
+      <div class="card">
+        <div class="form-grid">
+          <div class="fld"><label>Projeto</label><select id="ckProjeto" onchange="aoTrocarProjetoCockpit()"></select></div>
+          <div class="fld"><label>Obra do RDO vinculada</label><select id="ckObra"></select></div>
+          <div class="fld"><label>Tarifa da refeição por presença (R$)</label><input type="number" id="ckTarifa" step="0.01" min="0"></div>
+        </div>
+        <button class="btn btn-sm" style="margin-top:10px" onclick="salvarVinculoCockpit()">💾 Salvar vínculo e tarifa</button>
+        <p class="sub" style="margin-top:8px">A tarifa é definida aqui, no CRM, e o GPE apenas consulta. 1 presença no RDO (horas &gt; 0 no dia) = 1 refeição.</p>
+        <div id="ckAvisos" style="margin-top:10px"></div>
+      </div>
+      <div class="grid-kpi" id="ckKpis"></div>
+      <div class="card"><h2>Teto vendido × Custos efetivos</h2><div id="ckTabela"><div class="vazio">Escolhe um projeto.</div></div></div>
+      <div class="card"><h2>🔎 OS MATRIZ — quanto a ociosidade tirou da margem</h2><div id="ckMatriz"></div></div>
+      <div class="card"><h2>DRE Comercial da Obra</h2><div id="ckDre"></div></div>
+    </div>
+
     <div id="viewAprovacoes" class="hidden">
       <div class="pg-head"><div><h1>Aprovações Pendentes</h1><p>Pedidos travados por crédito ou margem, esperando liberação.</p></div></div>
       <div class="card">
@@ -514,7 +539,7 @@ function normalizar(s){ return (s||'').toString().toLowerCase().normalize('NFD')
 
 /* ── NAVEGAÇÃO ───────────────────────────────────────────── */
 function mudarView(nome){
-  const views = ['dashboard','funil','oportunidades','detalheOport','clientes','novoCliente','pedidos','novoPedido','detalhePedido','aprovacoes'];
+  const views = ['dashboard','funil','oportunidades','detalheOport','clientes','novoCliente','pedidos','novoPedido','detalhePedido','aprovacoes','cockpit'];
   views.forEach(v=>{
     const el = document.getElementById('view'+v.charAt(0).toUpperCase()+v.slice(1));
     if(el) el.classList.toggle('hidden', v !== nome);
@@ -526,8 +551,106 @@ function mudarView(nome){
   if(nome==='clientes') renderizarClientes();
   if(nome==='pedidos') renderizarPedidos();
   if(nome==='aprovacoes') renderizarAprovacoes();
+  if(nome==='cockpit') iniciarCockpit();
 }
 document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.addEventListener('click', ()=>mudarView(b.dataset.view)));
+
+/* ── COCKPIT DE MARGEM ───────────────────────────────────── */
+let CK_PROJETOS = [], CK_OBRAS = [];
+function escHtml(s){ return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+const CK_CATEGORIAS = [
+  {chave:'mao_obra', label:'Mão de obra', campos:['mo_produtiva','mo_matriz']},
+  {chave:'alimentacao', label:'Alimentação', campos:['alimentacao_produtiva','alimentacao_matriz']},
+  {chave:'frota', label:'Frota (km rodado)', campos:['frota']},
+  {chave:'material', label:'Materiais', campos:['material']},
+  {chave:'terceiros', label:'Terceiros / outros', campos:['terceiros_outros']},
+];
+async function iniciarCockpit(){
+  try{
+    const[rp,ro] = await Promise.all([
+      supabaseClient.from('projetos').select('id,codigo,nome,orcamento_previsto,obra_id,tarifa_refeicao').order('codigo'),
+      supabaseClient.from('obras').select('id,nome').order('nome'),
+    ]);
+    if(rp.error) throw rp.error; if(ro.error) throw ro.error;
+    CK_PROJETOS = rp.data||[]; CK_OBRAS = ro.data||[];
+    const atual = document.getElementById('ckProjeto').value;
+    document.getElementById('ckProjeto').innerHTML = '<option value="">— Selecione —</option>' + CK_PROJETOS.map(p=>`<option value="${p.id}">${escHtml(p.codigo||'')} — ${escHtml(p.nome)}</option>`).join('');
+    document.getElementById('ckObra').innerHTML = '<option value="">— Sem obra vinculada —</option>' + CK_OBRAS.map(o=>`<option value="${o.id}">${escHtml(o.nome)}</option>`).join('');
+    if(atual) { document.getElementById('ckProjeto').value = atual; aoTrocarProjetoCockpit(); }
+  }catch(e){ console.error(e); toast('Não foi possível carregar os projetos.','#dc2626'); }
+}
+function aoTrocarProjetoCockpit(){
+  const p = CK_PROJETOS.find(x=>x.id===document.getElementById('ckProjeto').value);
+  document.getElementById('ckObra').value = p?.obra_id || '';
+  document.getElementById('ckTarifa').value = p?.tarifa_refeicao || '';
+  carregarCockpit();
+}
+async function salvarVinculoCockpit(){
+  const id = document.getElementById('ckProjeto').value;
+  if(!id){ toast('Escolhe o projeto.','#dc2626'); return; }
+  const tarifa = parseFloat(document.getElementById('ckTarifa').value);
+  try{
+    const{error} = await supabaseClient.from('projetos').update({
+      obra_id: document.getElementById('ckObra').value || null,
+      tarifa_refeicao: isNaN(tarifa) ? 0 : tarifa,
+    }).eq('id', id);
+    if(error) throw error;
+    toast('✓ Vínculo e tarifa salvos.','#16a34a');
+    await iniciarCockpit();
+  }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
+}
+function corPct(pct){ return pct>=100 ? '#dc2626' : pct>=80 ? '#e8a33d' : '#16a34a'; }
+async function carregarCockpit(){
+  const id = document.getElementById('ckProjeto').value;
+  if(!id){ return; }
+  try{
+    const[rc, rv] = await Promise.all([
+      supabaseClient.rpc('fn_cockpit_margem', {p_projeto_id:id}),
+      supabaseClient.from('vw_orcamento_projeto').select('categoria,orcado').eq('projeto_id', id),
+    ]);
+    if(rc.error) throw rc.error;
+    const c = rc.data;
+    if(!c || c.erro){ toast(c?.erro || 'Sem dados.','#dc2626'); return; }
+    const tetos = {}; (rv.data||[]).forEach(r=>{ tetos[r.categoria] = Number(r.orcado)||0; });
+    renderizarCockpit(c, tetos);
+  }catch(e){ console.error(e); toast('Não foi possível calcular a margem (o SQL do cockpit já foi rodado?).','#dc2626'); }
+}
+function renderizarCockpit(c, tetos){
+  document.getElementById('ckAvisos').innerHTML = (c.avisos||[]).map(a=>`<div style="background:#e8a33d22;border:1px solid #e8a33d55;border-radius:8px;padding:8px 12px;font-size:12.5px;margin-top:6px">⚠️ ${escHtml(a)}</div>`).join('');
+
+  const corMargem = (c.margem_pct===null) ? '#8a94a6' : c.margem_pct<0 ? '#dc2626' : c.margem_pct<10 ? '#e8a33d' : '#16a34a';
+  document.getElementById('ckKpis').innerHTML =
+    `<div class="kpi" style="--cor:#00b5fe"><div class="n">${fmtMoeda(c.vendido)}</div><div class="l">Valor vendido</div></div>
+     <div class="kpi" style="--cor:#8b5cf6"><div class="n">${fmtMoeda(c.custo_total)}</div><div class="l">Custo realizado total</div></div>
+     <div class="kpi" style="--cor:${corMargem}"><div class="n">${fmtMoeda(c.margem_valor)}</div><div class="l">Margem real${c.margem_pct===null?'':' · '+String(c.margem_pct).replace('.',',')+'%'}</div></div>
+     <div class="kpi" style="--cor:#dc2626"><div class="n">${fmtMoeda(c.custo_matriz)}</div><div class="l">Custo da OS MATRIZ</div></div>`;
+
+  document.getElementById('ckTabela').innerHTML = CK_CATEGORIAS.map(cat=>{
+    const real = cat.campos.reduce((s,k)=>s+(Number(c[k])||0),0);
+    const teto = tetos[cat.chave];
+    const temTeto = teto!==undefined && teto>0;
+    const pct = temTeto ? Math.round(real/teto*100) : null;
+    const nota = (cat.chave==='frota' && c.frota_status==='sem_dados') ? ' <span style="color:#e8a33d" title="Sem km na Escala ou sem abastecimentos">(sem dados)</span>' : '';
+    return `<div class="item-linha"><div><div class="principal">${cat.label}${nota}</div>
+      <div class="sec">Teto ${temTeto?fmtMoeda(teto):'— (não definido em Projetos)'} · Realizado ${fmtMoeda(real)}${temTeto?' · Saldo '+fmtMoeda(teto-real):''}</div></div>
+      ${temTeto?`<span class="status-pill" style="background:${corPct(pct)}22;color:${corPct(pct)}">${pct}%</span>`:''}</div>`;
+  }).join('');
+
+  const pctHoras = c.horas_total>0 ? Math.round(c.horas_matriz/c.horas_total*100) : 0;
+  document.getElementById('ckMatriz').innerHTML = c.horas_matriz>0
+    ? `<div class="item-linha"><div><div class="principal">${fmtMoeda(c.custo_matriz)} = ${String(c.matriz_pct_do_vendido??0).replace('.',',')}% do valor vendido</div>
+       <div class="sec">Mão de obra parada ${fmtMoeda(c.mo_matriz)} + alimentação ${fmtMoeda(c.alimentacao_matriz)} · ${c.horas_matriz} h de ${c.horas_total} h (${pctHoras}% das horas da obra)</div></div>
+       <span class="status-pill" style="background:#dc262622;color:#f87171">−${String(c.matriz_pct_do_vendido??0).replace('.',',')} p.p. de margem</span></div>`
+    : '<div class="vazio">Nenhuma hora em OS "MATRIZ" nesta obra. Para isolar a ociosidade, nomeie a OS correspondente no RDO com a palavra MATRIZ.</div>';
+
+  const l = (t,v,neg,forte)=>`<div class="item-linha"><div class="principal" style="${forte?'font-weight:700':''}">${t}</div><b style="${neg?'color:#f87171':''}">${neg?'− ':''}${fmtMoeda(v)}</b></div>`;
+  document.getElementById('ckDre').innerHTML =
+    l('Receita — valor vendido', c.vendido, false, true) +
+    l('Custos das OSs produtivas', c.custo_produtivo, true, true) +
+    `<div style="margin:0 0 8px 14px;font-size:11.5px;color:#8a94a6">Mão de obra ${fmtMoeda(c.mo_produtiva)} · Alimentação ${fmtMoeda(c.alimentacao_produtiva)} · Frota ${fmtMoeda(c.frota)} · Materiais ${fmtMoeda(c.material)} · Terceiros/outros ${fmtMoeda(c.terceiros_outros)}</div>` +
+    l('Custo da OS MATRIZ (ociosidade)', c.custo_matriz, true, true) +
+    l('= Lucro líquido da obra'+(c.margem_pct===null?'':' ('+String(c.margem_pct).replace('.',',')+'%)'), c.margem_valor, c.margem_valor<0, true);
+}
 
 /* ── CARREGAMENTO ────────────────────────────────────────── */
 async function carregarClientes(){

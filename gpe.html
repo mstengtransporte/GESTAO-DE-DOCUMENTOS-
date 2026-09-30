@@ -451,9 +451,9 @@ a{color:inherit;}
             <div class="fld"><label>Cargo</label><input type="text" id="cCargo"></div>
             <div class="fld"><label>Função</label><input type="text" id="cFuncao"></div>
             <div class="fld"><label>Centro de Custo</label><input type="text" id="cCentroCusto"></div>
-            <div class="fld"><label>Obra</label><select id="cIdObra"><option value="">— Sem obra vinculada —</option></select></div>
+            <div class="fld"><label>Obra</label><select id="cIdObra" onchange="mostrarTarifaObra()"><option value="">— Sem obra vinculada —</option></select><div class="sub" id="infoTarifaObra" style="margin-top:4px"></div></div>
             <div class="fld"><label>Tipo de Centro de Custo</label><select id="cCentroCustoTipo"><option value="Matriz_Fixo">Matriz Fixo (não onera DRE de obra)</option><option value="Obra_Certa">Obra Certa (100% do custo vai pra obra)</option></select></div>
-            <div class="fld"><label>Diária de Refeição (R$)</label><input type="number" id="cValorDiariaRefeicao" step="0.01"></div>
+            <div class="fld"><label>Diária de Refeição (R$) — informativo</label><input type="number" id="cValorDiariaRefeicao" step="0.01"></div>
             <div class="fld"><label>Sindicato</label><select id="cSindicatoId"></select></div>
             <div class="fld"><label><input type="checkbox" id="cRecebePericulosidade" style="width:auto;margin-right:6px"> Recebe Periculosidade</label></div>
             <div class="fld"><label><input type="checkbox" id="cRecebeInsalubridade" style="width:auto;margin-right:6px"> Recebe Insalubridade</label></div>
@@ -712,9 +712,19 @@ async function carregarSindicatos(){
     if(el) el.innerHTML = '<option value="">— Sem sindicato —</option>' + SINDICATOS.map(s=>`<option value="${s.id}">${s.nome} (${s.percentual_periculosidade}% periculosidade)</option>`).join('');
   }catch(e){ console.error(e); }
 }
+let OBRAS_TARIFA = {};
+function mostrarTarifaObra(){
+  const id = document.getElementById('cIdObra').value;
+  const el = document.getElementById('infoTarifaObra');
+  if(!el) return;
+  if(!id){ el.textContent=''; return; }
+  const t = OBRAS_TARIFA[id]||0;
+  el.textContent = t>0 ? `🍽️ Tarifa da refeição desta obra (definida no CRM): ${fmtMoeda(t)} por presença` : '🍽️ Tarifa da refeição ainda não definida no CRM para esta obra.';
+}
 async function carregarObras(){
   try{
-    const{data,error} = await supabaseClient.from('projetos').select('id,nome,codigo').order('nome');
+    const{data,error} = await supabaseClient.from('projetos').select('id,nome,codigo,tarifa_refeicao').order('nome');
+    OBRAS_TARIFA = {}; (data||[]).forEach(p=>{ OBRAS_TARIFA[p.id] = Number(p.tarifa_refeicao)||0; });
     if(error) throw error;
     const el = document.getElementById('cIdObra');
     if(el) el.innerHTML = '<option value="">— Sem obra vinculada —</option>' + (data||[]).map(p=>`<option value="${p.id}">${p.codigo} — ${p.nome}</option>`).join('');
@@ -1358,6 +1368,7 @@ function abrirNovoColaborador(){
   document.getElementById('cRecebeInsalubridade').checked=false;
   document.getElementById('cGrauInsalubridade').value='0';
   aplicarModoSomenteLeitura(false);
+  mostrarTarifaObra();
   document.getElementById('tituloFormColaborador').textContent = 'Novo Colaborador';
   document.getElementById('btnExportarFicha').style.display = 'none';
   document.getElementById('listaHistoricoForm').innerHTML = '<div class="vazio">Salva o colaborador primeiro pra ver o histórico.</div>';
@@ -1395,6 +1406,7 @@ async function abrirEditarColaborador(id, somenteLeitura){
   await carregarHistorico(id);
   await carregarTurnoAtualDoColaborador(id);
   aplicarModoSomenteLeitura(somenteLeitura);
+  mostrarTarifaObra();
   trocarAbaForm('pessoais');
   mudarView('formColaborador');
 }
