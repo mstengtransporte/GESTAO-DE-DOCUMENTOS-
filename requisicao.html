@@ -563,7 +563,7 @@ tbody tr:hover{background:var(--s2);}
     </div>
     <div class="fgr2">
       <div class="fg"><label>Obra / Finalidade</label><input id="cpObra" list="obrasDatalist" placeholder="Selecione ou digite"></div>
-      <div class="fg"><label>Solicitante</label><input id="cpSolic" placeholder="Seu nome"></div>
+      <div class="fg"><label>Solicitante</label><select id="cpSolic"><option value="">— Selecione quem está pedindo —</option></select></div>
     </div>
     <div class="fg"><label>Observação</label><input id="cpObs" placeholder="Opcional — ex: fornecedor sugerido, prazo"></div>
     <div class="mftr">
@@ -3187,6 +3187,20 @@ function delDisc(nome){
 var FUNCIONARIOS = [];
 var _nextFuncId = 1;
 function saveFuncionarios(){ try{ localStorage.setItem(LS_FUNC, JSON.stringify({v:1, funcs:FUNCIONARIOS, nextId:_nextFuncId})); }catch(e){} }
+/* GPE é o módulo mãe -- Requisição só CONSULTA quem já está
+   cadastrado lá, pra solicitante e autorizador. Não usa mais o
+   cadastro local (FUNCIONARIOS/addFuncionario), que era um
+   catálogo paralelo, desconectado do GPE de verdade. */
+var FUNCIONARIOS_GPE = [];
+async function carregarFuncionariosGPE(){
+  try{
+    var{data,error} = await supabaseClient.from('funcionarios').select('id,nome').neq('situacao_folha','demitido').order('nome');
+    if(error) throw error;
+    FUNCIONARIOS_GPE = data||[];
+    var opts = '<option value="">— Selecione —</option>' + FUNCIONARIOS_GPE.map(function(f){ return '<option value="'+f.id+'">'+f.nome+'</option>'; }).join('');
+    var elSolic = document.getElementById('cpSolic'); if(elSolic) elSolic.innerHTML = opts;
+  }catch(e){ console.error('Falha ao carregar funcionários do GPE:', e); }
+}
 function loadFuncionarios(){
   try{
     var raw = localStorage.getItem(LS_FUNC); if(!raw) return;
@@ -3615,6 +3629,7 @@ async function sincronizarComprasComBanco(){
         numero_legado: String(c.num), modulo: c.mod, codigo_material: c.cod,
         descricao_material: c.desc, unidade: c.un, quantidade: c.qtd,
         urgencia: c.urgencia, obra_texto: c.obra, solicitante_texto: c.solic,
+        solicitante_funcionario_id: c.solicId||null,
         observacoes: c.obs, status: c.status, projeto_id, estoque_item_id
       };
       let idRequisicao = c._idBanco;
@@ -3625,21 +3640,30 @@ async function sincronizarComprasComBanco(){
         if(!error && data){ c._idBanco = data.id; idRequisicao = data.id; }
       }
       c._sincronizado = true;
-      // Verifica o estoque e atende sozinho (total ou parcial), gerando
-      // compra só da diferença que faltar -- só na criação, não a cada
-      // edição, pra não tentar baixar estoque de novo toda hora.
-      if(idRequisicao && !c._estoqueVerificado && estoque_item_id){
-        try{
-          const{data:resultado} = await supabaseClient.rpc('verificar_e_atender_requisicao', {p_requisicao_id: idRequisicao});
-          if(resultado && resultado[0]){
-            c._estoqueVerificado = true;
-            c.status = resultado[0].gerado_compra > 0 ? 'Pendente' : 'Atendido pelo Estoque';
-            toast('📦 ' + resultado[0].mensagem);
-          }
-        }catch(e){ console.error('Falha ao verificar estoque:', e); }
-      }
+      // O atendimento de estoque NÃO acontece mais sozinho aqui --
+      // agora exige autorização de um responsável (botão "Autorizar"
+      // na lista), pra ficar rastreável quem liberou o quê.
     }
   }catch(e){ console.error('Falha ao sincronizar solicitações de compra:', e); }
+}
+async function autorizarCompra(id){
+  var c = COMPRAS.find(function(x){ return x.id === id; });
+  if(!c || !c._idBanco){ toast('Aguarda sincronizar com o servidor antes de autorizar.', 'err'); return; }
+  if(!FUNCIONARIOS_GPE.length){ toast('Não achei ninguém cadastrado no GPE pra autorizar.', 'err'); return; }
+  var lista = FUNCIONARIOS_GPE.map(function(f,i){ return (i+1)+') '+f.nome; }).join('\n');
+  var escolha = parseInt(prompt('Quem está autorizando a solicitação "'+c.desc+'"?\n\n'+lista));
+  var autorizador = FUNCIONARIOS_GPE[escolha-1];
+  if(!autorizador){ toast('Autorização cancelada.', 'err'); return; }
+  try{
+    const{data:resultado, error} = await supabaseClient.rpc('verificar_e_atender_requisicao', {p_requisicao_id: c._idBanco, p_autorizado_por_funcionario_id: autorizador.id});
+    if(error) throw error;
+    if(resultado && resultado[0]){
+      c.autorizadoPorId = autorizador.id; c.autorizadoPorNome = autorizador.nome;
+      c.status = resultado[0].gerado_compra > 0 ? 'Pendente' : 'Atendido pelo Estoque';
+      saveCompras(); renderComprasTable();
+      toast('✅ Autorizado por ' + autorizador.nome + ' — ' + resultado[0].mensagem);
+    }
+  }catch(e){ console.error(e); toast('Não foi possível autorizar.', 'err'); }
 }
 async function loadCompras(){
   try{
@@ -3718,7 +3742,7 @@ function abrirEditarCompra(id){
   el('cpQtd').value = c.qtd;
   el('cpUrg').value = c.urgencia;
   el('cpObra').value = c.obra || '';
-  el('cpSolic').value = c.solic || '';
+  el('cpSolic').value = c.solicId || '';
   el('cpObs').value = c.obs || '';
   document.querySelector('#modCompra .modal-title').textContent = 'Alterar Solicitação ' + c.num;
   document.querySelector('#modCompra .mbtn-ok').textContent = '✔ Salvar Alteração';
@@ -3733,7 +3757,10 @@ async function saveCompraFromModal(){
     if(!existente){ editandoCompraId=null; return; }
     existente.mod = _cpSelected.mod; existente.cod = _cpSelected.cod; existente.desc = _cpSelected.desc; existente.un = _cpSelected.un;
     existente.qtd = qtd; existente.urgencia = el('cpUrg').value; existente.obra = el('cpObra').value.trim();
-    existente.solic = el('cpSolic').value.trim(); existente.obs = el('cpObs').value.trim();
+    existente.solicId = el('cpSolic').value || null;
+    var funcSelecionado = FUNCIONARIOS_GPE.find(function(f){ return f.id === existente.solicId; });
+    existente.solic = funcSelecionado ? funcSelecionado.nome : '';
+    existente.obs = el('cpObs').value.trim();
     existente._sincronizado = false; // força reenviar essa linha específica pro banco
     await sincronizarComprasComBanco();
     renderComprasTable(); renderDashboard();
@@ -3749,8 +3776,10 @@ async function saveCompraFromModal(){
     id: _nextCompraId++, num: nextCompraNum(), ts: Date.now(),
     mod: _cpSelected.mod, cod: _cpSelected.cod, desc: _cpSelected.desc, un: _cpSelected.un,
     qtd: qtd, urgencia: el('cpUrg').value, obra: el('cpObra').value.trim(),
-    solic: el('cpSolic').value.trim(), obs: el('cpObs').value.trim(), status: 'Pendente'
+    solicId: el('cpSolic').value || null, solic: '', obs: el('cpObs').value.trim(), status: 'Pendente'
   };
+  var funcSelecionadoNovo = FUNCIONARIOS_GPE.find(function(f){ return f.id === compra.solicId; });
+  compra.solic = funcSelecionadoNovo ? funcSelecionadoNovo.nome : '';
   COMPRAS.unshift(compra);
   saveCompras();
   renderComprasTable();
@@ -3790,6 +3819,7 @@ function renderComprasTable(){
       acoes += '<button class="tbtn" data-action="compra-pdf" data-id="' + c.id + '" title="Ver ou compartilhar o PDF">📤 PDF</button>';
       acoes += '<button class="tbtn" data-action="compra-wpp" data-id="' + c.id + '">💬</button>';
     }
+    if(c.status === 'Pendente' && !c.autorizadoPorId) acoes += '<button class="tbtn" data-action="compra-autorizar" data-id="' + c.id + '" title="Autorizar e liberar do estoque">✅</button>';
     if(c.status !== 'Recebido') acoes += '<button class="tbtn" data-action="compra-edit" data-id="' + c.id + '">✏️</button>';
     acoes += '<button class="tbtn" data-action="compra-del" data-id="' + c.id + '">🗑</button>';
     return '<tr><td>' + new Date(c.ts).toLocaleDateString('pt-BR') + '</td><td>' + esc(c.num) + '</td>' +
@@ -4225,6 +4255,7 @@ document.addEventListener('click', function(e){
     case 'compra-receber': confirmAction('Confirmar recebimento? Isso registra uma Entrada e atualiza o estoque.', function(){ receberCompra(parseInt(id)); }); break;
     case 'compra-pdf': compraPDF(parseInt(id)); break;
     case 'compra-wpp': compraWhatsApp(parseInt(id)); break;
+    case 'compra-autorizar': autorizarCompra(parseInt(id)); break;
     case 'compra-edit': abrirEditarCompra(parseInt(id)); break;
     case 'compra-del': confirmAction('Excluir esta solicitação de compra?', function(){ deleteCompra(parseInt(id)); }); break;
     case 'hist-detail': openHistDetail(t.getAttribute('data-mod'), t.getAttribute('data-num')); break;
@@ -4362,6 +4393,7 @@ async function initApp(){
 
   loadCadastros();
   loadFuncionarios();
+  carregarFuncionariosGPE();
   await carregarMovimentacoesDoBanco();
   await loadCompras();
 
