@@ -2135,6 +2135,7 @@ function createCatalogModule(cfg){
       qtyStepper +
       '<div class="c-actions">' +
         '<button data-action="edit-item" data-mod="' + M.key + '" data-id="' + esc(it.id) + '">✎ Editar</button>' +
+        '<button data-action="delete-item-geral" data-mod="' + M.key + '" data-id="' + esc(it.id) + '" title="Excluir">🗑</button>' +
         (semEstoque
           ? '<button class="buy" data-action="request-purchase" data-mod="' + M.key + '" data-id="' + esc(it.id) + '">🛒 Comprar</button>'
           : '<button class="add" data-action="add-cart" data-mod="' + M.key + '" data-id="' + esc(it.id) + '">＋ Adicionar</button>') +
@@ -2394,6 +2395,7 @@ function createCatalogModule(cfg){
     var it = id ? byId(id) : null;
     el('itemModalTitle').textContent = it ? 'Editar Material' : 'Cadastrar Material';
     el('itCod').value = it ? it.cod : '';
+    el('itCod').placeholder = it ? '' : 'Deixe em branco pra gerar automático';
     el('itCat').value = it ? it.cat : '';
     el('itDesc').value = it ? it.desc : '';
     el('itGrp').value = it ? it.grp : (M.groups[0] ? M.groups[0].id : '');
@@ -2404,26 +2406,69 @@ function createCatalogModule(cfg){
   }
   M.openEdit = openEdit;
 
-  function saveEdit(){
+  async function saveEdit(){
     var cod = el('itCod').value.trim(), cat = el('itCat').value.trim(), desc = el('itDesc').value.trim();
-    if(!cod || !cat || !desc){ toast('Preencha código, categoria e descrição.', 'err'); return; }
+    if(!cat || !desc){ toast('Preencha categoria e descrição.', 'err'); return; }
+    // Código é opcional só em item NOVO -- se vazio, o sistema gera um
+    // sozinho (prefixo por categoria), igual o padrão que já existe
+    // pros números de Compra/Contrato.
+    var categoriaSupabase = M.key === 'tub' ? 'tubulacao' : 'consumiveis';
+    if(!cod && !_editCtx.itemId){
+      try{
+        var{data:codigoGerado, error:erroGerar} = await supabaseClient.rpc('gerar_proximo_codigo_interno', {p_categoria: categoriaSupabase});
+        if(erroGerar) throw erroGerar;
+        cod = codigoGerado;
+      }catch(e){ console.error(e); toast('Não foi possível gerar o código automático -- informa um código manual.', 'err'); return; }
+    }
+    if(!cod){ toast('Preencha o código.', 'err'); return; }
+
     var data = {cod: cod, cat: cat, desc: desc, grp: el('itGrp').value, st: el('itSt').value,
       qty: parseInt(el('itQty').value) || 0, un: el('itUn').value};
-    if(_editCtx.itemId){
-      var it = byId(_editCtx.itemId);
-      Object.assign(it, data);
-      toast('✅ Material atualizado.');
-    } else {
-      var nextId = (M.items[M.items.length-1] ? M.items[M.items.length-1].id : 0) + 1;
-      data.id = nextId;
-      M.items.push(data);
-      toast('✅ Material cadastrado.');
-    }
+
+    try{
+      if(_editCtx.itemId){
+        var it = byId(_editCtx.itemId);
+        await supabaseClient.from('estoque_itens').update({codigo: cod, descricao: desc, categoria: categoriaSupabase, unidade: data.un}).eq('codigo', it.cod);
+        Object.assign(it, data);
+        toast('✅ Material atualizado.');
+      } else {
+        await supabaseClient.from('estoque_itens').insert({codigo: cod, descricao: desc, categoria: categoriaSupabase, unidade: data.un, quantidade_atual: data.qty});
+        var nextId = (M.items[M.items.length-1] ? M.items[M.items.length-1].id : 0) + 1;
+        data.id = nextId;
+        M.items.push(data);
+        toast('✅ Material cadastrado — código ' + cod + '.');
+      }
+    }catch(e){ console.error(e); toast('Não foi possível salvar no servidor -- confere se o código já não existe.', 'err'); return; }
+
     scheduleSave();
     renderGrid(); renderLegend();
     closeModal('modItem');
   }
   M.saveEdit = saveEdit;
+
+  /* Excluir geral -- diferente do deleteItem antigo (só duplicata):
+     chama a exclusão segura do Supabase (desativa se já tem
+     movimentação, apaga de vez se nunca foi usado). */
+  async function deleteItemGeral(id){
+    var it = byId(id); if(!it) return;
+    if(!confirm('Excluir "' + it.desc + '" (' + it.cod + ')? Se já tiver movimentação de estoque, só desativa em vez de apagar.')) return;
+    try{
+      var{data:itemBanco} = await supabaseClient.from('estoque_itens').select('id').eq('codigo', it.cod).limit(1);
+      if(itemBanco && itemBanco[0]){
+        var{data:resultado, error} = await supabaseClient.rpc('excluir_item_catalogo', {p_item_id: itemBanco[0].id});
+        if(error) throw error;
+        var msg = resultado && resultado[0] && resultado[0].resultado === 'desativado'
+          ? '⚠️ Já tinha movimentação de estoque -- desativado, não excluído, pra preservar o histórico.'
+          : '🗑 Excluído.';
+        toast(msg);
+      } else {
+        toast('🗑 Removido (não tinha registro no estoque ainda).');
+      }
+      M.items = M.items.filter(function(x){ return String(x.id) !== String(id); });
+      scheduleSave(); renderGrid(); renderLegend();
+    }catch(e){ console.error(e); toast('Não foi possível excluir.', 'err'); }
+  }
+  M.deleteItemGeral = deleteItemGeral;
 
   /* ── DUPLICATAS (checagem simplificada por similaridade de código/descrição) ── */
   function stripCode(s){ return normalize(s).replace(/[^a-z0-9]/g,''); }
@@ -3507,16 +3552,40 @@ function renderImportPreview(){
   box.innerHTML = html;
 }
 
-function confirmImport(){
+async function confirmImport(){
   var p = _importPending; if(!p) return;
   var mod = Modules[p.mod];
-  p.updates.forEach(function(u){ u.rec.id = u.existing.id; Object.assign(u.existing, u.rec); });
+  var categoriaSupabase = p.mod === 'tub' ? 'tubulacao' : 'consumiveis';
+  var falhas = 0;
+
+  for(const u of p.updates){
+    try{
+      await supabaseClient.from('estoque_itens').update({descricao:u.rec.desc, categoria:categoriaSupabase, unidade:u.rec.un}).eq('codigo', u.rec.cod);
+    }catch(e){ falhas++; }
+    u.rec.id = u.existing.id; Object.assign(u.existing, u.rec);
+  }
+
   var nextId = (mod.items[mod.items.length-1] ? mod.items[mod.items.length-1].id : 0) + 1;
-  p.news.forEach(function(n){ n.id = nextId++; mod.items.push(n); });
+  for(const n of p.news){
+    // Planilha sem código nessa linha (raro, já que a coluna Código é
+    // obrigatória pra importar) -- gera automático, mesma regra da
+    // tela de cadastro manual.
+    if(!n.cod){
+      try{
+        var{data:codigoGerado} = await supabaseClient.rpc('gerar_proximo_codigo_interno', {p_categoria: categoriaSupabase});
+        n.cod = codigoGerado;
+      }catch(e){ falhas++; continue; }
+    }
+    try{
+      await supabaseClient.from('estoque_itens').insert({codigo:n.cod, descricao:n.desc, categoria:categoriaSupabase, unidade:n.un, quantidade_atual:n.qty});
+    }catch(e){ falhas++; }
+    n.id = nextId++; mod.items.push(n);
+  }
+
   mod.scheduleSave();
   mod.renderGrid(); mod.renderLegend();
   renderDashboard();
-  toast('✅ Importação concluída: ' + p.updates.length + ' atualizado(s), ' + p.news.length + ' novo(s).', 'ok');
+  toast('✅ Importação concluída: ' + p.updates.length + ' atualizado(s), ' + p.news.length + ' novo(s)' + (falhas ? ' · ⚠️ ' + falhas + ' falha(s) ao gravar no servidor' : '') + '.', 'ok');
   cancelImport();
 }
 function cancelImport(){
@@ -4152,6 +4221,7 @@ document.addEventListener('click', function(e){
     /* — catálogo — */
     case 'card-toggle': if(mod){ var addBtn = e.target.closest('[data-action="add-cart"]'), editBtn = e.target.closest('[data-action="edit-item"]'); if(!addBtn && !editBtn) mod.toggleSel(id); } break;
     case 'edit-item': if(mod) mod.openEdit(id); break;
+    case 'delete-item-geral': if(mod) mod.deleteItemGeral(id); break;
     case 'new-item': if(mod) mod.openEdit(null); break;
     case 'add-cart': if(mod){
       var qtyInp = el('cqty-' + modKey + '-' + id);
