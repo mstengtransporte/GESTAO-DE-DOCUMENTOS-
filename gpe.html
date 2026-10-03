@@ -328,6 +328,7 @@ a{color:inherit;}
 
     <div class="nav-lbl">Folha de Pagamento</div>
     <button class="nav-item" data-view="folha"><span class="ic">💵</span>Folha & Adiantamento</button>
+    <button class="nav-item" data-view="holerite"><span class="ic">🧾</span>Holerite</button>
     <button class="nav-item" data-view="rescisao"><span class="ic">📋</span>Rescisão</button>
 
     <div class="nav-lbl">Utilitários</div>
@@ -558,6 +559,43 @@ a{color:inherit;}
       <div class="card"><h2>Férias programadas</h2><div id="listaFerias"><div class="vazio">Carregando...</div></div></div>
     </div>
 
+    <!-- ═══════════ HOLERITE ═══════════ -->
+    <div id="viewHolerite" class="hidden">
+      <div class="pg-head"><div><h1>Holerite</h1><p>Recibo de pagamento individual, por competência — só mostra quem já teve a folha processada.</p></div></div>
+      <div class="card">
+        <div class="form-grid">
+          <div class="fld"><label>Colaborador</label><select id="hlColaborador"></select></div>
+          <div class="fld"><label>Competência</label><input type="month" id="hlCompetencia"></div>
+        </div>
+        <button class="btn btn-sm" style="margin-top:10px" onclick="carregarHolerite()">🔎 Buscar Holerite</button>
+      </div>
+      <div class="card" id="holeriteDocumento" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid var(--borda,#2a3b5c);padding-bottom:12px;margin-bottom:12px">
+          <div>
+            <div style="font-weight:700;font-size:16px">RECIBO DE PAGAMENTO DE SALÁRIO</div>
+            <div class="sub" id="hlCompetenciaTitulo"></div>
+          </div>
+          <button class="btn btn-sm btn-ghost" onclick="window.print()">🖨️ Imprimir</button>
+        </div>
+        <div class="form-grid" style="margin-bottom:14px">
+          <div><div class="sub">Colaborador</div><div id="hlNome" style="font-weight:600"></div></div>
+          <div><div class="sub">Matrícula</div><div id="hlMatricula"></div></div>
+          <div><div class="sub">Cargo</div><div id="hlCargo"></div></div>
+          <div><div class="sub">Admissão</div><div id="hlAdmissao"></div></div>
+        </div>
+        <table class="tabela-ponto">
+          <thead><tr><th>Código</th><th>Descrição</th><th>Proventos</th><th>Descontos</th></tr></thead>
+          <tbody id="hlLinhas"></tbody>
+        </table>
+        <div style="display:flex;justify-content:flex-end;gap:24px;margin-top:14px;padding-top:12px;border-top:1px solid var(--borda,#2a3b5c)">
+          <div>Total de Proventos: <b id="hlTotalProventos"></b></div>
+          <div>Total de Descontos: <b id="hlTotalDescontos"></b></div>
+          <div style="font-size:16px">Líquido a Receber: <b id="hlLiquido" style="color:#16a34a"></b></div>
+        </div>
+      </div>
+      <div class="vazio" id="hlVazio" style="display:none">Nenhuma folha processada pra esse colaborador nessa competência.</div>
+    </div>
+
     <!-- ═══════════ FOLHA & ADIANTAMENTO ═══════════ -->
     <div id="viewFolha" class="hidden">
       <div class="pg-head"><div><h1>Folha de Pagamento & Adiantamento</h1><p>Adiantamento quinzenal, e fechamento mensal com integração de horas do Ponto.</p></div></div>
@@ -698,6 +736,7 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
 
 /* ── ESTADO ──────────────────────────────────────────────── */
 let COLABORADORES = [];
+let FOLHA_ENCARGOS_PATRONAIS = null;
 let DEPENDENTES_ATUAL = [];
 let colaboradorEditandoId = null;
 
@@ -998,11 +1037,18 @@ async function processarFechamentoFolha(){
     const{data:folha,error:errFolha} = await supabaseClient.from('rh_folha_pagamento').upsert({competencia}, {onConflict:'competencia'}).select().single();
     if(errFolha) throw errFolha;
 
-    let totalProventos=0, totalDescontos=0, processados=0;
+    let totalProventos=0, totalDescontos=0, totalFgts=0, totalInssPatronal=0, processados=0;
+    const semComposicao = [];
     const ativos = COLABORADORES.filter(c=>(c.situacao_folha||'ativo')!=='demitido');
     for(const c of ativos){
       const salario = parseFloat(c.salario_base)||0;
       if(salario<=0) continue;
+
+      const{data:composicao} = await supabaseClient.from('rh_composicao_custo').select('fgts_pct,inss_patronal_pct').eq('funcionario_id',c.id).order('created_at',{ascending:false}).limit(1);
+      const comp = composicao?.[0];
+      if(!comp) semComposicao.push(c.nome);
+      totalFgts += salario * (comp?.fgts_pct ?? 8) / 100;
+      totalInssPatronal += salario * (comp?.inss_patronal_pct ?? 20) / 100;
 
       const itens = [
         {folha_id:folha.id, funcionario_id:c.id, tipo:'provento', codigo:'001', descricao:'Salário Base', valor:salario},
@@ -1035,20 +1081,83 @@ async function processarFechamentoFolha(){
     }
 
     await supabaseClient.from('rh_folha_pagamento').update({total_proventos:totalProventos, total_descontos:totalDescontos, total_liquido:totalProventos-totalDescontos}).eq('id',folha.id);
+    FOLHA_ENCARGOS_PATRONAIS = {folhaId:folha.id, competencia, totalFgts:round2(totalFgts), totalInssPatronal:round2(totalInssPatronal)};
 
-    wrap.innerHTML = `<div class="aviso-integracao">✓ ${processados} colaborador(es) processados. Proventos: ${fmtMoeda(totalProventos)} · Descontos: ${fmtMoeda(totalDescontos)} · Líquido: ${fmtMoeda(totalProventos-totalDescontos)}<br><br>
+    const avisoComposicao = semComposicao.length ? `<div style="margin-top:10px;color:#e8a33d">⚠️ ${semComposicao.length} colaborador(es) sem Composição de Custo cadastrada (usei FGTS 8% e INSS patronal 20% padrão pra eles, sem encargo específico): ${semComposicao.join(', ')}. O valor/hora desses pode estar sem encargos embutidos — confere em "Composição de Custo".</div>` : '';
+    wrap.innerHTML = `<div class="aviso-integracao">✓ ${processados} colaborador(es) processados. Proventos: ${fmtMoeda(totalProventos)} · Descontos: ${fmtMoeda(totalDescontos)} · Líquido: ${fmtMoeda(totalProventos-totalDescontos)}<br>
+      Encargos do empregador (não descontados do funcionário, a empresa paga por fora): FGTS ${fmtMoeda(totalFgts)} · INSS Patronal ${fmtMoeda(totalInssPatronal)}
+      ${avisoComposicao}<br><br>
       <button class="btn btn-sm" onclick="fecharFolhaEEnviarFinanceiro('${folha.id}')">🔒 Fechar Folha e Enviar pro Financeiro</button></div>`;
     renderizarFolhas();
   }catch(e){ console.error(e); wrap.innerHTML='<div class="vazio">Não foi possível processar.</div>'; }
 }
 async function fecharFolhaEEnviarFinanceiro(folhaId){
-  if(!confirm('Fechar a folha envia um título a pagar pro Financeiro, pra cada colaborador. Confirma?')) return;
+  if(!confirm('Fechar a folha envia um título a pagar pro Financeiro pra cada colaborador, mais as guias de INSS e FGTS pro governo. Confirma?')) return;
   try{
     const{error} = await supabaseClient.from('rh_folha_pagamento').update({status:'fechada', data_fechamento:new Date().toISOString().slice(0,10)}).eq('id',folhaId);
     if(error) throw error;
-    toast('✓ Folha fechada — títulos enviados pro Financeiro.','#16a34a');
+
+    // Guias pro governo -- INSS retido dos funcionários + INSS patronal
+    // (a empresa também paga a parte dela, além do que descontou) vão
+    // juntas na mesma GPS, na prática. FGTS é depósito separado (GRF/SEFIP).
+    if(FOLHA_ENCARGOS_PATRONAIS && FOLHA_ENCARGOS_PATRONAIS.folhaId===folhaId){
+      const{data:itensInss} = await supabaseClient.from('rh_folha_itens').select('valor').eq('folha_id',folhaId).eq('codigo','900');
+      const totalInssRetido = (itensInss||[]).reduce((s,i)=>s+i.valor,0);
+      const totalInssGps = round2(totalInssRetido + FOLHA_ENCARGOS_PATRONAIS.totalInssPatronal);
+      const vencimentoGps = new Date(); vencimentoGps.setMonth(vencimentoGps.getMonth()+1); vencimentoGps.setDate(20);
+      const vencimentoFgts = new Date(); vencimentoFgts.setMonth(vencimentoFgts.getMonth()+1); vencimentoFgts.setDate(7);
+
+      if(totalInssGps>0) await supabaseClient.from('fin_titulos_pagar').insert({
+        fornecedor:'INSS — Receita Federal (GPS)', origem_tipo:'folha_pagamento',
+        descricao:`INSS retido + patronal — competência ${FOLHA_ENCARGOS_PATRONAIS.competencia}`,
+        valor:totalInssGps, data_vencimento:vencimentoGps.toISOString().slice(0,10), forma_pagamento:'guia',
+      });
+      if(FOLHA_ENCARGOS_PATRONAIS.totalFgts>0) await supabaseClient.from('fin_titulos_pagar').insert({
+        fornecedor:'FGTS — Caixa Econômica Federal (GRF/SEFIP)', origem_tipo:'folha_pagamento',
+        descricao:`FGTS depositado — competência ${FOLHA_ENCARGOS_PATRONAIS.competencia}`,
+        valor:FOLHA_ENCARGOS_PATRONAIS.totalFgts, data_vencimento:vencimentoFgts.toISOString().slice(0,10), forma_pagamento:'guia',
+      });
+    }
+
+    toast('✓ Folha fechada — títulos dos colaboradores, INSS e FGTS enviados pro Financeiro.','#16a34a');
     renderizarFolhas();
   }catch(e){ console.error(e); toast('Não foi possível fechar.','#dc2626'); }
+}
+async function carregarHolerite(){
+  const colaboradorId = document.getElementById('hlColaborador').value;
+  const competencia = document.getElementById('hlCompetencia').value;
+  if(!colaboradorId || !competencia){ toast('Escolhe o colaborador e a competência.','#dc2626'); return; }
+  document.getElementById('holeriteDocumento').style.display='none';
+  document.getElementById('hlVazio').style.display='none';
+  try{
+    const{data:folha} = await supabaseClient.from('rh_folha_pagamento').select('id,status').eq('competencia',competencia).limit(1);
+    const folhaRow = folha?.[0];
+    if(!folhaRow){ document.getElementById('hlVazio').style.display=''; return; }
+
+    const{data:itens} = await supabaseClient.from('rh_folha_itens').select('*').eq('folha_id',folhaRow.id).eq('funcionario_id',colaboradorId);
+    if(!itens || !itens.length){ document.getElementById('hlVazio').style.display=''; return; }
+
+    const c = COLABORADORES.find(x=>x.id===colaboradorId);
+    document.getElementById('hlNome').textContent = c?.nome || '—';
+    document.getElementById('hlMatricula').textContent = c?.matricula || '—';
+    document.getElementById('hlCargo').textContent = c?.cargo || '—';
+    document.getElementById('hlAdmissao').textContent = fmtData(c?.admissao);
+    const[ano,mes] = competencia.split('-');
+    const nomesMes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    document.getElementById('hlCompetenciaTitulo').textContent = `Competência: ${nomesMes[parseInt(mes)-1]}/${ano} ${folhaRow.status==='fechada'?'· Folha fechada':'· Folha ainda aberta (valores podem mudar)'}`;
+
+    const proventos = itens.filter(i=>i.tipo==='provento');
+    const descontos = itens.filter(i=>i.tipo==='desconto');
+    document.getElementById('hlLinhas').innerHTML = itens.map(i=>`<tr><td>${i.codigo}</td><td>${i.descricao}</td><td>${i.tipo==='provento'?fmtMoeda(i.valor):''}</td><td>${i.tipo==='desconto'?fmtMoeda(i.valor):''}</td></tr>`).join('');
+
+    const totalProventos = proventos.reduce((s,i)=>s+parseFloat(i.valor),0);
+    const totalDescontos = descontos.reduce((s,i)=>s+parseFloat(i.valor),0);
+    document.getElementById('hlTotalProventos').textContent = fmtMoeda(totalProventos);
+    document.getElementById('hlTotalDescontos').textContent = fmtMoeda(totalDescontos);
+    document.getElementById('hlLiquido').textContent = fmtMoeda(totalProventos-totalDescontos);
+
+    document.getElementById('holeriteDocumento').style.display='';
+  }catch(e){ console.error(e); toast('Não foi possível buscar o holerite.','#dc2626'); }
 }
 async function renderizarFolhas(){
   try{
@@ -1280,7 +1389,7 @@ function iniciais(nome){ return (nome||'?').trim().split(' ').filter(Boolean).sl
 
 /* ── NAVEGAÇÃO ───────────────────────────────────────────── */
 function mudarView(nome){
-  const views=['dashboard','lista','formColaborador','importar','esocial','afastamentos','ferias','folha','rescisao','tabelasFiscais','verbas','movimentoMensal','sindicatos'];
+  const views=['dashboard','lista','formColaborador','importar','esocial','afastamentos','ferias','folha','rescisao','tabelasFiscais','verbas','movimentoMensal','sindicatos','holerite'];
   views.forEach(v=>{ const el=document.getElementById('view'+v.charAt(0).toUpperCase()+v.slice(1)); if(el) el.classList.toggle('hidden', v!==nome); });
   document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.classList.toggle('active', b.dataset.view===nome));
   if(nome==='dashboard') renderizarDashboard();
@@ -1294,6 +1403,7 @@ function mudarView(nome){
   if(nome==='verbas') carregarVerbas();
   if(nome==='movimentoMensal') carregarMovimentoMensal();
   if(nome==='sindicatos'){ sindicatoEditandoId=null; document.getElementById('siNome').value=''; document.getElementById('siPiso').value=''; document.getElementById('tituloFormSindicato').textContent='Novo Sindicato'; renderizarSindicatos(); }
+  if(nome==='holerite'){ popularTodosSelectsColaborador(); document.getElementById('holeriteDocumento').style.display='none'; document.getElementById('hlVazio').style.display='none'; }
 }
 document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.addEventListener('click',()=>mudarView(b.dataset.view)));
 
@@ -1618,7 +1728,7 @@ function popularSelectEsocial(){
 }
 function popularTodosSelectsColaborador(){
   const opts = '<option value="">— Selecione —</option>' + COLABORADORES.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
-  ['esColaborador','afColaborador','feColaborador','adColaborador','rsColaborador'].forEach(id=>{
+  ['esColaborador','afColaborador','feColaborador','adColaborador','rsColaborador','hlColaborador'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.innerHTML = opts;
   });
 }
