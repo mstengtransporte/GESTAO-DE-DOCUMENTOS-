@@ -558,12 +558,20 @@ function renderizarLista(){
 }
 
 /* ── NOVO CONTRATO ───────────────────────────────────────── */
-function abrirNovoContrato(){
+async function abrirNovoContrato(){
   ['ncLocal','ncDataInicio','ncDataFim','ncCustoAlmoco','ncDistanciaKm','ncValorHoraCusto','ncValorHoraVenda'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('ncFuncionario').value=''; document.getElementById('ncCliente').value=''; document.getElementById('ncProjeto').value=''; document.getElementById('ncVeiculo').value='';
   document.getElementById('ncHorasDia').value='8.8'; document.getElementById('ncDiasSemana').value='5';
   document.getElementById('ncCustoAlmoco').value='0'; document.getElementById('ncDistanciaKm').value='0';
   document.getElementById('previaMargemContrato').innerHTML='';
+  // Sugere o valor padrão da empresa (definido no CRM) -- a pessoa só
+  // confirma, ou sobrescreve se esse contrato tiver preço negociado
+  // diferente. Se não conseguir buscar, o gatilho do banco preenche
+  // de qualquer jeito, quando o campo ficar vazio.
+  try{
+    const{data} = await supabaseClient.from('crm_parametros').select('valor_padrao_hora_venda').limit(1);
+    if(data && data[0] && data[0].valor_padrao_hora_venda>0) document.getElementById('ncValorHoraVenda').value = data[0].valor_padrao_hora_venda;
+  }catch(e){ console.error(e); }
   mudarView('novoContrato');
 }
 
@@ -615,8 +623,11 @@ document.getElementById('ncHorasDia').addEventListener('input', atualizarPreviaM
 async function salvarContrato(){
   const funcId=document.getElementById('ncFuncionario').value, cliId=document.getElementById('ncCliente').value;
   const dataInicio=document.getElementById('ncDataInicio').value;
-  const valorVenda=parseFloat(document.getElementById('ncValorHoraVenda').value);
-  if(!funcId||!cliId||!dataInicio||isNaN(valorVenda)){ toast('Preenche funcionário, cliente, data de início e valor de venda.','#dc2626'); return; }
+  const valorVendaDigitado=parseFloat(document.getElementById('ncValorHoraVenda').value);
+  if(!funcId||!cliId||!dataInicio){ toast('Preenche funcionário, cliente e data de início.','#dc2626'); return; }
+  // Valor de venda é opcional -- se não vier, o gatilho do banco
+  // preenche sozinho com o padrão da empresa (definido no CRM).
+  const valorVenda = isNaN(valorVendaDigitado) ? null : valorVendaDigitado;
   try{
     const{error}=await supabaseClient.from('contratos_mao_obra').insert({
       funcionario_id:funcId, cliente_id:cliId, projeto_id:document.getElementById('ncProjeto').value||null,

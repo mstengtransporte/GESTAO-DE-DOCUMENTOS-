@@ -213,6 +213,7 @@ a{color:inherit;}
 
     <div class="nav-lbl">Resultado</div>
     <button class="nav-item" data-view="cockpit"><span class="ic">📊</span>Cockpit de Margem</button>
+    <button class="nav-item" data-view="extraEscopo"><span class="ic">🟢</span>Extra Escopo</button>
 
     <div class="sidebar-foot">
       ESF · Vendas/CRM — v2026.09.22<br>
@@ -416,6 +417,46 @@ a{color:inherit;}
     </div>
 
     <!-- ═══════════ APROVAÇÕES ═══════════ -->
+    <!-- ═══════════ EXTRA ESCOPO ═══════════ -->
+    <div id="viewExtraEscopo" class="hidden">
+      <div class="pg-head"><div><h1>Extra Escopo</h1><p>Serviço não vendido antecipadamente, identificado no RDO (OSE marcada em verde) — vira receita por hora, no valor padrão da empresa.</p></div></div>
+
+      <div class="card">
+        <h2>Valor Padrão de Venda da Hora (HH)</h2>
+        <p class="sub">Um valor só, pra empresa inteira — cobre salário, encargos e benefícios de qualquer função. Também preenche sozinho o valor de Contratos de Mão de Obra novos.</p>
+        <div class="form-grid">
+          <div class="fld"><label>R$ por hora</label><input type="number" id="eeValorPadrao" step="0.01" min="0"></div>
+        </div>
+        <button class="btn btn-sm" style="margin-top:10px" onclick="salvarValorPadraoHora()">💾 Salvar</button>
+      </div>
+
+      <div class="card">
+        <h2>Fechar Extra Escopo — data livre</h2>
+        <p class="sub">Escolhe qualquer intervalo de datas (não precisa ser o mês inteiro) — o sistema busca sozinho toda OSE marcada Extra Escopo nesse período, que ainda não foi fechada antes.</p>
+        <div class="form-grid">
+          <div class="fld"><label>Obra (RDO)</label><select id="eeObra"><option value="">— Todas —</option></select></div>
+          <div class="fld"><label>Data Início</label><input type="date" id="eeDataInicio"></div>
+          <div class="fld"><label>Data Fim</label><input type="date" id="eeDataFim"></div>
+          <div class="fld"><label>Cliente (pra cobrança)</label><select id="eeCliente"></select></div>
+          <div class="fld"><label>Projeto</label><select id="eeProjeto"></select></div>
+        </div>
+        <button class="btn btn-sm btn-ghost" style="margin-top:10px" onclick="buscarPreviaExtraEscopo()">🔎 Buscar Extra Escopo do Período</button>
+        <div id="eePreviaResumo" style="margin-top:14px"></div>
+      </div>
+
+      <div class="card hidden" id="eeCardItens">
+        <h2>Itens encontrados — descrição editável pra cobrança</h2>
+        <p class="sub">O nome original da OSE vem preenchido; edita se precisar de uma descrição mais apresentável pro cliente.</p>
+        <div id="eeListaItens"></div>
+        <div style="display:flex;justify-content:flex-end;margin-top:14px;padding-top:12px;border-top:1px solid var(--borda,#2a3b5c);gap:16px;align-items:center">
+          <div>Total: <b id="eeTotalGeral" style="font-size:16px"></b></div>
+          <button class="btn btn-sm" onclick="confirmarFechamentoExtraEscopo()">✅ Confirmar e Enviar pro Financeiro</button>
+        </div>
+      </div>
+
+      <div class="card"><h2>Fechamentos já confirmados</h2><div id="eeListaFechamentos"><div class="vazio">Carregando...</div></div></div>
+    </div>
+
     <!-- ═══════════ COCKPIT DE MARGEM ═══════════ -->
     <div id="viewCockpit" class="hidden">
       <div class="pg-head">
@@ -539,7 +580,7 @@ function normalizar(s){ return (s||'').toString().toLowerCase().normalize('NFD')
 
 /* ── NAVEGAÇÃO ───────────────────────────────────────────── */
 function mudarView(nome){
-  const views = ['dashboard','funil','oportunidades','detalheOport','clientes','novoCliente','pedidos','novoPedido','detalhePedido','aprovacoes','cockpit'];
+  const views = ['dashboard','funil','oportunidades','detalheOport','clientes','novoCliente','pedidos','novoPedido','detalhePedido','aprovacoes','cockpit','extraEscopo'];
   views.forEach(v=>{
     const el = document.getElementById('view'+v.charAt(0).toUpperCase()+v.slice(1));
     if(el) el.classList.toggle('hidden', v !== nome);
@@ -552,8 +593,87 @@ function mudarView(nome){
   if(nome==='pedidos') renderizarPedidos();
   if(nome==='aprovacoes') renderizarAprovacoes();
   if(nome==='cockpit') iniciarCockpit();
+  if(nome==='extraEscopo') iniciarExtraEscopo();
 }
 document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.addEventListener('click', ()=>mudarView(b.dataset.view)));
+
+/* ── EXTRA ESCOPO ────────────────────────────────────────── */
+let EE_PREVIA_ATUAL = [];
+async function iniciarExtraEscopo(){
+  try{
+    const[rp, ro, rc, rpr, rf] = await Promise.all([
+      supabaseClient.from('crm_parametros').select('valor_padrao_hora_venda').limit(1),
+      supabaseClient.from('obras').select('id,nome').order('nome'),
+      supabaseClient.from('crm_clientes').select('id,nome').order('nome'),
+      supabaseClient.from('projetos').select('id,nome,codigo').order('codigo'),
+      supabaseClient.from('rdo_extra_escopo_fechamentos').select('*').order('created_at',{ascending:false}).limit(20),
+    ]);
+    document.getElementById('eeValorPadrao').value = rp.data?.[0]?.valor_padrao_hora_venda || '';
+    document.getElementById('eeObra').innerHTML = '<option value="">— Todas —</option>' + (ro.data||[]).map(o=>`<option value="${o.id}">${o.nome}</option>`).join('');
+    document.getElementById('eeCliente').innerHTML = '<option value="">— Selecione —</option>' + (rc.data||[]).map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+    document.getElementById('eeProjeto').innerHTML = '<option value="">— Selecione —</option>' + (rpr.data||[]).map(p=>`<option value="${p.id}">${p.codigo||''} — ${p.nome}</option>`).join('');
+
+    document.getElementById('eeListaFechamentos').innerHTML = (rf.data&&rf.data.length) ? rf.data.map(f=>
+      `<div class="item-linha"><div><div class="principal">${f.numero}</div><div class="sec">${fmtData(f.data_inicio)} a ${fmtData(f.data_fim)} · R$${f.valor_hora_aplicado}/h</div></div><b>${fmtMoeda(f.valor_total)}</b></div>`
+    ).join('') : '<div class="vazio">Nenhum fechamento ainda.</div>';
+  }catch(e){ console.error(e); toast('Não foi possível carregar.','#dc2626'); }
+}
+async function salvarValorPadraoHora(){
+  const valor = parseFloat(document.getElementById('eeValorPadrao').value);
+  if(isNaN(valor) || valor<=0){ toast('Informa um valor válido.','#dc2626'); return; }
+  try{
+    const{data:existe} = await supabaseClient.from('crm_parametros').select('id').limit(1);
+    if(existe && existe[0]) await supabaseClient.from('crm_parametros').update({valor_padrao_hora_venda:valor}).eq('id',existe[0].id);
+    else await supabaseClient.from('crm_parametros').insert({valor_padrao_hora_venda:valor});
+    toast('✓ Valor salvo — já vale pra Extra Escopo e novos Contratos de Mão de Obra.','#16a34a');
+  }catch(e){ console.error(e); toast('Não foi possível salvar.','#dc2626'); }
+}
+async function buscarPreviaExtraEscopo(){
+  const dataInicio = document.getElementById('eeDataInicio').value, dataFim = document.getElementById('eeDataFim').value;
+  if(!dataInicio || !dataFim){ toast('Escolhe as duas datas.','#dc2626'); return; }
+  const obraId = document.getElementById('eeObra').value || null;
+  try{
+    const{data,error} = await supabaseClient.rpc('prever_fechamento_extra_escopo', {p_data_inicio:dataInicio, p_data_fim:dataFim, p_obra_id:obraId});
+    if(error) throw error;
+    EE_PREVIA_ATUAL = (data||[]).map(d=>({...d, descricao_fatura:d.descricao_original}));
+    renderizarPreviaExtraEscopo();
+  }catch(e){ console.error(e); toast('Não foi possível buscar — confere se o SQL do Extra Escopo já foi rodado.','#dc2626'); }
+}
+function renderizarPreviaExtraEscopo(){
+  const card = document.getElementById('eeCardItens');
+  if(!EE_PREVIA_ATUAL.length){
+    card.classList.add('hidden');
+    document.getElementById('eePreviaResumo').innerHTML = '<div class="vazio">Nenhuma OSE de Extra Escopo encontrada nesse período (ou já foi tudo fechado antes).</div>';
+    return;
+  }
+  document.getElementById('eePreviaResumo').innerHTML = '';
+  card.classList.remove('hidden');
+  document.getElementById('eeListaItens').innerHTML = EE_PREVIA_ATUAL.map((it,i)=>
+    `<div class="item-linha"><div style="flex:1">
+      <div class="sec">${fmtData(it.data)} · ${it.horas}h · Original: "${it.descricao_original}"</div>
+      <input type="text" value="${it.descricao_fatura.replace(/"/g,'&quot;')}" oninput="EE_PREVIA_ATUAL[${i}].descricao_fatura=this.value" style="width:100%;margin-top:4px" placeholder="Descrição pra cobrança">
+    </div><b style="margin-left:10px">${fmtMoeda(it.valor)}</b></div>`
+  ).join('');
+  const total = EE_PREVIA_ATUAL.reduce((s,it)=>s+Number(it.valor),0);
+  document.getElementById('eeTotalGeral').textContent = fmtMoeda(total);
+}
+async function confirmarFechamentoExtraEscopo(){
+  const clienteId = document.getElementById('eeCliente').value, projetoId = document.getElementById('eeProjeto').value;
+  if(!clienteId){ toast('Escolhe o cliente, pra quem vai a cobrança.','#dc2626'); return; }
+  if(!EE_PREVIA_ATUAL.length){ toast('Nada pra confirmar.','#dc2626'); return; }
+  if(!confirm('Confirma o fechamento de ' + EE_PREVIA_ATUAL.length + ' item(ns), total ' + fmtMoeda(EE_PREVIA_ATUAL.reduce((s,it)=>s+Number(it.valor),0)) + '? Isso trava essas horas contra fechamento duplicado, e já envia o título a receber pro Financeiro.')) return;
+  try{
+    const{data:fechamentoId, error} = await supabaseClient.rpc('confirmar_fechamento_extra_escopo', {
+      p_data_inicio: document.getElementById('eeDataInicio').value, p_data_fim: document.getElementById('eeDataFim').value,
+      p_cliente_id: clienteId, p_projeto_id: projetoId || null, p_itens: EE_PREVIA_ATUAL,
+    });
+    if(error) throw error;
+    toast('✅ Fechamento confirmado — título a receber enviado pro Financeiro.','#16a34a');
+    EE_PREVIA_ATUAL = [];
+    document.getElementById('eeCardItens').classList.add('hidden');
+    await iniciarExtraEscopo();
+  }catch(e){ console.error(e); toast('Não foi possível confirmar: ' + (e.message||''),'#dc2626'); }
+}
 
 /* ── COCKPIT DE MARGEM ───────────────────────────────────── */
 let CK_PROJETOS = [], CK_OBRAS = [];
